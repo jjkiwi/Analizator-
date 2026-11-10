@@ -47,7 +47,9 @@ exclude:
   GOLD:      ["gold medal", "gold medals", "golden", "gold coast", "gold standard", "gold card",
               "gold rate today", "gold rates today", "retail rates", "24k", "22k", "24 carat", "22 carat",
               "gold miners", "gold mining", "barrick gold", "kinross gold", "gold fields", "gold corp",
-              "gold stocks", "gold stock"]
+              "gold stocks", "gold stock", "equinox gold", "mining", "cs:TSX",
+              # lokalne ceny detaliczne (Indie, Pakistan, Indonezja, Wietnam): bez znaczenia dla XAU/USD
+              "per tola", "tola", "tael", "antam", "10 gm", "10 grams", "lakh", "cs:Rs", "rupee", "cs:VND", "cs:IDR"]
   SILVER:    ["silver medal", "silver lining", "silver rate today", "silver stocks", "silver stock"]
   COPPER:    ["copper mountain"]
   SOYBEAN:   ["soybean oil"]

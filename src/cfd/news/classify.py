@@ -25,7 +25,7 @@ _DOWN = re.compile(r"\b(plunge[sd]?|tumble[sd]?|slump[sed]*|sink[s]?|sank|drop[s
 
 # Zapowiedzi, prognozy i komentarze: fraza wysokiej wagi ("CPI", "rate hike") pada w nich bez nowego zdarzenia.
 _SOFT = re.compile(
-    r"\b(ahead of|await(?:s|ing)?|looms?|loom(?:ing)?|brac(?:e|es|ed|ing)|eyes?|eyed|in focus|forecasts?|outlook|"
+    r"\b(ahead|tests?|next|focus|market today|markets today|markets wrap|recap|await(?:s|ing)?|looms?|loom(?:ing)?|brac(?:e|es|ed|ing)|eyes?|eyed|forecasts?|outlook|"
     r"preview|what to expect|predictions?|analysis|could|might|expected to|explained|live updates?|week ahead|"
     r"here(?:'|’)s what|opinion|odds|bets?|przed|prognoz\w*|zapowied\w*|komentarz\w*)\b|\?",
     re.I,

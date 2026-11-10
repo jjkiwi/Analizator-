@@ -16,3 +16,6 @@ SPA35      yahoo    OK    ^IBEX        ostatnia swieca 2026-11-10 close 19936.4
 ITA40      yahoo    OK    FTSEMIB.MI   ostatnia swieca 2026-11-10 close 51755.1
 NED25      yahoo    OK    ^AEX         ostatnia swieca 2026-11-10 close 1132.44
 SUI20      yahoo    OK    ^SSMI        ostatnia swieca 2026-11-10 close 15037.9
+W20        stooq    BLAD  wig20        stooq wig20: ConnectError: [Errno 104] Connection reset by peer
+W20        yahoo    OK    WIG20.WA     ostatnia swieca 2026-11-10 close 4208.46
+JP225      yahoo    OK    ^N225        ostatnia swieca 2026-11-09 close 58775.5
