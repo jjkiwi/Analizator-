@@ -187,6 +187,14 @@ def _due(ctx: Context, name: str, every_seconds: float) -> bool:
     return False
 
 
+def job_dashboard(ctx: Context) -> str:
+    """Odswieza statyczny panel HTML, zeby dzialal bez osobnego harmonogramu."""
+    from .dashboard import write
+
+    cfg = ctx.settings.get("dashboard", {})
+    return str(write(ctx.conn, cfg.get("path", "reports/panel.html")))
+
+
 def run_once(ctx: Context) -> dict:
     """Jeden pelny przebieg wszystkich zadan. Blad jednego zadania nie zatrzymuje pozostalych."""
     out = {}
@@ -207,6 +215,9 @@ def run_forever(ctx: Context, tick: float = 15.0) -> None:
         ("news", job_news, s["news"]["every_seconds"]),
         ("scan", job_scan, s["scan"]["every_minutes"] * 60),
     )
+    dash_minutes = s.get("dashboard", {}).get("refresh_minutes", 5)
+    if dash_minutes:
+        schedule += (("dashboard", job_dashboard, dash_minutes * 60),)
     ctx.notifier.send("✅ Analizator CFD uruchomiony.")
     while True:
         for name, job, every in schedule:

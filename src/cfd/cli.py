@@ -309,6 +309,46 @@ def cmd_dashboard(args) -> None:
     print(f"Panel: {write(_conn(args), args.out)}")
 
 
+def cmd_size(args) -> None:
+    from .sizing import ContractSpec, load_contracts, position_size
+
+    if args.symbol not in _instruments(args):
+        sys.exit(f"Nieznany symbol: {args.symbol}")
+    spec = load_contracts(_cfg(args, "contracts.yaml")).get(args.symbol)
+    if args.lot_multiplier:
+        spec = ContractSpec(lot_multiplier=args.lot_multiplier,
+                            currency=args.currency or (spec.currency if spec else ""),
+                            min_lot=spec.min_lot if spec else 0.01, lot_step=spec.lot_step if spec else 0.01)
+    if spec is None:
+        sys.exit(f"Brak specyfikacji {args.symbol} w config/contracts.yaml. Przepisz ja z xStation "
+                 "albo podaj --lot-multiplier i --currency.")
+    if not spec.currency:
+        sys.exit("Podaj --currency (waluta instrumentu).")
+    fx = args.fx_rate
+    if fx is None:
+        if spec.currency.upper() != args.account_currency.upper():
+            sys.exit(f"Instrument w {spec.currency}, rachunek w {args.account_currency}: podaj --fx-rate "
+                     f"(kurs {spec.currency}{args.account_currency}).")
+        fx = 1.0
+    try:
+        r = position_size(args.entry, args.sl, args.risk_pct, args.equity, spec, fx)
+    except ValueError as e:
+        sys.exit(f"Bledne dane: {e}")
+    acc = args.account_currency.upper()
+    side = "LONG" if args.sl < args.entry else "SHORT"
+    print(f"{args.symbol} {side}  wejscie {args.entry}  SL {args.sl}  (odleglosc {abs(args.entry - args.sl):g})")
+    print(f"Ryzyko: {args.risk_pct:g}% z {args.equity:,.2f} {acc} = {r.risk_amount:,.2f} {acc}")
+    print(f"Strata 1 lota na SL: {r.loss_per_lot:,.2f} {acc}")
+    if r.below_min_lot:
+        print(f"WOLUMEN: 0 (minimalny lot {spec.min_lot:g} dalby strate "
+              f"{spec.min_lot * r.loss_per_lot:,.2f} {acc}, wiecej niz zadane ryzyko)")
+        return
+    print(f"WOLUMEN: {r.volume:.2f} lota  (dokladnie {r.raw_volume:.4f}, zaokraglone w dol)")
+    print(f"Strata na SL: {r.loss_at_sl:,.2f} {acc} = {r.risk_pct_actual:.2f}% kapitalu")
+    print(f"Wartosc nominalna: {r.notional:,.2f} {acc}")
+    print("Bez spreadu, swapu i poslizgu. Porownaj z kalkulatorem w xStation przed zleceniem.")
+
+
 def cmd_notify_test(args) -> None:
     from .notify import notifier_from_env
 
@@ -383,6 +423,16 @@ def main(argv: list[str] | None = None) -> None:
     sp.add_argument("--once", action="store_true")
     sp = add("dashboard", cmd_dashboard, "wygeneruj statyczny panel HTML", symbols=False, interval=False)
     sp.add_argument("--out", default="reports/panel.html")
+    sp = add("size", cmd_size, "kalkulator wielkosci pozycji (loty dla zadanego ryzyka)", symbols=False, interval=False)
+    sp.add_argument("symbol")
+    sp.add_argument("--entry", type=float, required=True)
+    sp.add_argument("--sl", type=float, required=True)
+    sp.add_argument("--risk-pct", type=float, default=1.0, help="procent kapitalu ryzykowany na transakcje")
+    sp.add_argument("--equity", type=float, required=True, help="kapital w walucie rachunku")
+    sp.add_argument("--account-currency", default="PLN")
+    sp.add_argument("--fx-rate", type=float, help="kurs waluta instrumentu -> waluta rachunku, np. USDPLN")
+    sp.add_argument("--lot-multiplier", type=float, help="nadpisuje config/contracts.yaml")
+    sp.add_argument("--currency", help="waluta instrumentu (z --lot-multiplier)")
     add("notify-test", cmd_notify_test, "wyslij testowe powiadomienie", symbols=False, interval=False)
 
     args = p.parse_args(argv)

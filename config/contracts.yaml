@@ -1,0 +1,17 @@
+# Specyfikacja kontraktow XTB dla kalkulatora pozycji (`cfd size`).
+#
+# UWAGA: plik jest celowo PUSTY. Wartosci trzeba przepisac z xStation
+# (okno instrumentu -> "Informacje o instrumencie"), patrz DECYZJE.md punkt 1 i 16.
+# Nie wpisuje ich "z pamieci", bo blad w mnozniku lota = blad w wielkosci pozycji.
+#
+# lot_multiplier: o ile zmienia sie wynik 1 lota (w walucie instrumentu), gdy cena zmieni sie o 1.0.
+#                 W xStation: "Wartosc nominalna 1 lota" podzielona przez biezaca cene.
+# currency:       waluta instrumentu (waluta, w ktorej liczony jest wynik przed przeliczeniem).
+# min_lot, lot_step: minimalny wolumen i krok (domyslnie 0.01).
+#
+# Przyklad formatu (wartosci do potwierdzenia w xStation, dlatego zakomentowane):
+# contracts:
+#   US500: {lot_multiplier: 50, currency: USD, min_lot: 0.01, lot_step: 0.01}
+#   GOLD:  {lot_multiplier: 100, currency: USD}
+
+contracts: {}

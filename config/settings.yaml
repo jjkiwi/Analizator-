@@ -25,3 +25,7 @@ fundamentals:
 
 health:
   alert_after_failures: 3
+
+dashboard:
+  refresh_minutes: 5       # `cfd run` sam odswieza panel; 0 = wylaczone
+  path: reports/panel.html

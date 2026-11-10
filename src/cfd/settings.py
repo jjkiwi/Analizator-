@@ -11,6 +11,7 @@ DEFAULTS = {
     "macro": {"refresh_minutes": 60, "alert_minutes_before": 30, "alert_min_importance": 3},
     "fundamentals": {"refresh_hours": 24},
     "health": {"alert_after_failures": 3},
+    "dashboard": {"refresh_minutes": 5, "path": "reports/panel.html"},
 }
 
 

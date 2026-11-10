@@ -126,3 +126,10 @@ def test_dashboard_renders_with_and_without_data(tmp_path, monkeypatch):
     runner.job_scan(ctx)
     page = render(ctx.conn)
     assert "US500" in page and "LONG" in page and "candles:GOLD" in page
+
+
+def test_job_dashboard_writes_panel(tmp_path):
+    ctx = make_ctx(tmp_path)
+    ctx.settings["dashboard"] = {"refresh_minutes": 5, "path": str(tmp_path / "panel.html")}
+    assert runner.job_dashboard(ctx).endswith("panel.html")
+    assert "<html" in (tmp_path / "panel.html").read_text(encoding="utf-8").lower()
