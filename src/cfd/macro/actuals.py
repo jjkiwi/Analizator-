@@ -304,6 +304,9 @@ def compute_actual(series: pd.Series, event_time: datetime, rule: ActualRule) ->
         else:
             if pos == 0:
                 raise DataSourceError("brak poprzedniej obserwacji")
+            gap = (when - series.index[pos - 1]).days
+            if gap > {"monthly": 31, "quarterly": 92, "weekly": 7, "daily": 4}[rule.period]:
+                raise DataSourceError(f"dziura w serii przed {when:%Y-%m-%d} (poprzednia obserwacja {gap} dni wczesniej)")
             base = float(series.iloc[pos - 1])
         if rule.transform == "diff":
             value = value - base

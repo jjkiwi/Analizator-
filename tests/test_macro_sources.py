@@ -177,7 +177,7 @@ def test_eia_dnav_real_samples(monkeypatch):
     crude = EiaDnavSeries.parse(text("eia_pet_WCESTUS1.html"), "pet:WCESTUS1")
     assert crude.index[0] == pd.Timestamp("2026-01-02") and crude.index[-1] == pd.Timestamp("2026-10-30")
     assert crude[pd.Timestamp("2026-10-30")] == 409760.0 and crude[pd.Timestamp("2026-10-23")] == 410625.0
-    assert (crude.index.dayofweek == 4).all() and len(crude) == 44  # same piatki
+    assert (crude.index.day_of_week == 4).all() and len(crude) == 44  # same piatki
     gas = EiaDnavSeries.parse(text("eia_ng_NW2_EPG0_SWO_R48_BCF.html"), "ng:NW2_EPG0_SWO_R48_BCF")
     assert gas[pd.Timestamp("2026-10-30")] == 3801.0 and gas[pd.Timestamp("2026-10-23")] == 3724.0
     with pytest.raises(DataSourceError, match="tabeli"):
@@ -240,13 +240,20 @@ def test_compute_actual_matches_calendar_previous():
     cpi = p["fred"].series("CPIAUCSL")
     assert compute_actual(cpi, datetime(2026, 10, 14, 12, 30, tzinfo=UTC), rule("CPI m/m")) == 0.6
     assert compute_actual(cpi, datetime(2026, 11, 10, 13, 30, tzinfo=UTC), rule("CPI m/m")) == 0.4
-    assert compute_actual(p["fred"].series("CPIAUCNS"), datetime(2026, 11, 10, 13, 30, tzinfo=UTC), rule("CPI y/y")) is not None
+    nsa = p["fred"].series("CPIAUCNS")
+    assert compute_actual(nsa, datetime(2026, 10, 14, 12, 30, tzinfo=UTC), rule("CPI y/y")) == 3.7  # 336.940 / 324.800
+    # prawdziwa dziura w danych: indeksu CPI za pazdziernik 2025 nie opublikowano, wiec r/r za 10.2026
+    # nie da sie policzyc z serii; ma byc jawny blad, a nie wynik liczony wzgledem innego miesiaca
+    with pytest.raises(DataSourceError, match="sprzed roku"):
+        compute_actual(nsa, datetime(2026, 11, 10, 13, 30, tzinfo=UTC), rule("CPI y/y"))
     claims = p["fred"].series("ICSA")
     assert compute_actual(claims, datetime(2026, 11, 5, 13, 30, tzinfo=UTC), rule("Unemployment Claims")) == 189000.0
     crude = p["eia"].series("pet:WCESTUS1")
     assert compute_actual(crude, datetime(2026, 11, 4, 15, 30, tzinfo=UTC), rule("Crude Oil Inventories")) == -900000.0
     gas = p["eia"].series("ng:NW2_EPG0_SWO_R48_BCF")
     assert compute_actual(gas, datetime(2026, 11, 5, 15, 30, tzinfo=UTC), rule("Natural Gas Storage")) == 77e9
+    with pytest.raises(DataSourceError, match="dziura"):  # m/m za 11.2025 nie moze byc liczone wzgledem 09.2025
+        compute_actual(nsa, datetime(2025, 12, 18, 13, 30, tzinfo=UTC), rule("CPI m/m"))
     nfp = compute_actual(p["fred"].series("PAYEMS"), datetime(2026, 11, 6, 13, 30, tzinfo=UTC), rule("Non-Farm Employment Change"))
     assert nfp == 165000.0  # 159293 - 159128 tys.
     gdp = p["fred"].series("A191RL1Q225SBEA")
