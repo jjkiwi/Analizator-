@@ -185,6 +185,7 @@ class EiaDnavSeries(_Cached):
 
     name = "eia"
     URL = "https://www.eia.gov/dnav/{area}/hist/LeafHandler.ashx"
+    NG_URL = "https://www.eia.gov/dnav/ng/hist/{sid}w.htm"
 
     def __init__(self, timeout: float = 60.0):
         super().__init__()
@@ -194,7 +195,10 @@ class EiaDnavSeries(_Cached):
         area, _, sid = series_id.partition(":")
         if area not in ("pet", "ng") or not sid:
             raise DataSourceError(f"eia: zly identyfikator serii {series_id!r} (oczekiwane pet:ID albo ng:ID)")
-        text = http_text(self.URL.format(area=area), {"n": area.upper(), "s": sid, "f": "W"}, self.timeout, f"eia {sid}")
+        if area == "ng":  # dzial gazu nie obsluguje LeafHandler (HTTP 404), ma statyczne strony <id>w.htm
+            text = http_text(self.NG_URL.format(sid=sid.lower()), None, self.timeout, f"eia {sid}")
+        else:
+            text = http_text(self.URL.format(area=area), {"n": area.upper(), "s": sid, "f": "W"}, self.timeout, f"eia {sid}")
         return self.parse(text, series_id)
 
     @staticmethod

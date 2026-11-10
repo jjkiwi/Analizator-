@@ -9,7 +9,6 @@ feeds:
   - {name: eia_today,      url: "https://www.eia.gov/rss/todayinenergy.xml",                  poll_seconds: 600}
   - {name: eia_press,      url: "https://www.eia.gov/rss/press_rss.xml",                      poll_seconds: 600}
   - {name: marketwatch,    url: "https://feeds.content.dowjones.io/public/rss/mw_topstories", poll_seconds: 120}
-  - {name: mw_marketpulse, url: "https://feeds.content.dowjones.io/public/rss/mw_marketpulse", poll_seconds: 120}
   - {name: wsj_markets,    url: "https://feeds.content.dowjones.io/public/rss/RSSMarketsMain", poll_seconds: 120}
   # bez koncowego "/": stary adres odpowiadal przekierowaniem 308
   - {name: coindesk,       url: "https://www.coindesk.com/arc/outboundfeeds/rss",             poll_seconds: 120}

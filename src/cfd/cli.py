@@ -205,16 +205,17 @@ def cmd_news(args) -> None:
 
     if args.action == "check-feeds":
         ok = 0
-        feeds = load_feeds(_cfg(args, "feeds.yaml"))
+        feeds = load_feeds(_cfg(args, "feeds.yaml"), include_disabled=True)  # wylaczone tez sprawdzamy
         for feed in feeds:
+            off = "" if feed.enabled else "  [wylaczony w feeds.yaml]"
             try:
                 items = fetch_feed(feed)
                 newest = max((i.published for i in items if i.published), default=None)
-                print(f"OK    {feed.name:<34} {len(items):>3} pozycji, najnowsza {newest}")
+                print(f"OK    {feed.name:<34} {len(items):>3} pozycji, najnowsza {newest}{off}")
                 ok += bool(items)
             except Exception as exc:
-                print(f"BLAD  {feed.name:<34} {type(exc).__name__}: {str(exc)[:90]}")
-        print(f"\nDziala: {ok} z {len(feeds)}")
+                print(f"BLAD  {feed.name:<34} {str(exc)[:110]}{off}")
+        print(f"\nDziala: {ok} z {len(feeds)} (wlaczonych: {sum(f.enabled for f in feeds)})")
     elif args.action == "poll":
         from .runner import job_news
 

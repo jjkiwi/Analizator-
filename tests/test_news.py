@@ -103,3 +103,212 @@ def test_feed_config_builds_google_news_urls(tmp_path):
     p.write_text('feeds: [{name: a, url: "https://a/rss"}]\ngoogle_news: {enabled: true, params: {hl: en}, queries: ["gold price"]}\n')
     feeds = load_feeds(p)
     assert feeds[1].name == "gnews_gold_price" and "q=gold+price" in feeds[1].url and "hl=en" in feeds[1].url
+
+
+# ---------- testy na probkach prawdziwych odpowiedzi (C1-C3) ----------
+
+import json
+from pathlib import Path
+from types import SimpleNamespace
+
+import httpx
+
+from cfd.data.base import DataSourceError
+from cfd.news.rss import FeedConfig, fetch_feed
+
+FIX = Path(__file__).parent / "fixtures"
+REAL_KEYWORDS = Path(__file__).parent.parent / "config" / "keywords.yaml"
+
+
+def _fixture(name: str) -> str:
+    return (FIX / name).read_text(encoding="utf-8")
+
+
+def test_parse_real_google_news_strips_publisher():
+    items = parse_feed(_fixture("news_gnews_gold_price.xml"), "gnews_gold_price")
+    assert len(items) == 4
+    second = items[1]
+    assert second.title == "Gold falls more than 2% as CPI tops forecasts, lifting dollar and yields"  # bez " - Reuters"
+    assert second.summary == "" and second.url.startswith("https://news.google.com/rss/articles/")
+    assert second.published == datetime(2026, 11, 10, 3, 31, tzinfo=timezone.utc)
+    pl = parse_feed(_fixture("news_gnews_pl_nbp.xml"), "gnews_pl")
+    assert pl[0].title.startswith("RPP może podnieść stopy procentowe") and pl[0].published.tzinfo is not None
+
+
+def test_parse_real_fed_press():
+    items = parse_feed(_fixture("news_fed_press.xml"), "fed_press")
+    assert len(items) == 3 and items[0].title.startswith("Federal Reserve Board announces")
+    assert items[0].url.startswith("https://www.federalreserve.gov/") and items[0].published.year == 2026
+
+
+def test_load_feeds_disabled_polish_query_and_when(tmp_path):
+    p = tmp_path / "f.yaml"
+    p.write_text(
+        'feeds: [{name: a, url: "https://a/rss"}, {name: wyl, url: "https://b/rss", enabled: false}]\n'
+        'google_news: {enabled: true, when: "1d", params: {hl: en-US, gl: US, ceid: "US:en"},\n'
+        '  queries: ["gold price", {q: "NBP stopy", hl: pl, gl: PL, ceid: "PL:pl"}]}\n', encoding="utf-8")
+    feeds = load_feeds(p)
+    assert [f.name for f in feeds] == ["a", "gnews_gold_price", "gnews_nbp_stopy"]
+    assert "q=gold+price+when%3A1d" in feeds[1].url and "ceid=US%3Aen" in feeds[1].url
+    assert "hl=pl" in feeds[2].url and "gl=PL" in feeds[2].url and "ceid=PL%3Apl" in feeds[2].url
+    assert [f.name for f in load_feeds(p, include_disabled=True)][1] == "wyl"
+
+
+def test_real_feeds_yaml_loads():
+    feeds = load_feeds(Path(__file__).parent.parent / "config" / "feeds.yaml", include_disabled=True)
+    assert len({f.name for f in feeds}) == len(feeds)
+    assert all(f.url.startswith("https://") for f in feeds)
+    assert all("hl=" in f.url and "gl=" in f.url and "ceid=" in f.url for f in feeds if f.name.startswith("gnews_"))
+
+
+def _client(handler) -> httpx.Client:
+    return httpx.Client(transport=httpx.MockTransport(handler), follow_redirects=True)
+
+
+def test_fetch_feed_follows_redirect_and_reports_clear_errors():
+    feed = FeedConfig("g", "https://news.google.com/rss/search?q=gold")
+    body = _fixture("news_gnews_gold_price.xml")
+
+    def redirecting(request: httpx.Request) -> httpx.Response:
+        if "ceid" not in str(request.url):  # tak odpowiada Google bez kompletu hl/gl/ceid
+            return httpx.Response(302, headers={"location": str(request.url) + "&hl=en-US&gl=US&ceid=US:en"})
+        return httpx.Response(200, text=body)
+
+    assert len(fetch_feed(feed, _client(redirecting))) == 4
+    cases = {
+        "ochrona przed botami": lambda r: httpx.Response(403, headers={"cf-mitigated": "challenge"}, text="<html>Just a moment...</html>"),
+        "429": lambda r: httpx.Response(429, text="too many"),
+        "nie jest poprawnym XML": lambda r: httpx.Response(200, text="<html><body>captcha<br></body></html>"),
+        "brak pozycji": lambda r: httpx.Response(200, text="<rss><channel></channel></rss>"),
+        "strone blokady": lambda r: httpx.Response(302, headers={"location": "https://www.google.com/sorry/index"})
+        if "sorry" not in str(r.url) else httpx.Response(200, text="<html/>"),
+    }
+    for expected, handler in cases.items():
+        with pytest.raises(DataSourceError, match=expected):
+            fetch_feed(feed, _client(handler))
+
+
+def test_real_keywords_ambiguous_words():
+    """Przypadki z zywych danych 2026-11-10 (C2): wieloznaczne slowa nie moga mapowac sie na instrument."""
+    m = KeywordMapper.from_file(REAL_KEYWORDS)
+    no_direct = {
+        "GOLD": ["Gold rates today 10 Nov Tuesday: check retail rates of 24K, 22K", "Why Gold Miners Rose on Gold’s Down Day",
+                 "Barrick Gold earnings analysis", "She won a gold medal"],
+        "ETHEREUM": ["Method eth results", "the ether of space"],
+        "JP225": ["Polski boj o medale"],
+        "NATGAS": ["LNG Traffic Through Hormuz Hits Highest Level"],
+        "SUGAR": ["Blood sugar drug wins approval"],
+        "CORN": ["Corn dogs are back at the fair"],
+        "SOYBEAN": ["As Crude Oil Prices Retreat, Sell Soybean Oil Now"],
+        "US500": ["Here's what Wall Street has to say about the scandal"],
+    }
+    for symbol, texts in no_direct.items():
+        for text in texts:
+            assert symbol not in m.match(text)["direct"], (symbol, text)
+    assert m.match("They fed the cattle and got fed up")["symbols"] == []
+    assert "fed" in m.match("Fed's Waller backs December rate hike")["topics"]
+    assert m.match("Bitcoin, Ether Fall as ETH lags")["direct"] == ["BITCOIN", "ETHEREUM"]
+    assert m.match("Gold falls more than 2% as CPI tops forecasts")["direct"] == ["GOLD"]
+    assert m.match("Greek inflation rises further in October")["symbols"] == []  # inflacja spoza USA
+    assert "nbp" in m.match("RPP może podnieść stopy procentowe")["topics"]
+
+
+def test_high_impact_only_in_title_and_moves_need_direct():
+    m = KeywordMapper.from_file(REAL_KEYWORDS)
+    assert not m.match("Stocks mixed. Analysts mention CPI in passing", "Stocks mixed")["high_impact"]
+    assert not m.match("Global Carbon Emissions Set to Dip After Iran War Oil Prices Surge", "x")["high_impact"]
+    r = m.match("US Treasury yields surge as inflation data exceeds forecasts")
+    assert r["symbols"] and not r["direct"] and not r["high_impact"]  # "surge" bez instrumentu wprost
+    r = m.match("Gold surges past $4,200")
+    assert r["high_impact"] and r["high_impact_hits"] == ["surges"]
+
+
+def test_rules_demote_previews_and_questions():
+    m, c = KeywordMapper.from_file(REAL_KEYWORDS), RuleClassifier()
+
+    def imp(title: str) -> int:
+        item = NewsItem("s", title)
+        return c.classify(item, m.match(item.text, item.title)).importance
+
+    assert imp("U.S. CPI rose stronger than expected 0.4% in October; core rate rose 0.3%") == 3
+    assert imp("Fed’s Waller puts half-point rate hike into the mix for December") == 3
+    assert imp("Gold drifts lower as traders eye US CPI and dip-buying support") == 2
+    assert imp("British Pound steadies ahead of US CPI data") <= 2
+    assert imp("Will the Federal Reserve raise interest rates in December?") <= 2
+    assert imp("Bitcoin Price Forecast: Can US CPI revive the BTC bulls?") == 2
+
+
+def test_pipeline_repeat_topic_cooldown():
+    conn, m, rules = connect(":memory:"), KeywordMapper.from_file(REAL_KEYWORDS), RuleClassifier()
+    now = datetime.now(timezone.utc)
+    items = [
+        NewsItem("a", "U.S. CPI rose stronger than expected 0.4% in October", "https://x/1", published=now),
+        NewsItem("b", "Inflation remained elevated in October, CPI report shows", "https://x/2", published=now),
+        NewsItem("c", "OPEC output returns to 90% of pre-war levels", "https://x/3", published=now),
+    ]
+    out = process_items(conn, items, m, rules, None, 24, now)
+    assert [c.importance for _, c in out] == [3, 2, 3]  # drugi news o CPI to juz powtorka tematu
+    more = [NewsItem("d", "US core CPI rises by more than forecast", "https://x/4", published=now)]
+    assert process_items(conn, more, m, rules, None, 24, now)[0][1].importance == 2  # pamiec z bazy
+    again = [NewsItem("e", "CPI report shows prices hot enough", "https://x/5", published=now)]
+    assert process_items(conn, again, m, rules, None, 24, now, repeat_cooldown_minutes=0)[0][1].importance == 3
+
+
+class FakeMessages:
+    """Atrapa `client.messages` z SDK anthropic: zapamietuje argumenty i zwraca przygotowana odpowiedz."""
+
+    def __init__(self, response):
+        self.response, self.kwargs = response, None
+
+    def create(self, **kwargs):
+        self.kwargs = kwargs
+        if isinstance(self.response, Exception):
+            raise self.response
+        return self.response
+
+
+def _llm_response(payload: dict, stop_reason: str = "end_turn"):
+    """Ksztalt odpowiedzi Messages API: blok `thinking` przed tekstem (Haiku 5.5 mysli domyslnie)."""
+    return SimpleNamespace(
+        content=[SimpleNamespace(type="thinking", thinking="", signature="sig"),
+                 SimpleNamespace(type="text", text=json.dumps(payload))],
+        stop_reason=stop_reason,
+        usage=SimpleNamespace(input_tokens=420, output_tokens=95),
+    )
+
+
+def test_llm_classifier_request_shape_and_response_parsing():
+    m = KeywordMapper(CFG, KNOWN)
+    item = NewsItem("s", "Fed holds rates as gold slips")
+    match = m.match(item.text)
+    messages = FakeMessages(_llm_response({
+        "importance": 3,
+        "directions": [{"symbol": "GOLD", "direction": "down"}, {"symbol": "US500", "direction": "up"}, {"symbol": "XXX", "direction": "up"}],
+        "reason": "Decyzja Fed zgodna z oczekiwaniami.",
+    }))
+    llm = LLMClassifier(client=SimpleNamespace(messages=messages))
+    cls = llm.classify(item, match)
+    assert cls.classifier == "llm" and cls.importance == 3 and cls.directions == {"GOLD": -1, "US500": 1}
+    kw = messages.kwargs
+    assert kw["model"] == "claude-haiku-5-5" and kw["max_tokens"] >= 1024  # zapas na myslenie
+    assert kw["messages"][0]["role"] == "user" and "Fed holds rates" in kw["messages"][0]["content"]
+    assert kw["output_config"]["effort"] == "low" and kw["output_config"]["format"]["type"] == "json_schema"
+    schema = kw["output_config"]["format"]["schema"]
+    assert schema["additionalProperties"] is False and set(schema["required"]) == {"importance", "directions", "reason"}
+    for removed in ("temperature", "top_p", "top_k", "thinking", "output_format"):  # odrzucane lub przestarzale
+        assert removed not in kw
+    assert (llm.calls, llm.input_tokens, llm.output_tokens) == (1, 420, 95)
+    assert llm.cost_usd == pytest.approx((420 * 0.10 + 95 * 0.50) / 1e6)
+
+
+def test_llm_classifier_falls_back_on_refusal_truncation_and_errors():
+    m = KeywordMapper(CFG, KNOWN)
+    item = NewsItem("s", "Gold surges")
+    match = m.match(item.text)
+    for bad in (_llm_response({"importance": 3, "directions": [], "reason": ""}, stop_reason="refusal"),
+                SimpleNamespace(content=[SimpleNamespace(type="thinking", thinking="", signature="s")],
+                                stop_reason="max_tokens", usage=SimpleNamespace(input_tokens=1, output_tokens=1)),
+                RuntimeError("429 rate limit")):
+        llm = LLMClassifier(client=SimpleNamespace(messages=FakeMessages(bad)))
+        assert llm.classify(item, match).classifier == "rules"
+    assert LLMClassifier(api_key="").classify(item, match).classifier == "rules"  # brak klucza: bez sieci

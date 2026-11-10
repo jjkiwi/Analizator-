@@ -1,0 +1,7 @@
+## Nowe pytania (D. Kalendarz makro)
+
+1. **Klucz BLS (darmowy).** Bez klucza BLS daje 25 zapytań na dobę na adres IP; z kluczem 500. Rejestracja: https://data.bls.gov/registrationEngine/ . Jeśli chcesz odczyty CPI/NFP/PPI w minucie publikacji (zamiast ok. 40 minut z FRED), dopisz do `.env` linię `BLS_API_KEY=...` (i do `.env.example` pustą `BLS_API_KEY=` — nie ruszałem tego pliku). Bez klucza wszystko działa, z FRED jako zapasem.
+2. **Odczyty spoza USA.** Do sprawdzenia potrzebne odblokowanie hostów: `ec.europa.eu` (Eurostat), `apps.bea.gov` (BEA), ewentualnie `api.ons.gov.uk`, `www.e-stat.go.jp`. Do tego czasu dla EUR/GBP/JPY/CNY zostaje `cfd macro set-actual` i tor newsowy. Czy to wystarczy, czy dopisywać kolejne adaptery?
+3. **Reguły łapiące wystąpienia.** `match: "ecb"` i `"fomc"` w `config/macro_rules.yaml` pasują też do „… Speaks”. Zawęzić do decyzji o stopach (np. „Main Refinancing Rate”, „Federal Funds Rate”, „FOMC Statement”)?
+4. **Okno alertu po publikacji.** `runner.job_macro` alarmuje tylko o odczytach z ostatnich 6 godzin; stopa Fed z FRED pojawia się następnego dnia. Wydłużyć okno do 24–36 h, czy decyzje o stopach zostawić torowi newsowemu?
+5. **Zaokrąglenia.** Odczyt liczony z serii może różnić się o 0.1 od komunikatu urzędu (sprzedaż detaliczna, PCE). Czy dla tych wskaźników wymagać różnicy ≥ 0.2 względem prognozy, zanim pójdzie alert (`surprise_effects` ma parametr `min_rel`, dziś nieużywany)?

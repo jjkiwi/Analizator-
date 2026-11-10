@@ -1,0 +1,18 @@
+US500      yahoo    OK    ES=F         ostatnia swieca 2026-11-10 close 7537.25
+US500      stooq    BLAD  ^spx         stooq ^spx: HTTPStatusError: Client error '404 Not Found' for url 'https://stooq.com/q/d/l/?s=%5Espx&i=d&d1=20
+US100      yahoo    OK    NQ=F         ostatnia swieca 2026-11-10 close 27794
+US100      stooq    BLAD  ^ndx         stooq ^ndx: HTTPStatusError: Client error '404 Not Found' for url 'https://stooq.com/q/d/l/?s=%5Endx&i=d&d1=20
+US30       yahoo    OK    YM=F         ostatnia swieca 2026-11-10 close 52286
+US30       stooq    BLAD  ^dji         stooq ^dji: ConnectError: [Errno 104] Connection reset by peer
+US2000     yahoo    OK    RTY=F        ostatnia swieca 2026-11-10 close 2822.9
+DE40       yahoo    OK    ^GDAXI       ostatnia swieca 2026-11-10 close 26347.4
+DE40       stooq    BLAD  ^dax         stooq ^dax: ConnectError: [Errno 104] Connection reset by peer
+UK100      yahoo    OK    ^FTSE        ostatnia swieca 2026-11-10 close 10751.6
+UK100      stooq    BLAD  ^ukx         stooq ^ukx: ConnectError: [Errno 104] Connection reset by peer
+FRA40      yahoo    OK    ^FCHI        ostatnia swieca 2026-11-10 close 8278.59
+FRA40      stooq    BLAD  ^cac         stooq ^cac: ConnectError: [Errno 104] Connection reset by peer
+EU50       yahoo    OK    ^STOXX50E    ostatnia swieca 2026-11-10 close 6327.87
+SPA35      yahoo    OK    ^IBEX        ostatnia swieca 2026-11-10 close 19936.4
+ITA40      yahoo    OK    FTSEMIB.MI   ostatnia swieca 2026-11-10 close 51755.1
+NED25      yahoo    OK    ^AEX         ostatnia swieca 2026-11-10 close 1132.44
+SUI20      yahoo    OK    ^SSMI        ostatnia swieca 2026-11-10 close 15037.9

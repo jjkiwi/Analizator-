@@ -188,6 +188,9 @@ def test_eia_dnav_real_samples(monkeypatch):
     fake_get(monkeypatch, [(200, text("eia_pet_WCESTUS1.html"), {})], calls)
     EiaDnavSeries().series("pet:WCESTUS1")
     assert calls[0] == ("https://www.eia.gov/dnav/pet/hist/LeafHandler.ashx", {"n": "PET", "s": "WCESTUS1", "f": "W"})
+    fake_get(monkeypatch, [(200, text("eia_ng_NW2_EPG0_SWO_R48_BCF.html"), {})], calls)
+    EiaDnavSeries().series("ng:NW2_EPG0_SWO_R48_BCF")
+    assert calls[-1] == ("https://www.eia.gov/dnav/ng/hist/nw2_epg0_swo_r48_bcfw.htm", {})
 
 
 # ---------- D2: wydarzenie -> odczyt ----------

@@ -118,6 +118,9 @@ high_impact:
   - "halts exports"
   - "obniża stopy"
   - "podnosi stopy"
+  - "podwyżka stóp"
+  - "obniżka stóp"
+  - "stopy bez zmian"
 
 high_impact_moves:
   - "record high"

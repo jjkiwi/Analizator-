@@ -2,8 +2,12 @@
 #
 # UWAGA 1: lista symboli XTB spisana recznie. Porownaj z xStation i popraw,
 #          XTB nie ma API, wiec to jedyne miejsce, gdzie ta lista zyje.
-# UWAGA 2: mapowania zrodel NIE byly sprawdzone w sieci. Uruchom
-#          `cfd check-sources`, zeby zobaczyc, ktore dzialaja.
+# UWAGA 2: mapowania Yahoo i Binance sprawdzone w sieci 2026-11-10 (`cfd check-sources`, wynik w
+#          CLAUDE_CODE/check-sources.txt). Mapowania Stooq NIE sa potwierdzone: Stooq blokowal pobieranie.
+#          Kolejnosc wpisow w `sources` = priorytet zrodel (pierwsze dzialajace wygrywa).
+#          Rozne zrodla to rozne instrumenty bazowe: Yahoo "=F" to kontrakt futures, Stooq "^..." to indeks kasowy.
+# UWAGA 2a: ZINC i NICKEL nie maja darmowego zrodla (Yahoo nie ma kontraktow LME; ZNC=F to martwa seria
+#          rozliczeniowa bez obrotu). Patrz DECYZJE.md.
 # UWAGA 3: koszty w `cost_defaults` to ZALOZENIA robocze, nie dane XTB.
 #          Podmien je na wartosci ze specyfikacji instrumentow w xStation
 #          (mozesz tez nadpisac koszt na pojedynczym instrumencie polem `costs`).
@@ -29,7 +33,8 @@ instruments:
   - {symbol: ITA40,   name: "FTSE MIB",        category: indices, sources: {yahoo: "FTSEMIB.MI"}}
   - {symbol: NED25,   name: "AEX",             category: indices, sources: {yahoo: "^AEX"}}
   - {symbol: SUI20,   name: "SMI",             category: indices, sources: {yahoo: "^SSMI"}}
-  - {symbol: W20,     name: "WIG20",           category: indices, sources: {stooq: "wig20"}}
+  # W20: Stooq ma pelna historie dzienna; Yahoo WIG20.WA ma tylko 1h (730 dni), swiece dzienne sa wtedy skladane z 1h.
+  - {symbol: W20,     name: "WIG20",           category: indices, sources: {stooq: "wig20", yahoo: "WIG20.WA"}}
   - {symbol: JP225,   name: "Nikkei 225",      category: indices, sources: {yahoo: "^N225", stooq: "^nkx"}}
   - {symbol: AUS200,  name: "ASX 200",         category: indices, sources: {yahoo: "^AXJO"}}
   - {symbol: HK.cash, name: "Hang Seng",       category: indices, sources: {yahoo: "^HSI",  stooq: "^hsi"}}
