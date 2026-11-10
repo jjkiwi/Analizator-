@@ -6,21 +6,25 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 
+from dataclasses import replace
+
 from .strategies import PARAM_GRIDS, REGISTRY
 from .validation import verdict, walk_forward
 
 
 def build_rows(instruments, data_service, interval: str, strategies: list[str], train_bars: int, test_bars: int,
-               progress=None) -> list[dict]:
+               progress=None, cost_mult: float = 1.0) -> list[dict]:
+    """cost_mult mnozy spread i swapy: test odpornosci wyniku na zanizone zalozenia kosztowe."""
     rows = []
     for inst in instruments:
+        costs = replace(inst.costs, **{k: v * cost_mult for k, v in vars(inst.costs).items()})
         try:
             df = data_service.get(inst, interval)
         except Exception as exc:
             rows.append({"symbol": inst.symbol, "category": inst.category, "error": str(exc)[:120]})
             continue
         for name in strategies:
-            res = walk_forward(df, REGISTRY[name], PARAM_GRIDS.get(name, {}), inst.costs, train_bars, test_bars)
+            res = walk_forward(df, REGISTRY[name], PARAM_GRIDS.get(name, {}), costs, train_bars, test_bars)
             st = res.stats
             v, why = verdict(st, res.folds) if res.folds else ("fail", "za krotka historia na walk-forward")
             rows.append({

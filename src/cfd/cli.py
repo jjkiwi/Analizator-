@@ -161,8 +161,10 @@ def cmd_report(args) -> None:
 
     insts = [i for i in _pick(_instruments(args), args.symbols, args.category) if i.sources]
     rows = build_rows(insts, _service(args), args.interval, args.strategies or STRATS, args.train, args.test,
-                      progress=lambda r: print(f"{r['symbol']:<10} {r['strategy']:<18} {r['verdict']:<5} {r['why']}"))
-    html_path, json_path = write_report(rows, args.out, f"walidacja_{args.interval}")
+                      progress=lambda r: print(f"{r['symbol']:<10} {r['strategy']:<18} {r['verdict']:<5} {r['why']}"),
+                      cost_mult=args.cost_mult)
+    suffix = "" if args.cost_mult == 1 else f"_koszty_x{args.cost_mult:g}"
+    html_path, json_path = write_report(rows, args.out, f"walidacja_{args.interval}{suffix}")
     print(f"\nRaport: {html_path}\nDane:   {json_path}")
 
 
@@ -394,6 +396,7 @@ def main(argv: list[str] | None = None) -> None:
     sp.add_argument("--train", type=int, default=750)
     sp.add_argument("--test", type=int, default=250)
     sp.add_argument("--out", default="reports")
+    sp.add_argument("--cost-mult", type=float, default=1.0, help="mnoznik kosztow (test odpornosci, np. 2)")
 
     sp = add("scan", cmd_scan, "sygnaly z ostatniej zamknietej swiecy")
     sp.add_argument("--strategies", nargs="*", choices=STRATS)

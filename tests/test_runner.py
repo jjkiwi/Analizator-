@@ -6,7 +6,7 @@ from cfd import runner
 from cfd.data import DataSourceError
 from cfd.db import connect
 from cfd.macro import MacroEvent, MacroRules, upsert_events
-from cfd.models import Instrument
+from cfd.models import Costs, Instrument
 from cfd.news import FeedConfig, KeywordMapper, NewsItem, RuleClassifier
 from cfd.report import build_rows, render_html
 from cfd.settings import load_settings
@@ -133,3 +133,12 @@ def test_job_dashboard_writes_panel(tmp_path):
     ctx.settings["dashboard"] = {"refresh_minutes": 5, "path": str(tmp_path / "panel.html")}
     assert runner.job_dashboard(ctx).endswith("panel.html")
     assert "<html" in (tmp_path / "panel.html").read_text(encoding="utf-8").lower()
+
+
+def test_report_cost_mult_reduces_result():
+    insts = [Instrument("US500", "x", "indices", {"fake": "a"}, Costs(spread_pct=0.001, swap_long_annual_pct=0.05))]
+    data = FakeData({"US500": make_candles(1600, seed=5, drift=0.0006)})
+    base = build_rows(insts, data, "1d", ["donchian_breakout"], 750, 250)[0]
+    hard = build_rows(insts, data, "1d", ["donchian_breakout"], 750, 250, cost_mult=5)[0]
+    if base["trades"] and hard["trades"]:
+        assert hard["costs_total_r"] > base["costs_total_r"]
