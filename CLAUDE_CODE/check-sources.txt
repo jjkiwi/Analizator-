@@ -19,3 +19,7 @@ SUI20      yahoo    OK    ^SSMI        ostatnia swieca 2026-11-10 close 15037.9
 W20        stooq    BLAD  wig20        stooq wig20: ConnectError: [Errno 104] Connection reset by peer
 W20        yahoo    OK    WIG20.WA     ostatnia swieca 2026-11-10 close 4208.46
 JP225      yahoo    OK    ^N225        ostatnia swieca 2026-11-09 close 58775.5
+JP225      stooq    BLAD  ^nkx         stooq ^nkx: ConnectError: [Errno 104] Connection reset by peer
+AUS200     yahoo    OK    ^AXJO        ostatnia swieca 2026-11-10 close 9129
+HK.cash    yahoo    OK    ^HSI         ostatnia swieca 2026-11-09 close 24448.9
+HK.cash    stooq    BLAD  ^hsi         stooq ^hsi: ConnectError: [Errno 104] Connection reset by peer
