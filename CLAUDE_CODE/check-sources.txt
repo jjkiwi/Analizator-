@@ -23,3 +23,9 @@ JP225      stooq    BLAD  ^nkx         stooq ^nkx: ConnectError: [Errno 104] Con
 AUS200     yahoo    OK    ^AXJO        ostatnia swieca 2026-11-10 close 9129
 HK.cash    yahoo    OK    ^HSI         ostatnia swieca 2026-11-09 close 24448.9
 HK.cash    stooq    BLAD  ^hsi         stooq ^hsi: ConnectError: [Errno 104] Connection reset by peer
+VIX        yahoo    OK    ^VIX         ostatnia swieca 2026-11-10 close 19.85
+USDIDX     yahoo    OK    DX-Y.NYB     ostatnia swieca 2026-11-10 close 102.246
+OIL        yahoo    OK    BZ=F         ostatnia swieca 2026-11-10 close 92.09
+OIL.WTI    yahoo    OK    CL=F         ostatnia swieca 2026-11-10 close 86.49
+OIL.WTI    stooq    BLAD  cl.f         stooq cl.f: HTTPStatusError: Client error '404 Not Found' for url 'https://stooq.com/q/d/l/?s=cl.f&i=d&d1=2026
+NATGAS     yahoo    OK    NG=F         ostatnia swieca 2026-11-10 close 3.319

@@ -62,7 +62,7 @@ def render(conn: sqlite3.Connection) -> str:
         ("Skuteczność na żywo", _table(["Strategia", "Int.", "Sygnałów", "Rozlicz.", "Wygr.", "Oczek.", "Suma"], stats, "Dziennik jest pusty.")),
         ("Newsy (waga ≥ 2)", _table(["Czas (UTC)", "", "Instrumenty", "Tytuł"], news, "Brak newsów.")),
         ("Kalendarz makro", _table(["Czas (UTC)", "Kraj", "Wydarzenie", "Waga", "Prognoza", "Poprz."], macro, "Brak wydarzeń. Uruchom `cfd macro refresh`.")),
-        ("Bias fundamentalny", _table(["Instrument", "Bias (−2..+2)", "Aktualizacja"], bias, "Brak danych. Wymaga FRED_API_KEY i `cfd bias update`.")),
+        ("Bias fundamentalny", _table(["Instrument", "Bias (−2..+2)", "Aktualizacja"], bias, "Brak danych. Uruchom `cfd bias update`.")),
         ("Problemy ze źródłami", _table(["Źródło", "Stan", "Ostatni błąd"], health, "Wszystkie źródła działają.")),
     ]
     body = "".join(f"<section class='card'><h2>{_e(t)}</h2>{c}</section>" for t, c in cards)
