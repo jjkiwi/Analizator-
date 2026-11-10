@@ -71,14 +71,15 @@ def surprise_effects(event: MacroEvent, rules: MacroRules, min_rel: float = 0.0)
 
 
 def upsert_events(conn: sqlite3.Connection, events: list[MacroEvent]) -> int:
-    """Wstawia nowe wydarzenia i uzupelnia odczyty juz znanych. Nie nadpisuje odczytu wartoscia pusta."""
+    """Wstawia nowe wydarzenia i uzupelnia dane juz znanych. Nie nadpisuje wartosci pusta, a odczytu
+    juz zapisanego (np. recznie przez `set-actual`) nie zmienia wcale: poprawke wpisuje sie przez `set_actual`."""
     n = 0
     for e in events:
         cur = conn.execute(
             """INSERT INTO macro_events (id, time, country, name, importance, actual, forecast, previous, unit)
                VALUES (?,?,?,?,?,?,?,?,?)
                ON CONFLICT(id) DO UPDATE SET
-                   actual=COALESCE(excluded.actual, actual),
+                   actual=COALESCE(actual, excluded.actual),
                    forecast=COALESCE(excluded.forecast, forecast),
                    previous=COALESCE(excluded.previous, previous),
                    importance=excluded.importance""",

@@ -1,64 +1,90 @@
 # Przypisywanie newsow do instrumentow. Dopasowanie po calych slowach, bez rozrozniania wielkosci liter.
-# `instruments`: slowa wskazujace wprost na instrument.
+# Wpis z przedrostkiem "cs:" (np. "cs:Fed") wymaga dokladnej pisowni: dla skrotow, ktore jako zwykle
+# slowa znacza co innego ("fed up", "eth", "boj").
+# `instruments`: slowa wskazujace wprost na instrument (waga co najmniej 2, kierunek z tytulu).
+# `exclude`: frazy uniewazniajace dopasowanie wprost danego instrumentu (inne znaczenie slowa).
 # `topics`: tematy makro, ktore ruszaja wieloma instrumentami naraz.
-# `high_impact`: frazy podnoszace wage newsa do 3 (najwyzsza) w klasyfikatorze regulowym.
+# `high_impact`: frazy w TYTULE podnoszace wage newsa do 3 (najwyzsza) w klasyfikatorze regulowym.
+# `high_impact_moves`: jak wyzej, ale licza sie tylko razem z dopasowaniem wprost do instrumentu.
+# Stan po przegladzie na zywych danych 2026-11-10 (zadanie C2), szczegoly w CLAUDE_CODE/WYNIKI.md.
 
 instruments:
-  US500:     ["s&p 500", "s&p500", "sp500", "wall street"]
+  US500:     ["s&p 500", "s&p500", "sp500", "cs:S&P"]
   US100:     ["nasdaq", "nasdaq 100", "tech stocks"]
-  US30:      ["dow jones", "dow industrials"]
+  US30:      ["dow jones", "dow industrials", "cs:Dow"]
   US2000:    ["russell 2000", "small caps"]
-  DE40:      ["dax", "german stocks", "bundesbank"]
-  UK100:     ["ftse 100", "ftse", "bank of england"]
+  DE40:      ["cs:DAX", "german stocks"]
+  UK100:     ["ftse 100", "cs:FTSE"]
   FRA40:     ["cac 40"]
   EU50:      ["euro stoxx", "eurostoxx", "stoxx 50"]
-  W20:       ["wig20", "wig 20", "gpw", "giełda papierów wartościowych"]
-  JP225:     ["nikkei", "bank of japan", "boj"]
+  W20:       ["wig20", "wig 20", "cs:GPW", "giełda papierów wartościowych"]
+  JP225:     ["nikkei"]
   HK.cash:   ["hang seng"]
-  VIX:       ["vix", "volatility index"]
-  USDIDX:    ["dollar index", "dxy", "us dollar"]
+  VIX:       ["cs:VIX", "volatility index"]
+  USDIDX:    ["dollar index", "cs:DXY", "us dollar", "u.s. dollar"]
   OIL:       ["brent"]
-  OIL.WTI:   ["wti", "west texas"]
-  NATGAS:    ["natural gas", "henry hub", "lng"]
-  GASOLINE:  ["gasoline", "rbob"]
+  OIL.WTI:   ["cs:WTI", "west texas"]
+  NATGAS:    ["natural gas", "nat-gas", "henry hub", "lng exports", "us lng", "u.s. lng"]
+  GASOLINE:  ["gasoline prices", "gasoline futures", "rbob"]
   COCOA:     ["cocoa", "kakao"]
-  COFFEE:    ["coffee", "arabica"]
-  SUGAR:     ["sugar"]
-  COTTON:    ["cotton"]
-  CORN:      ["corn"]
+  COFFEE:    ["coffee prices", "coffee futures", "arabica", "robusta"]
+  SUGAR:     ["sugar prices", "sugar futures", "raw sugar", "ceny cukru"]
+  COTTON:    ["cotton prices", "cotton futures"]
+  CORN:      ["corn prices", "corn futures", "corn crop", "corn harvest", "kukurydza"]
   WHEAT:     ["wheat", "pszenica"]
   SOYBEAN:   ["soybean", "soybeans"]
   COPPER:    ["copper", "miedź", "kghm"]
   ALUMINIUM: ["aluminium", "aluminum"]
-  GOLD:      ["gold", "złoto", "bullion"]
-  SILVER:    ["silver", "srebro"]
+  GOLD:      ["gold", "złoto", "bullion", "cs:XAU", "xau/usd", "xauusd"]
+  SILVER:    ["silver", "srebro", "xag/usd"]
   PLATINUM:  ["platinum", "platyna"]
   PALLADIUM: ["palladium", "pallad"]
-  BITCOIN:   ["bitcoin", "btc"]
-  ETHEREUM:  ["ethereum", "ether", "eth"]
+  BITCOIN:   ["bitcoin", "cs:BTC"]
+  ETHEREUM:  ["ethereum", "cs:Ether", "cs:ETH"]
   SOLANA:    ["solana"]
+
+exclude:
+  GOLD:      ["gold medal", "gold medals", "golden", "gold coast", "gold standard", "gold card",
+              "gold rate today", "gold rates today", "retail rates", "24k", "22k", "24 carat", "22 carat",
+              "gold miners", "gold mining", "barrick gold", "kinross gold", "gold fields", "gold corp",
+              "gold stocks", "gold stock"]
+  SILVER:    ["silver medal", "silver lining", "silver rate today", "silver stocks", "silver stock"]
+  COPPER:    ["copper mountain"]
+  SOYBEAN:   ["soybean oil"]
+  COCOA:     ["hot cocoa"]
+  BITCOIN:   ["bitcoin miner", "bitcoin miners", "bitcoin mining"]
 
 topics:
   fed:
-    keywords: ["federal reserve", "fed", "fomc", "powell", "rate cut", "rate hike", "interest rates"]
+    keywords: ["federal reserve", "cs:Fed", "cs:Fed's", "cs:Fed’s", "cs:FOMC", "powell", "rate cut", "rate hike", "interest rates"]
     symbols: [US500, US100, US30, GOLD, SILVER, USDIDX, BITCOIN]
   us_inflation:
-    keywords: ["cpi", "inflation", "pce", "consumer prices", "producer prices"]
+    keywords: ["cs:CPI", "us inflation", "u.s. inflation", "inflation report", "inflation data", "cs:PCE",
+               "consumer prices", "producer prices"]
     symbols: [US500, US100, GOLD, USDIDX]
   us_jobs:
     keywords: ["payrolls", "nonfarm", "jobless claims", "unemployment rate", "jobs report"]
     symbols: [US500, US100, US30, GOLD, USDIDX]
+  us_stocks:
+    keywords: ["wall street", "us stocks", "u.s. stocks", "stock futures"]
+    symbols: [US500, US100, US30]
   ecb:
-    keywords: ["ecb", "european central bank", "lagarde"]
+    keywords: ["cs:ECB", "cs:ECB's", "cs:ECB’s", "european central bank", "lagarde", "bundesbank", "cs:EBC"]
     symbols: [DE40, EU50, FRA40]
+  boe:
+    keywords: ["bank of england", "cs:BoE"]
+    symbols: [UK100]
+  boj:
+    keywords: ["bank of japan", "cs:BoJ", "cs:BOJ"]
+    symbols: [JP225]
   nbp:
-    keywords: ["nbp", "rpp", "rada polityki pieniężnej", "stopy procentowe"]
+    keywords: ["cs:NBP", "cs:RPP", "rada polityki pieniężnej", "stopy procentowe", "glapiński"]
     symbols: [W20]
   oil_supply:
-    keywords: ["opec", "opec+", "crude oil", "oil prices", "crude inventories", "strait of hormuz", "ropa"]
+    keywords: ["opec", "opec+", "crude oil", "oil prices", "crude inventories", "strait of hormuz", "ceny ropy"]
     symbols: [OIL, OIL.WTI, GASOLINE]
   china:
-    keywords: ["china stimulus", "pboc", "chinese economy"]
+    keywords: ["china stimulus", "cs:PBOC", "cs:PBoC", "chinese economy"]
     symbols: [HK.cash, COPPER, OIL]
   crypto_market:
     keywords: ["crypto", "cryptocurrency", "spot etf", "sec crypto", "stablecoin"]
@@ -74,20 +100,34 @@ high_impact:
   - "raises rates"
   - "holds rates"
   - "rate decision"
-  - "emergency"
+  - "emergency meeting"
+  - "emergency rate"
   - "payrolls"
-  - "cpi"
+  - "cs:CPI"
   - "opec"
+  - "opec+"
   - "sanctions"
   - "tariffs"
   - "invasion"
-  - "default"
-  - "bankruptcy"
-  - "halts"
-  - "record high"
-  - "record low"
-  - "plunge"
-  - "crash"
-  - "surge"
+  - "debt default"
+  - "defaults on"
+  - "files for bankruptcy"
+  - "trading halted"
+  - "halts trading"
+  - "halts production"
+  - "halts exports"
   - "obniża stopy"
   - "podnosi stopy"
+
+high_impact_moves:
+  - "record high"
+  - "record low"
+  - "all-time high"
+  - "plunge"
+  - "plunges"
+  - "crash"
+  - "crashes"
+  - "surge"
+  - "surges"
+  - "soars"
+  - "tumbles"

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import threading
+import time
 from datetime import datetime
 from typing import Protocol
 
@@ -11,6 +13,22 @@ INTERVALS = ("1h", "4h", "1d")
 
 class DataSourceError(RuntimeError):
     pass
+
+
+class Throttle:
+    """Wymusza minimalny odstep miedzy zapytaniami do jednego serwisu (zasada 3 z CLAUDE.md)."""
+
+    def __init__(self, min_interval: float):
+        self.min_interval = min_interval
+        self._last = 0.0
+        self._lock = threading.Lock()
+
+    def wait(self) -> None:
+        with self._lock:
+            pause = self._last + self.min_interval - time.monotonic()
+            if pause > 0:
+                time.sleep(pause)
+            self._last = time.monotonic()
 
 
 class MarketDataAdapter(Protocol):

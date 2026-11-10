@@ -17,3 +17,28 @@ rules:
   - {name: inflacja_uk,    country: GBP, match: ["cpi"],                                           effects: {UK100: -1}}
   - {name: japonia_boj,    country: JPY, match: ["boj policy rate"],                               effects: {JP225: -1}}
   - {name: chiny_pmi,      country: CNY, match: ["manufacturing pmi"],                             effects: {HK.cash: 1, COPPER: 1, OIL: 1}}
+
+# Odczyty biezace ("actual"): kalendarz ich nie podaje, wiec po godzinie publikacji liczymy je z serii urzedowych.
+# `match`: DOKLADNE nazwy wydarzen z kalendarza. `sources`: kolejne proby (bls = api.bls.gov, fred = CSV bez klucza,
+# eia = publiczne strony www.eia.gov/dnav). `period`/`lag`: ktorego okresu dotyczy publikacja (miesieczne: poprzedni
+# miesiac = 1). `transform`: level | diff | pct_change | pct_change_yoy. `scale` i `decimals`: jednostka i
+# zaokraglenie takie jak w kalendarzu (prognoza "194K" = 194000, "-0.9M" = -900000, "77B" = 77e9).
+# Identyfikatory FRED i EIA sprawdzone na zywo 2026-11-10; BLS tylko LNS14000000 (limit dzienny, patrz WYNIKI).
+actuals:
+  - {country: USD, match: ["CPI m/m"],       transform: pct_change,     sources: [{provider: bls, series: CUSR0000SA0},    {provider: fred, series: CPIAUCSL}]}
+  - {country: USD, match: ["Core CPI m/m"],  transform: pct_change,     sources: [{provider: bls, series: CUSR0000SA0L1E}, {provider: fred, series: CPILFESL}]}
+  - {country: USD, match: ["CPI y/y"],       transform: pct_change_yoy, sources: [{provider: bls, series: CUUR0000SA0},    {provider: fred, series: CPIAUCNS}]}
+  - {country: USD, match: ["PPI m/m"],       transform: pct_change,     sources: [{provider: bls, series: WPSFD4},         {provider: fred, series: PPIFIS}]}
+  - {country: USD, match: ["Core PPI m/m"],  transform: pct_change,     sources: [{provider: bls, series: WPSFD49104},     {provider: fred, series: PPIFES}]}
+  - {country: USD, match: ["Non-Farm Employment Change"], transform: diff, scale: 1000, decimals: -3, sources: [{provider: bls, series: CES0000000001}, {provider: fred, series: PAYEMS}]}
+  - {country: USD, match: ["Unemployment Rate"], transform: level,      sources: [{provider: bls, series: LNS14000000},    {provider: fred, series: UNRATE}]}
+  - {country: USD, match: ["Average Hourly Earnings m/m"], transform: pct_change, sources: [{provider: bls, series: CES0500000003}, {provider: fred, series: CES0500000003}]}
+  - {country: USD, match: ["JOLTS Job Openings"], lag: 2, transform: level, scale: 1000, decimals: -4, sources: [{provider: bls, series: JTS000000000000000JOL}, {provider: fred, series: JTSJOL}]}
+  - {country: USD, match: ["Retail Sales m/m"],      transform: pct_change, sources: [{provider: fred, series: RSAFS}]}
+  - {country: USD, match: ["Core Retail Sales m/m"], transform: pct_change, sources: [{provider: fred, series: RSFSXMV}]}
+  - {country: USD, match: ["Core PCE Price Index m/m"], transform: pct_change, sources: [{provider: fred, series: PCEPILFE}]}
+  - {country: USD, match: ["Advance GDP q/q", "Prelim GDP q/q", "Final GDP q/q"], period: quarterly, transform: level, sources: [{provider: fred, series: A191RL1Q225SBEA}]}
+  - {country: USD, match: ["Unemployment Claims"], period: weekly, transform: level, decimals: -3, sources: [{provider: fred, series: ICSA}]}
+  - {country: USD, match: ["Federal Funds Rate"],  period: daily, lag: -1, transform: level, decimals: 2, sources: [{provider: fred, series: DFEDTARU}]}
+  - {country: USD, match: ["Crude Oil Inventories"], period: weekly, transform: diff, scale: 1000, decimals: -5, sources: [{provider: eia, series: "pet:WCESTUS1"}]}
+  - {country: USD, match: ["Natural Gas Storage"],   period: weekly, transform: diff, scale: 1000000000, decimals: -9, sources: [{provider: eia, series: "ng:NW2_EPG0_SWO_R48_BCF"}]}

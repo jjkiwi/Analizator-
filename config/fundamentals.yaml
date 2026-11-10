@@ -1,20 +1,65 @@
 # Bias fundamentalny = srednia skladowych, kazda w skali -2..+2.
-# Skladowa: zmiana serii w `lookback` dniach, wystandaryzowana wzgledem historii, razy `sign`.
-#   sign: -1 oznacza "gdy seria rosnie, to zle dla instrumentu".
-# Serie pochodza z FRED (darmowy klucz API). Identyfikatory do potwierdzenia: `cfd bias check`.
-# To proste heurystyki makro. Fundamenty spolek, COT i zapasy EIA sa w zadaniach na pozniej.
+#
+# Typy skladowych:
+#   change (domyslny): zmiana serii w `lookback` dniach, wystandaryzowana wzgledem historii, razy `sign`.
+#       sign: -1 oznacza "gdy seria rosnie, to zle dla instrumentu".
+#       transform: yoy -> liczona jest zmiana nadwyzki wobec tego samego tygodnia rok wczesniej (usuwa sezonowosc zapasow).
+#   positioning: percentyl pozycji netto spekulantow z raportu COT na tle `window` raportow (domyslnie 156 = 3 lata).
+#       Kontrariansko przy skrajnosciach: percentyl >= `high` (90) daje -1..-2, <= `low` (10) daje +1..+2, w srodku 0.
+#       Kontrakt i typ raportu bierze sie z sekcji `cot_contracts` ponizej.
+#
+# Zrodla serii (prefiks identyfikatora):
+#   bez prefiksu -> FRED (z FRED_API_KEY przez API, bez klucza przez publiczny plik fredgraph.csv)
+#   EIA:         -> EIA, identyfikator jak w API: PET.WCESTUS1.W (z EIA_API_KEY przez API v2, bez klucza strona www.eia.gov/dnav)
+#   CFTC:        -> raport COT, np. CFTC:disaggregated:088691
+# Identyfikatory sprawdzone w sieci 2026-11-10 (`cfd bias check`). WCESTUS1 to seria EIA, w FRED jej nie ma.
+# To proste heurystyki, nie model. Fundamenty spolek: zadanie E3.
+
+# Skladowa jest pomijana, gdy ostatnia obserwacja serii jest starsza niz tyle dni (wycofana seria, zawieszone publikacje).
+max_age_days: 45
+
+# Instrument -> kontrakt CFTC. report: disaggregated (managed money, surowce), tff (leveraged funds, finansowe),
+# legacy (non-commercial). Kody z kolumny cftc_contract_market_code, raporty "futures only".
+cot_contracts:
+  GOLD:      {code: "088691", report: disaggregated, name: "GOLD - COMEX"}
+  SILVER:    {code: "084691", report: disaggregated, name: "SILVER - COMEX"}
+  PLATINUM:  {code: "076651", report: disaggregated, name: "PLATINUM - NYMEX"}
+  PALLADIUM: {code: "075651", report: disaggregated, name: "PALLADIUM - NYMEX"}
+  COPPER:    {code: "085692", report: disaggregated, name: "COPPER #1 - COMEX"}
+  OIL.WTI:   {code: "067651", report: disaggregated, name: "WTI-PHYSICAL - NYMEX"}
+  # Glowny kontrakt Brent (ICE Europe) nie jest objety raportem CFTC; to mniejszy kontrakt Brent na NYMEX.
+  OIL:       {code: "06765T", report: disaggregated, name: "BRENT LAST DAY - NYMEX"}
+  NATGAS:    {code: "023651", report: disaggregated, name: "NAT GAS - NYMEX"}
+  GASOLINE:  {code: "111659", report: disaggregated, name: "GASOLINE RBOB - NYMEX"}
+  COCOA:     {code: "073732", report: disaggregated, name: "COCOA - ICE US"}
+  COFFEE:    {code: "083731", report: disaggregated, name: "COFFEE C - ICE US"}
+  SUGAR:     {code: "080732", report: disaggregated, name: "SUGAR NO. 11 - ICE US"}
+  COTTON:    {code: "033661", report: disaggregated, name: "COTTON NO. 2 - ICE US"}
+  CORN:      {code: "002602", report: disaggregated, name: "CORN - CBOT"}
+  WHEAT:     {code: "001602", report: disaggregated, name: "WHEAT-SRW - CBOT"}
+  SOYBEAN:   {code: "005602", report: disaggregated, name: "SOYBEANS - CBOT"}
+  SOYOIL:    {code: "007601", report: disaggregated, name: "SOYBEAN OIL - CBOT"}
+  CATTLE:    {code: "057642", report: disaggregated, name: "LIVE CATTLE - CME"}
+  LEANHOGS:  {code: "054642", report: disaggregated, name: "LEAN HOGS - CME"}
+  USDIDX:    {code: "098662", report: tff,           name: "USD INDEX - ICE US"}
 
 components:
   GOLD:
     - {series: DFII10,       lookback: 63, sign: -1, label: "realna rentownosc 10Y"}
     - {series: DTWEXBGS,     lookback: 63, sign: -1, label: "szeroki indeks dolara"}
+    - {type: positioning}
   SILVER:
     - {series: DFII10,       lookback: 63, sign: -1, label: "realna rentownosc 10Y"}
     - {series: DTWEXBGS,     lookback: 63, sign: -1, label: "szeroki indeks dolara"}
+    - {type: positioning}
   PLATINUM:
     - {series: DTWEXBGS,     lookback: 63, sign: -1, label: "szeroki indeks dolara"}
+    - {type: positioning}
+  PALLADIUM:
+    - {type: positioning}
   COPPER:
     - {series: DTWEXBGS,     lookback: 63, sign: -1, label: "szeroki indeks dolara"}
+    - {type: positioning}
   US500: &us_equities
     - {series: NFCI,         lookback: 63, sign: -1, label: "warunki finansowe (NFCI)"}
     - {series: BAMLH0A0HYM2, lookback: 63, sign: -1, label: "spread obligacji high yield"}
@@ -24,12 +69,44 @@ components:
   US2000: *us_equities
   USDIDX:
     - {series: DGS2,         lookback: 63, sign: 1,  label: "rentownosc 2Y"}
+    - {type: positioning}
   BITCOIN: &crypto
     - {series: NFCI,         lookback: 63, sign: -1, label: "warunki finansowe (NFCI)"}
     - {series: DTWEXBGS,     lookback: 63, sign: -1, label: "szeroki indeks dolara"}
   ETHEREUM: *crypto
   SOLANA: *crypto
-  OIL: &oil
-    - {series: WCESTUS1,     lookback: 28, sign: -1, label: "zapasy ropy w USA (ID do potwierdzenia)"}
+  OIL:
+    - {series: "EIA:PET.WCESTUS1.W", lookback: 28, sign: -1, transform: yoy, label: "zapasy ropy w USA (EIA, r/r)"}
     - {series: DTWEXBGS,     lookback: 63, sign: -1, label: "szeroki indeks dolara"}
-  OIL.WTI: *oil
+    - {type: positioning}
+  OIL.WTI:
+    - {series: "EIA:PET.WCESTUS1.W", lookback: 28, sign: -1, transform: yoy, label: "zapasy ropy w USA (EIA, r/r)"}
+    - {series: DTWEXBGS,     lookback: 63, sign: -1, label: "szeroki indeks dolara"}
+    - {type: positioning}
+  GASOLINE:
+    - {series: "EIA:PET.WGTSTUS1.W", lookback: 28, sign: -1, transform: yoy, label: "zapasy benzyny w USA (EIA, r/r)"}
+    - {series: "EIA:PET.WCESTUS1.W", lookback: 28, sign: -1, transform: yoy, label: "zapasy ropy w USA (EIA, r/r)"}
+    - {type: positioning}
+  NATGAS:
+    - {series: "EIA:NG.NW2_EPG0_SWO_R48_BCF.W", lookback: 28, sign: -1, transform: yoy, label: "gaz w magazynach USA, Lower 48 (EIA, r/r)"}
+    - {type: positioning}
+  COCOA:
+    - {type: positioning}
+  COFFEE:
+    - {type: positioning}
+  SUGAR:
+    - {type: positioning}
+  COTTON:
+    - {type: positioning}
+  CORN:
+    - {type: positioning}
+  WHEAT:
+    - {type: positioning}
+  SOYBEAN:
+    - {type: positioning}
+  SOYOIL:
+    - {type: positioning}
+  CATTLE:
+    - {type: positioning}
+  LEANHOGS:
+    - {type: positioning}

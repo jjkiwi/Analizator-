@@ -1,4 +1,10 @@
-from .bias import compute_bias, component_score, load_components, read_bias, save_bias
+from .bias import component_score, compute_bias, load_components, positioning_percentile, positioning_score, read_bias, save_bias
+from .cot import CotClient
+from .eia import EiaClient
 from .fred import FredClient
+from .sources import SeriesRouter
 
-__all__ = ["FredClient", "component_score", "compute_bias", "load_components", "read_bias", "save_bias"]
+__all__ = [
+    "CotClient", "EiaClient", "FredClient", "SeriesRouter", "component_score", "compute_bias", "load_components",
+    "positioning_percentile", "positioning_score", "read_bias", "save_bias",
+]

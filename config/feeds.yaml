@@ -1,22 +1,44 @@
-# Zrodla newsow (RSS/Atom). Adresy spisane recznie i NIESPRAWDZONE w sieci:
-# uruchom `cfd news check-feeds` i usun/popraw te, ktore nie dzialaja.
-# `poll_seconds` to minimalny odstep miedzy pobraniami danego feedu.
+# Zrodla newsow (RSS/Atom). `poll_seconds` to minimalny odstep miedzy pobraniami danego feedu.
+# `enabled: false` wylacza feed z pracy ciaglej; `cfd news check-feeds` sprawdza takze wylaczone.
+# Stan sprawdzony na zywo 2026-11-10 (zadanie C1) ze srodowiska testowego w chmurze.
 
 feeds:
-  - {name: fed_press,      url: "https://www.federalreserve.gov/feeds/press_all.xml",        poll_seconds: 120}
-  - {name: ecb_press,      url: "https://www.ecb.europa.eu/rss/press.html",                  poll_seconds: 120}
-  - {name: eia_today,      url: "https://www.eia.gov/rss/todayinenergy.xml",                 poll_seconds: 600}
-  - {name: eia_press,      url: "https://www.eia.gov/rss/press_rss.xml",                     poll_seconds: 300}
-  - {name: bankier_news,   url: "https://www.bankier.pl/rss/wiadomosci.xml",                 poll_seconds: 120}
-  - {name: bankier_gielda, url: "https://www.bankier.pl/rss/gielda.xml",                     poll_seconds: 120}
-  - {name: cnbc_top,       url: "https://www.cnbc.com/id/100003114/device/rss/rss.html",     poll_seconds: 120}
+  # --- dziala (zweryfikowane) ---
+  - {name: fed_press,      url: "https://www.federalreserve.gov/feeds/press_all.xml",         poll_seconds: 120}
+  - {name: ecb_press,      url: "https://www.ecb.europa.eu/rss/press.html",                   poll_seconds: 120}
+  - {name: eia_today,      url: "https://www.eia.gov/rss/todayinenergy.xml",                  poll_seconds: 600}
+  - {name: eia_press,      url: "https://www.eia.gov/rss/press_rss.xml",                      poll_seconds: 600}
   - {name: marketwatch,    url: "https://feeds.content.dowjones.io/public/rss/mw_topstories", poll_seconds: 120}
-  - {name: coindesk,       url: "https://www.coindesk.com/arc/outboundfeeds/rss/",           poll_seconds: 120}
+  - {name: mw_marketpulse, url: "https://feeds.content.dowjones.io/public/rss/mw_marketpulse", poll_seconds: 120}
+  - {name: wsj_markets,    url: "https://feeds.content.dowjones.io/public/rss/RSSMarketsMain", poll_seconds: 120}
+  # bez koncowego "/": stary adres odpowiadal przekierowaniem 308
+  - {name: coindesk,       url: "https://www.coindesk.com/arc/outboundfeeds/rss",             poll_seconds: 120}
+
+  # --- serwis odrzuca automat (HTTP 403 z ochrony przed botami: Cloudflare / Akamai) ---
+  # Sprawdzone z adresu IP centrum danych. Z domowego lacza moga dzialac: uruchom `cfd news check-feeds`
+  # i jesli jest OK, ustaw enabled: true. Nie obchodzimy zabezpieczen (zasada 3 z CLAUDE.md).
+  - {name: bankier_news,   url: "https://www.bankier.pl/rss/wiadomosci.xml",                  poll_seconds: 120, enabled: false}
+  - {name: bankier_gielda, url: "https://www.bankier.pl/rss/gielda.xml",                      poll_seconds: 120, enabled: false}
+  - {name: cnbc_top,       url: "https://www.cnbc.com/id/100003114/device/rss/rss.html",      poll_seconds: 120, enabled: false}
+
+  # --- niezweryfikowane (host zablokowany w srodowisku testowym) ---
+  # Adresy spisane z pamieci, nigdy nie pobrane. Sprawdz `cfd news check-feeds` u siebie
+  # i wlacz (enabled: true) te, ktore pokaza OK; bledne popraw albo usun.
+  - {name: nbp_news,       url: "https://nbp.pl/feed/",                                       poll_seconds: 300, enabled: false}  # niezweryfikowane (host zablokowany w srodowisku testowym)
+  - {name: pap_biznes,     url: "https://biznes.pap.pl/pl/rss/8659",                          poll_seconds: 120, enabled: false}  # niezweryfikowane (host zablokowany w srodowisku testowym)
+  - {name: pap_espi,       url: "https://biznes.pap.pl/pl/rss/6614",                          poll_seconds: 120, enabled: false}  # niezweryfikowane (host zablokowany w srodowisku testowym); komunikaty ESPI/EBI
+  - {name: boe_news,       url: "https://www.bankofengland.co.uk/rss/news",                   poll_seconds: 300, enabled: false}  # niezweryfikowane (host zablokowany w srodowisku testowym)
+  - {name: boj_news,       url: "https://www.boj.or.jp/en/rss/whatsnew.xml",                  poll_seconds: 300, enabled: false}  # niezweryfikowane (host zablokowany w srodowisku testowym)
+  - {name: snb_press,      url: "https://www.snb.ch/public/en/rss/pressrel",                  poll_seconds: 300, enabled: false}  # niezweryfikowane (host zablokowany w srodowisku testowym)
 
 # Dodatkowo dla kazdego zapytania powstaje feed Google News (wyszukiwanie RSS).
+# Wpis to napis albo slownik {q, hl, gl, ceid}; komplet hl/gl/ceid jest konieczny (inaczej 302).
+# `when: "1d"` ogranicza wyniki do ostatniej doby (bez tego wracaja tez artykuly sprzed tygodni).
+# Uwaga: Google zastrzega w feedzie uzytek osobisty, niekomercyjny, w czytniku RSS.
 google_news:
   enabled: true
   poll_seconds: 300
+  when: "1d"
   params: {hl: "en-US", gl: "US", ceid: "US:en"}
   queries:
     - "Federal Reserve interest rates"
@@ -27,3 +49,6 @@ google_news:
     - "stock market today"
     - "bitcoin"
     - "ECB interest rates"
+    # polskie zrodla posrednio (zastepuja Bankier/PAP/NBP, dopoki ich feedy nie sa potwierdzone)
+    - {q: "NBP stopy procentowe", hl: "pl", gl: "PL", ceid: "PL:pl"}
+    - {q: "GPW WIG20",            hl: "pl", gl: "PL", ceid: "PL:pl"}

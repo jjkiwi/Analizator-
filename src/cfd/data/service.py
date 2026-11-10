@@ -11,8 +11,8 @@ from .store import CandleStore
 
 log = logging.getLogger(__name__)
 
-# Kolejnosc = priorytet. Pierwsze zrodlo, ktore zadziala, wygrywa.
-SOURCE_PRIORITY = ("binance", "yahoo", "stooq")
+# Priorytet zrodel = kolejnosc wpisow `sources` instrumentu w instruments.yaml.
+# Pierwsze zrodlo, ktore obsluguje interwal i zadziala, wygrywa.
 
 
 def default_adapters() -> dict[str, MarketDataAdapter]:
@@ -32,10 +32,10 @@ class DataService:
 
     def candidates(self, inst: Instrument, interval: str) -> list[tuple[MarketDataAdapter, str]]:
         out = []
-        for name in SOURCE_PRIORITY:
+        for name, src_symbol in inst.sources.items():
             adapter = self.adapters.get(name)
-            if adapter and name in inst.sources and interval in adapter.intervals:
-                out.append((adapter, inst.sources[name]))
+            if adapter and interval in adapter.intervals:
+                out.append((adapter, src_symbol))
         return out
 
     def update(self, inst: Instrument, interval: str) -> tuple[pd.DataFrame, str]:

@@ -48,8 +48,8 @@ def _pick(instruments: dict, symbols, category) -> list:
 
 def _context(args):
     """Sklada wszystko, czego potrzebuje praca ciagla. Brakujace klucze = dana czesc jest wylaczona."""
-    from .fundamentals import FredClient, load_components
-    from .macro import FairEconomyCalendar, MacroRules
+    from .fundamentals import SeriesRouter, load_components
+    from .macro import MacroRules, default_source
     from .news import KeywordMapper, LLMClassifier, RuleClassifier, load_feeds
     from .notify import notifier_from_env
     from .runner import Context
@@ -58,7 +58,7 @@ def _context(args):
     settings = load_settings(_cfg(args, "settings.yaml"))
     rules = RuleClassifier()
     use_llm = settings["news"]["use_llm"] and os.environ.get("ANTHROPIC_API_KEY")
-    fred = FredClient() if os.environ.get("FRED_API_KEY") else None
+    fund_router = SeriesRouter()  # FRED i EIA maja sciezki bezkluczowe, CFTC nie wymaga klucza
     return Context(
         conn=_conn(args), settings=settings, instruments=instruments, data=_service(args),
         notifier=notifier_from_env(),
@@ -66,9 +66,9 @@ def _context(args):
         mapper=KeywordMapper.from_file(_cfg(args, "keywords.yaml"), set(instruments)),
         classifier=LLMClassifier(fallback=rules) if use_llm else rules,
         cheap_classifier=rules if use_llm else None,
-        macro_source=FairEconomyCalendar(), macro_rules=MacroRules.from_file(_cfg(args, "macro_rules.yaml")),
+        macro_source=default_source(_cfg(args, "macro_rules.yaml")), macro_rules=MacroRules.from_file(_cfg(args, "macro_rules.yaml")),
         fund_components=load_components(_cfg(args, "fundamentals.yaml")),
-        fund_series=fred.series if fred else None,
+        fund_series=fund_router.series,
     )
 
 
@@ -228,14 +228,27 @@ def cmd_news(args) -> None:
 
 
 def cmd_macro(args) -> None:
-    from .macro import FairEconomyCalendar, MacroRules, surprise_effects, upcoming, upsert_events
+    from .data import DataSourceError
+    from .macro import MacroRules, default_source, surprise_effects, upcoming, upsert_events
     from .macro.calendar import set_actual
 
     conn = _conn(args)
     if args.action == "refresh":
-        events = FairEconomyCalendar().fetch()
+        source = default_source(_cfg(args, "macro_rules.yaml"))
+        try:
+            events = source.fetch()
+        except DataSourceError as exc:
+            sys.exit(f"Kalendarz makro niedostepny: {exc}")
         upsert_events(conn, events)
-        print(f"Pobrano wydarzen: {len(events)}, z odczytem 'actual': {sum(e.actual is not None for e in events)}")
+        report = source.last_report
+        print(f"Pobrano wydarzen: {len(events)}{' (z cache)' if source.calendar.from_cache else ''}, "
+              f"z odczytem 'actual': {sum(e.actual is not None for e in events)}")
+        for e, src in report.filled:
+            print(f"  odczyt {e.time:%a %d.%m %H:%M} UTC {e.country} {e.name}: {e.actual:g} (prognoza {e.forecast}, poprz. {e.previous}) [{src}]")
+        for e in report.pending:
+            print(f"  czeka na zrodlo: {e.time:%a %d.%m %H:%M} UTC {e.country} {e.name}")
+        for err in report.errors:
+            print(f"  zrodlo odczytow niedostepne: {err}")
     elif args.action == "upcoming":
         rules = MacroRules.from_file(_cfg(args, "macro_rules.yaml"))
         for e in upcoming(conn, timedelta(days=args.days), args.min_importance):
@@ -255,22 +268,24 @@ def cmd_bias(args) -> None:
         from .runner import job_fundamentals
 
         ctx = _context(args)
-        if ctx.fund_series is None:
-            sys.exit("Brak FRED_API_KEY (darmowy klucz: fred.stlouisfed.org)")
         print(f"Zaktualizowano bias dla {job_fundamentals(ctx)} instrumentow")
     elif args.action == "check":
-        from .fundamentals import FredClient, load_components
+        from .fundamentals import SeriesRouter, load_components
 
-        fred = FredClient()
+        router = SeriesRouter()
         ids = sorted({c["series"] for comps in load_components(_cfg(args, "fundamentals.yaml")).values() for c in comps})
         for sid in ids:
             try:
-                s = fred.series(sid)
-                print(f"OK    {sid:<14} {len(s)} obserwacji, ostatnia {s.index[-1].date()} = {s.iloc[-1]}")
+                s = router.series(sid)
+                print(f"OK    {sid:<32} {len(s)} obserwacji, ostatnia {s.index[-1].date()} = {s.iloc[-1]}")
             except Exception as exc:
-                print(f"BLAD  {sid:<14} {str(exc)[:100]}")
+                print(f"BLAD  {sid:<32} {str(exc)[:160]}")
     for r in conn.execute("SELECT * FROM fundamental_bias ORDER BY bias DESC"):
         print(f"{r['symbol']:<10} bias {r['bias']:+.2f}  ({r['updated'][:16]})")
+        for c in __import__("json").loads(r["components"] or "[]"):
+            score = "blad: " + str(c.get("error", "brak danych"))[:80] if c.get("score") is None else f"{c['score']:+.2f}"
+            pct = f" (percentyl {c['percentile']:.0f})" if c.get("percentile") is not None else ""
+            print(f"    {c.get('label', c.get('series')):<44} {score}{pct}")
 
 
 # ---------- dziennik i praca ciagla ----------
