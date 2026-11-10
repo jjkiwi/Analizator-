@@ -1,0 +1,29 @@
+# Zrodla newsow (RSS/Atom). Adresy spisane recznie i NIESPRAWDZONE w sieci:
+# uruchom `cfd news check-feeds` i usun/popraw te, ktore nie dzialaja.
+# `poll_seconds` to minimalny odstep miedzy pobraniami danego feedu.
+
+feeds:
+  - {name: fed_press,      url: "https://www.federalreserve.gov/feeds/press_all.xml",        poll_seconds: 120}
+  - {name: ecb_press,      url: "https://www.ecb.europa.eu/rss/press.html",                  poll_seconds: 120}
+  - {name: eia_today,      url: "https://www.eia.gov/rss/todayinenergy.xml",                 poll_seconds: 600}
+  - {name: eia_press,      url: "https://www.eia.gov/rss/press_rss.xml",                     poll_seconds: 300}
+  - {name: bankier_news,   url: "https://www.bankier.pl/rss/wiadomosci.xml",                 poll_seconds: 120}
+  - {name: bankier_gielda, url: "https://www.bankier.pl/rss/gielda.xml",                     poll_seconds: 120}
+  - {name: cnbc_top,       url: "https://www.cnbc.com/id/100003114/device/rss/rss.html",     poll_seconds: 120}
+  - {name: marketwatch,    url: "https://feeds.content.dowjones.io/public/rss/mw_topstories", poll_seconds: 120}
+  - {name: coindesk,       url: "https://www.coindesk.com/arc/outboundfeeds/rss/",           poll_seconds: 120}
+
+# Dodatkowo dla kazdego zapytania powstaje feed Google News (wyszukiwanie RSS).
+google_news:
+  enabled: true
+  poll_seconds: 300
+  params: {hl: "en-US", gl: "US", ceid: "US:en"}
+  queries:
+    - "Federal Reserve interest rates"
+    - "OPEC oil production"
+    - "crude oil prices"
+    - "natural gas prices"
+    - "gold price"
+    - "stock market today"
+    - "bitcoin"
+    - "ECB interest rates"

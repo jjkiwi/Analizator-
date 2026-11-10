@@ -1,0 +1,27 @@
+# Ustawienia pracy ciaglej (`cfd run`). Sekrety trzymaj w zmiennych srodowiskowych, patrz .env.example.
+
+scan:
+  every_minutes: 15
+  intervals: ["1d", "4h"]
+  # Wszystkie strategie z tej listy trafiaja do dziennika (forward test)...
+  strategies: [trend_pullback, donchian_breakout, mean_reversion]
+  # ...ale alert dostajesz tylko z tych, ktore przeszly walidacje. Domyslnie zadna.
+  alert_strategies: []
+  expire_bars: 40
+
+news:
+  every_seconds: 60
+  alert_min_importance: 3
+  max_age_hours: 12
+  use_llm: true            # bez ANTHROPIC_API_KEY i tak dzialaja same reguly
+
+macro:
+  refresh_minutes: 60
+  alert_minutes_before: 30
+  alert_min_importance: 3
+
+fundamentals:
+  refresh_hours: 24
+
+health:
+  alert_after_failures: 3

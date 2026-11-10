@@ -1,0 +1,93 @@
+# Przypisywanie newsow do instrumentow. Dopasowanie po calych slowach, bez rozrozniania wielkosci liter.
+# `instruments`: slowa wskazujace wprost na instrument.
+# `topics`: tematy makro, ktore ruszaja wieloma instrumentami naraz.
+# `high_impact`: frazy podnoszace wage newsa do 3 (najwyzsza) w klasyfikatorze regulowym.
+
+instruments:
+  US500:     ["s&p 500", "s&p500", "sp500", "wall street"]
+  US100:     ["nasdaq", "nasdaq 100", "tech stocks"]
+  US30:      ["dow jones", "dow industrials"]
+  US2000:    ["russell 2000", "small caps"]
+  DE40:      ["dax", "german stocks", "bundesbank"]
+  UK100:     ["ftse 100", "ftse", "bank of england"]
+  FRA40:     ["cac 40"]
+  EU50:      ["euro stoxx", "eurostoxx", "stoxx 50"]
+  W20:       ["wig20", "wig 20", "gpw", "giełda papierów wartościowych"]
+  JP225:     ["nikkei", "bank of japan", "boj"]
+  HK.cash:   ["hang seng"]
+  VIX:       ["vix", "volatility index"]
+  USDIDX:    ["dollar index", "dxy", "us dollar"]
+  OIL:       ["brent"]
+  OIL.WTI:   ["wti", "west texas"]
+  NATGAS:    ["natural gas", "henry hub", "lng"]
+  GASOLINE:  ["gasoline", "rbob"]
+  COCOA:     ["cocoa", "kakao"]
+  COFFEE:    ["coffee", "arabica"]
+  SUGAR:     ["sugar"]
+  COTTON:    ["cotton"]
+  CORN:      ["corn"]
+  WHEAT:     ["wheat", "pszenica"]
+  SOYBEAN:   ["soybean", "soybeans"]
+  COPPER:    ["copper", "miedź", "kghm"]
+  ALUMINIUM: ["aluminium", "aluminum"]
+  GOLD:      ["gold", "złoto", "bullion"]
+  SILVER:    ["silver", "srebro"]
+  PLATINUM:  ["platinum", "platyna"]
+  PALLADIUM: ["palladium", "pallad"]
+  BITCOIN:   ["bitcoin", "btc"]
+  ETHEREUM:  ["ethereum", "ether", "eth"]
+  SOLANA:    ["solana"]
+
+topics:
+  fed:
+    keywords: ["federal reserve", "fed", "fomc", "powell", "rate cut", "rate hike", "interest rates"]
+    symbols: [US500, US100, US30, GOLD, SILVER, USDIDX, BITCOIN]
+  us_inflation:
+    keywords: ["cpi", "inflation", "pce", "consumer prices", "producer prices"]
+    symbols: [US500, US100, GOLD, USDIDX]
+  us_jobs:
+    keywords: ["payrolls", "nonfarm", "jobless claims", "unemployment rate", "jobs report"]
+    symbols: [US500, US100, US30, GOLD, USDIDX]
+  ecb:
+    keywords: ["ecb", "european central bank", "lagarde"]
+    symbols: [DE40, EU50, FRA40]
+  nbp:
+    keywords: ["nbp", "rpp", "rada polityki pieniężnej", "stopy procentowe"]
+    symbols: [W20]
+  oil_supply:
+    keywords: ["opec", "opec+", "crude oil", "oil prices", "crude inventories", "strait of hormuz", "ropa"]
+    symbols: [OIL, OIL.WTI, GASOLINE]
+  china:
+    keywords: ["china stimulus", "pboc", "chinese economy"]
+    symbols: [HK.cash, COPPER, OIL]
+  crypto_market:
+    keywords: ["crypto", "cryptocurrency", "spot etf", "sec crypto", "stablecoin"]
+    symbols: [BITCOIN, ETHEREUM, SOLANA]
+  geopolitics:
+    keywords: ["sanctions", "tariff", "tariffs", "ceasefire", "invasion", "missile"]
+    symbols: [US500, OIL, GOLD]
+
+high_impact:
+  - "rate cut"
+  - "rate hike"
+  - "cuts rates"
+  - "raises rates"
+  - "holds rates"
+  - "rate decision"
+  - "emergency"
+  - "payrolls"
+  - "cpi"
+  - "opec"
+  - "sanctions"
+  - "tariffs"
+  - "invasion"
+  - "default"
+  - "bankruptcy"
+  - "halts"
+  - "record high"
+  - "record low"
+  - "plunge"
+  - "crash"
+  - "surge"
+  - "obniża stopy"
+  - "podnosi stopy"

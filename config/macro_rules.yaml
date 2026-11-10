@@ -1,0 +1,19 @@
+# Podrecznikowe reakcje na odczyty makro: znak przy symbolu = kierunek, gdy odczyt jest WYZSZY od prognozy.
+# To heurystyki pierwszej reakcji, a nie pewniki: rynek czesto reaguje odwrotnie, gdy zmienia sie narracja.
+# `match`: fragmenty nazwy wydarzenia (bez rozrozniania wielkosci liter); `country`: waluta z kalendarza.
+
+rules:
+  - {name: inflacja_usa,   country: USD, match: ["cpi", "pce price", "ppi"],                       effects: {US500: -1, US100: -1, GOLD: -1, USDIDX: 1}}
+  - {name: payrolls,       country: USD, match: ["non-farm", "nonfarm", "adp"],                    effects: {USDIDX: 1, GOLD: -1}}
+  - {name: bezrobocie_usa, country: USD, match: ["unemployment rate", "unemployment claims", "jobless"], effects: {USDIDX: -1, GOLD: 1}}
+  - {name: stopy_fed,      country: USD, match: ["federal funds rate", "fomc"],                    effects: {US500: -1, US100: -1, GOLD: -1, USDIDX: 1, BITCOIN: -1}}
+  - {name: pmi_usa,        country: USD, match: ["ism manufacturing", "ism services", "flash manufacturing pmi", "flash services pmi"], effects: {US500: 1, US30: 1, USDIDX: 1}}
+  - {name: sprzedaz_usa,   country: USD, match: ["retail sales"],                                  effects: {US500: 1, USDIDX: 1}}
+  - {name: pkb_usa,        country: USD, match: ["gdp"],                                           effects: {US500: 1, USDIDX: 1}}
+  - {name: zapasy_ropy,    country: USD, match: ["crude oil inventories"],                         effects: {OIL: -1, OIL.WTI: -1}}
+  - {name: zapasy_gazu,    country: USD, match: ["natural gas storage"],                           effects: {NATGAS: -1}}
+  - {name: stopy_ebc,      country: EUR, match: ["main refinancing rate", "ecb"],                  effects: {DE40: -1, EU50: -1, FRA40: -1}}
+  - {name: niemcy_nastroje, country: EUR, match: ["zew", "ifo", "german flash manufacturing pmi"], effects: {DE40: 1, EU50: 1}}
+  - {name: inflacja_uk,    country: GBP, match: ["cpi"],                                           effects: {UK100: -1}}
+  - {name: japonia_boj,    country: JPY, match: ["boj policy rate"],                               effects: {JP225: -1}}
+  - {name: chiny_pmi,      country: CNY, match: ["manufacturing pmi"],                             effects: {HK.cash: 1, COPPER: 1, OIL: 1}}

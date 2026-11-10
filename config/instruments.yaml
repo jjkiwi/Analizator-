@@ -1,0 +1,72 @@
+# Tabela instrumentow XTB -> symbole w darmowych zrodlach danych.
+#
+# UWAGA 1: lista symboli XTB spisana recznie. Porownaj z xStation i popraw,
+#          XTB nie ma API, wiec to jedyne miejsce, gdzie ta lista zyje.
+# UWAGA 2: mapowania zrodel NIE byly sprawdzone w sieci. Uruchom
+#          `cfd check-sources`, zeby zobaczyc, ktore dzialaja.
+# UWAGA 3: koszty w `cost_defaults` to ZALOZENIA robocze, nie dane XTB.
+#          Podmien je na wartosci ze specyfikacji instrumentow w xStation
+#          (mozesz tez nadpisac koszt na pojedynczym instrumencie polem `costs`).
+
+cost_defaults:
+  indices:     {spread_pct: 0.0003, swap_long_annual_pct: 0.06, swap_short_annual_pct: 0.01}
+  commodities: {spread_pct: 0.0010, swap_long_annual_pct: 0.08, swap_short_annual_pct: 0.02}
+  metals:      {spread_pct: 0.0005, swap_long_annual_pct: 0.06, swap_short_annual_pct: 0.01}
+  crypto:      {spread_pct: 0.0030, swap_long_annual_pct: 0.25, swap_short_annual_pct: 0.10}
+  stocks:      {spread_pct: 0.0010, swap_long_annual_pct: 0.07, swap_short_annual_pct: 0.02}
+
+instruments:
+  # ---------- INDEKSY ----------
+  - {symbol: US500,   name: "S&P 500",         category: indices, sources: {yahoo: "ES=F",  stooq: "^spx"}}
+  - {symbol: US100,   name: "Nasdaq 100",      category: indices, sources: {yahoo: "NQ=F",  stooq: "^ndx"}}
+  - {symbol: US30,    name: "Dow Jones",       category: indices, sources: {yahoo: "YM=F",  stooq: "^dji"}}
+  - {symbol: US2000,  name: "Russell 2000",    category: indices, sources: {yahoo: "RTY=F"}}
+  - {symbol: DE40,    name: "DAX",             category: indices, sources: {yahoo: "^GDAXI", stooq: "^dax"}}
+  - {symbol: UK100,   name: "FTSE 100",        category: indices, sources: {yahoo: "^FTSE", stooq: "^ukx"}}
+  - {symbol: FRA40,   name: "CAC 40",          category: indices, sources: {yahoo: "^FCHI", stooq: "^cac"}}
+  - {symbol: EU50,    name: "Euro Stoxx 50",   category: indices, sources: {yahoo: "^STOXX50E"}}
+  - {symbol: SPA35,   name: "IBEX 35",         category: indices, sources: {yahoo: "^IBEX"}}
+  - {symbol: ITA40,   name: "FTSE MIB",        category: indices, sources: {yahoo: "FTSEMIB.MI"}}
+  - {symbol: NED25,   name: "AEX",             category: indices, sources: {yahoo: "^AEX"}}
+  - {symbol: SUI20,   name: "SMI",             category: indices, sources: {yahoo: "^SSMI"}}
+  - {symbol: W20,     name: "WIG20",           category: indices, sources: {stooq: "wig20"}}
+  - {symbol: JP225,   name: "Nikkei 225",      category: indices, sources: {yahoo: "^N225", stooq: "^nkx"}}
+  - {symbol: AUS200,  name: "ASX 200",         category: indices, sources: {yahoo: "^AXJO"}}
+  - {symbol: HK.cash, name: "Hang Seng",       category: indices, sources: {yahoo: "^HSI",  stooq: "^hsi"}}
+  - {symbol: VIX,     name: "VIX",             category: indices, sources: {yahoo: "^VIX"}}
+  - {symbol: USDIDX,  name: "Indeks dolara",   category: indices, sources: {yahoo: "DX-Y.NYB"}}
+
+  # ---------- SUROWCE ----------
+  - {symbol: OIL,       name: "Ropa Brent",     category: commodities, sources: {yahoo: "BZ=F"}}
+  - {symbol: OIL.WTI,   name: "Ropa WTI",       category: commodities, sources: {yahoo: "CL=F", stooq: "cl.f"}}
+  - {symbol: NATGAS,    name: "Gaz ziemny",     category: commodities, sources: {yahoo: "NG=F", stooq: "ng.f"}}
+  - {symbol: GASOLINE,  name: "Benzyna",        category: commodities, sources: {yahoo: "RB=F"}}
+  - {symbol: COCOA,     name: "Kakao",          category: commodities, sources: {yahoo: "CC=F"}}
+  - {symbol: COFFEE,    name: "Kawa",           category: commodities, sources: {yahoo: "KC=F"}}
+  - {symbol: SUGAR,     name: "Cukier",         category: commodities, sources: {yahoo: "SB=F"}}
+  - {symbol: COTTON,    name: "Bawelna",        category: commodities, sources: {yahoo: "CT=F"}}
+  - {symbol: CORN,      name: "Kukurydza",      category: commodities, sources: {yahoo: "ZC=F"}}
+  - {symbol: WHEAT,     name: "Pszenica",       category: commodities, sources: {yahoo: "ZW=F"}}
+  - {symbol: SOYBEAN,   name: "Soja",           category: commodities, sources: {yahoo: "ZS=F"}}
+  - {symbol: SOYOIL,    name: "Olej sojowy",    category: commodities, sources: {yahoo: "ZL=F"}}
+  - {symbol: CATTLE,    name: "Bydlo",          category: commodities, sources: {yahoo: "LE=F"}}
+  - {symbol: LEANHOGS,  name: "Wieprzowina",    category: commodities, sources: {yahoo: "HE=F"}}
+  - {symbol: COPPER,    name: "Miedz",          category: commodities, sources: {yahoo: "HG=F", stooq: "hg.f"}}
+  - {symbol: ALUMINIUM, name: "Aluminium",      category: commodities, sources: {yahoo: "ALI=F"}}
+  - {symbol: ZINC,      name: "Cynk",           category: commodities, sources: {}}
+  - {symbol: NICKEL,    name: "Nikiel",         category: commodities, sources: {}}
+
+  # ---------- METALE SZLACHETNE ----------
+  - {symbol: GOLD,      name: "Zloto",          category: metals, sources: {yahoo: "GC=F", stooq: "gc.f"}}
+  - {symbol: SILVER,    name: "Srebro",         category: metals, sources: {yahoo: "SI=F", stooq: "si.f"}}
+  - {symbol: PLATINUM,  name: "Platyna",        category: metals, sources: {yahoo: "PL=F"}}
+  - {symbol: PALLADIUM, name: "Pallad",         category: metals, sources: {yahoo: "PA=F"}}
+
+  # ---------- KRYPTO (top 3; trzecia pozycja do potwierdzenia) ----------
+  - {symbol: BITCOIN,   name: "Bitcoin",        category: crypto, sources: {binance: "BTCUSDT", yahoo: "BTC-USD"}}
+  - {symbol: ETHEREUM,  name: "Ethereum",       category: crypto, sources: {binance: "ETHUSDT", yahoo: "ETH-USD"}}
+  - {symbol: SOLANA,    name: "Solana",         category: crypto, sources: {binance: "SOLUSDT", yahoo: "SOL-USD"}}
+
+  # ---------- AKCJE: dopisz swoja liste, np. ----------
+  # - {symbol: AAPL.US, name: "Apple", category: stocks, sources: {yahoo: "AAPL"}}
+  # - {symbol: PKN.PL,  name: "Orlen", category: stocks, sources: {yahoo: "PKN.WA", stooq: "pkn"}}

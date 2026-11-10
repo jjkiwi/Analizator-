@@ -1,0 +1,35 @@
+# Bias fundamentalny = srednia skladowych, kazda w skali -2..+2.
+# Skladowa: zmiana serii w `lookback` dniach, wystandaryzowana wzgledem historii, razy `sign`.
+#   sign: -1 oznacza "gdy seria rosnie, to zle dla instrumentu".
+# Serie pochodza z FRED (darmowy klucz API). Identyfikatory do potwierdzenia: `cfd bias check`.
+# To proste heurystyki makro. Fundamenty spolek, COT i zapasy EIA sa w zadaniach na pozniej.
+
+components:
+  GOLD:
+    - {series: DFII10,       lookback: 63, sign: -1, label: "realna rentownosc 10Y"}
+    - {series: DTWEXBGS,     lookback: 63, sign: -1, label: "szeroki indeks dolara"}
+  SILVER:
+    - {series: DFII10,       lookback: 63, sign: -1, label: "realna rentownosc 10Y"}
+    - {series: DTWEXBGS,     lookback: 63, sign: -1, label: "szeroki indeks dolara"}
+  PLATINUM:
+    - {series: DTWEXBGS,     lookback: 63, sign: -1, label: "szeroki indeks dolara"}
+  COPPER:
+    - {series: DTWEXBGS,     lookback: 63, sign: -1, label: "szeroki indeks dolara"}
+  US500: &us_equities
+    - {series: NFCI,         lookback: 63, sign: -1, label: "warunki finansowe (NFCI)"}
+    - {series: BAMLH0A0HYM2, lookback: 63, sign: -1, label: "spread obligacji high yield"}
+    - {series: DGS10,        lookback: 63, sign: -1, label: "rentownosc 10Y"}
+  US100: *us_equities
+  US30: *us_equities
+  US2000: *us_equities
+  USDIDX:
+    - {series: DGS2,         lookback: 63, sign: 1,  label: "rentownosc 2Y"}
+  BITCOIN: &crypto
+    - {series: NFCI,         lookback: 63, sign: -1, label: "warunki finansowe (NFCI)"}
+    - {series: DTWEXBGS,     lookback: 63, sign: -1, label: "szeroki indeks dolara"}
+  ETHEREUM: *crypto
+  SOLANA: *crypto
+  OIL: &oil
+    - {series: WCESTUS1,     lookback: 28, sign: -1, label: "zapasy ropy w USA (ID do potwierdzenia)"}
+    - {series: DTWEXBGS,     lookback: 63, sign: -1, label: "szeroki indeks dolara"}
+  OIL.WTI: *oil
