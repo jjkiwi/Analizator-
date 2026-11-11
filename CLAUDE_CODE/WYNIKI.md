@@ -575,7 +575,59 @@ w środowisku testowym. `cfd notify-test` bez kluczy używa konsoli; formatowani
 
 ## F2. Pierwszy pełny przebieg
 
-@@F2@@
+**Co zrobione.** `cfd -v run --once`, potem `cfd health`, `cfd journal`, `cfd dashboard`, a następnie `cfd -v run`
+przez 61 minut (2026-11-11, 11:59–13:00 UTC) z pomiarem pamięci co minutę. Bez kluczy: powiadomienia szły na konsolę,
+newsy klasyfikowały same reguły.
+
+**Co wyszło: przebieg jednorazowy** (4 min 7 s, nic nie padło):
+
+| Zadanie | Wynik |
+|---|---|
+| fundamentals | bias policzony dla 27 instrumentów |
+| macro | 0 nowych alertów (kalendarz i odczyty odświeżone) |
+| news | 12 newsów z alertem |
+| scan | 11 nowych sygnałów w dzienniku (1d i 4h), wszystkie otwarte |
+
+`cfd health`: wszystkie włączone źródła OK (świece Yahoo i Binance, 18 feedów, makro, fundamenty).
+`cfd journal` i `cfd dashboard` działają; rozliczonych sygnałów jeszcze nie ma.
+
+**Co wyszło: godzina pracy ciągłej.** Proces działał do końca (zatrzymany przez limit czasu testu), 0 wyjątków w logu.
+
+- **Pamięć (RSS):** 123 MB na starcie, 279 MB po 5 min (załadowane świece), 340 MB po 30 min, 350 MB po 60 min.
+  Po pierwszych 25 minutach przyrost to ok. 10 MB na pół godziny. Godzina to za mało, żeby rozstrzygnąć, czy to wyciek,
+  czy dochodzenie do poziomu stałego: do sprawdzenia w teście dobowym. Limit 1 GB w `deploy/` ma zapas.
+- **Zapytania HTTP w godzinę** (z logu `httpx`; Yahoo idzie przez `yfinance` i nie jest tu liczone):
+
+  | Serwis | Zapytań | Uwagi |
+  |---|---|---|
+  | news.google.com | 100 | 10 zapytań co ok. 6 min, wszystkie 200 |
+  | feeds.content.dowjones.io | 44 | MarketWatch i WSJ |
+  | data-api.binance.vision | 24 | świece krypto |
+  | federalreserve.gov, ecb.europa.eu, coindesk.com | po 22 | |
+  | publicreporting.cftc.gov | 20 | COT, jednorazowo przy starcie |
+  | www.eia.gov | 13 | zapasy, jednorazowo |
+  | fred.stlouisfed.org | 7 | jednorazowo |
+  | api.bls.gov | 2 | limit dobowy wyczerpany, zapas FRED zadziałał |
+  | stooq.com | 2 | oba nieudane (zerwane połączenie, 404) |
+  | nfs.faireconomy.media | 1 | kalendarz z cache |
+  | api.binance.com | 1 | 451, potem zapasowy host |
+
+  Razem 280 odpowiedzi: 277 × 200, 2 × 404 (Stooq), 1 × 451 (Binance). **Żaden serwis nie zaczął odrzucać połączeń.**
+- **Alerty newsowe:** 2 „PILNE” w godzinę (po 12 w przebiegu nadrabiającym).
+- **Panel:** `reports/panel.html` odświeżany co 5 minut przez nowe zadanie `dashboard`.
+
+**Co zmienione w kodzie.** Zadanie `dashboard` w `runner.py` (opis w F3). Poza tym w tym zadaniu nic nie wymagało naprawy:
+błędy znalezione wcześniej poprawiono w zadaniach A, C, D i E.
+
+**Co nie działa / uwagi.**
+- Każdy skan W20 najpierw próbuje Stooq (nieudane), potem Yahoo: działa, ale zostawia ostrzeżenie w logu przy każdym skanie.
+- `cfd health` nadal pokazuje jako BŁĄD wyłączone feedy (Bankier, CNBC) z wcześniejszych prób (pytanie w `DECYZJE.md`).
+- Reguły nadal przepuszczają jako „PILNE” tytuły spekulacyjne, np. „Bitcoin May Recover Before The First Rate Cut”
+  (fraza „rate cut” w tytule). Klasyfikator regułowy ocenia słowa, nie sens: to argument za LLM albo za węższą listą fraz.
+- Jeden news mapuje się na 7 instrumentów (BITCOIN, US500, US100, US30, GOLD, SILVER, USDIDX), bo hasło „rate” dotyka
+  wszystkich: alerty są przez to mało konkretne.
+- Liczba zapytań do Yahoo nie była mierzona (brak logu z `yfinance`); błędów ani odmów z Yahoo nie było.
+- Test trwał godzinę, w jednej sesji europejskiej. Zachowanie przez noc, weekend i otwarcie rynków jest niesprawdzone.
 
 ## F3. Uruchamianie w tle
 
