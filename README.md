@@ -3,7 +3,7 @@
 Analiza rynku i sygnały dla CFD w XTB: technika, fundamenty, newsy, kalendarz makro.
 Nie składa zleceń. Decyzja i transakcja są po stronie użytkownika.
 
-## Stan: v0.3
+## Stan: v0.2 + weryfikacja na żywych danych (to NIE jest paczka v0.3 z czatu)
 
 Adaptery sieciowe zostały sprawdzone na żywych danych (listopad 2026); wyniki, liczby i lista rzeczy niesprawdzonych
 są w `CLAUDE_CODE/WYNIKI.md`, otwarte pytania w `DECYZJE.md`. Testy (`pytest`) nie wymagają sieci: korzystają
