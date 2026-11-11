@@ -18,6 +18,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=8"]
+llm = ["anthropic>=1.0"]  # klasyfikator newsow LLM; bez pakietu dzialaja same reguly
 
 [project.scripts]
 cfd = "cfd.cli:main"

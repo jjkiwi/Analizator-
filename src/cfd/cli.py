@@ -110,6 +110,26 @@ def cmd_fetch(args) -> None:
             print(f"{inst.symbol:<10} BLAD: {str(exc)[:140]}")
 
 
+def cmd_data_quality(args) -> None:
+    """Jakosc swiec w cache (bez sieci): luki, zerowy zasieg, skoki > 8 ATR."""
+    from .data.quality import format_reports, quality_report
+
+    store = _service(args).store
+    reports = []
+    for inst in _pick(_instruments(args), args.symbols, args.category):
+        df = store.load(inst.symbol, args.interval)
+        source = store.source_of(inst.symbol, args.interval)
+        reports.append(quality_report(df, inst.symbol, args.interval, always_open=inst.category == "crypto",
+                                      source_symbol=inst.sources.get(source) if source else None))
+    print(format_reports(reports, markdown=args.markdown))
+    if args.details:
+        for r in reports:
+            for a, b in r.gaps[-args.details:]:
+                print(f"{r.symbol:<10} luka   {a} -> {b}")
+            for t, size in sorted(r.jumps, key=lambda j: -abs(j[1]))[:args.details]:
+                print(f"{r.symbol:<10} skok   {t}  {size:+.1f} ATR")
+
+
 # ---------- analiza ----------
 
 def _print_stats(label: str, st: dict) -> None:
@@ -395,6 +415,9 @@ def main(argv: list[str] | None = None) -> None:
     sp.add_argument("--category")
     add("check-sources", cmd_check_sources, "sprawdz, ktore mapowania zrodel dzialaja", interval=False)
     add("fetch", cmd_fetch, "pobierz/uzupelnij swiece do cache")
+    sp = add("data-quality", cmd_data_quality, "jakosc swiec w cache: luki, zerowy zasieg, skoki > 8 ATR")
+    sp.add_argument("--markdown", action="store_true", help="tabela w formacie Markdown")
+    sp.add_argument("--details", type=int, default=0, metavar="N", help="wypisz N ostatnich luk i N najwiekszych skokow")
 
     sp = add("backtest", cmd_backtest, "backtest strategii z kosztami")
     sp.add_argument("--strategy", default="trend_pullback", choices=STRATS)
