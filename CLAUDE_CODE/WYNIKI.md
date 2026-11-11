@@ -746,3 +746,34 @@ menedżera usług, demona Dockera ani Windows). Samo zadanie `dashboard` jest pr
 
 Nie zaczynane (wymaga decyzji 13–15). Po B1 uwaga do G3: obecne trzy strategie nie mają przewagi, więc nowe strategie
 i filtr reżimu mają sens dopiero po decyzjach o danych (rolowanie, stara historia) i po wpisaniu prawdziwych kosztów.
+
+## B1 po scaleniu z v0.3: akcje i interwał 1h (2026-11-11)
+
+Swapy XTB dla CFD, rolowania wykluczone, spready założone (akcje: 0,30%, bez swapu). 30m pominięte: 59 dni historii
+to za mało na walk-forward (750 + 250 świec dałoby jedno okno).
+
+| Zakres | Interwał | Kombinacji | PASS | WEAK | FAIL | PASS przy kosztach ×2 |
+|---|---|---|---|---|---|---|
+| 30 spółek (SPL.PL bez danych) | 1d | 90 | 4 | 13 | 73 | 2 |
+| 30 spółek | 4h | 90 | 0 | 0 | 90 | 0 |
+| 71 instrumentów | 1h | 213 | 2 | 23 | 188 | nie liczono |
+
+PASS: akcje 1d — TTWO.US mean_reversion (93 trans., +0,18R), OXIG.UK donchian_breakout (205, +0,29R),
+AST.PL donchian_breakout (96, +0,25R; ×2: PASS +0,20R), RBW.PL donchian_breakout (88, +0,33R; ×2: PASS +0,29R).
+Żadna z nich nie ma PASS na 4h. 1h — EU50 trend_pullback (39 trans., +0,27R), JP225 trend_pullback (36, +0,38R).
+
+Suma na 1h, wszystkie instrumenty:
+
+| Strategia | Transakcje | Suma R | Mediana oczek. R | W tym koszty (R) |
+|---|---|---|---|---|
+| trend_pullback | 4666 | −730,3 | −0,20 | 590,0 |
+| donchian_breakout | 7531 | −1099,6 | −0,17 | 983,2 |
+| mean_reversion | 3679 | −578,7 | −0,11 | 550,5 |
+
+Wnioski:
+- Na 1h jest 3–5 razy więcej transakcji niż na 1d, ale wynik jest wyraźnie gorszy. Koszty to ok. 0,13R na transakcję:
+  odpowiadają za większość straty, a przed kosztami wynik jest w okolicach zera lub ujemny.
+- Akcje na 1d: `donchian_breakout` ma dodatnią sumę (+76,5R na 1631 transakcjach) przy kosztach bazowych i ujemną (−42,2R) przy ×2.
+  Cała „przewaga” mieści się w niepewności co do spreadu.
+- Na 4h dla akcji historia jest za krótka: prawie wszystkie kombinacje padają na liczbie transakcji.
+- Nadal żadna strategia nie przechodzi walidacji.
