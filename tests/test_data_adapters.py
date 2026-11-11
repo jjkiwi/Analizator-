@@ -45,7 +45,7 @@ def test_yahoo_daily_index_is_session_date_utc():
     assert (out.index == out.index.normalize()).all()
     assert out.index[-1] == pd.Timestamp("2026-11-06", tz="UTC")
     assert list(out.columns) == ["open", "high", "low", "close", "volume"]
-    assert out.index.dayofweek.max() <= 4
+    assert out.index.day_of_week.max() <= 4
 
 
 def test_yahoo_hourly_is_utc_and_ordered():

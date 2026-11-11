@@ -11,6 +11,7 @@ JUMP_ATR = 8.0
 ATR_PERIOD = 14
 # Tyle kolejnych dni roboczych bez swiecy uznajemy jeszcze za swieta (np. Boze Narodzenie + drugi dzien).
 HOLIDAY_BDAYS = 2
+RECENT_BARS = 500
 
 
 @dataclass
@@ -22,6 +23,7 @@ class QualityReport:
     end: pd.Timestamp | None = None
     gaps: list[tuple[pd.Timestamp, pd.Timestamp]] = field(default_factory=list)  # (ostatnia swieca przed, pierwsza po)
     zero_range: int = 0
+    zero_range_recent: int = 0  # w ostatnich RECENT_BARS swiecach
     jumps: list[tuple[pd.Timestamp, float]] = field(default_factory=list)  # (czas, skok w ATR ze znakiem)
     roll_bars: int = 0  # swiece oznaczone jako rolowanie wg kalendarza wygasania (tylko znane kontrakty)
     jumps_on_roll: int = 0
@@ -74,7 +76,8 @@ def atr_prev(df: pd.DataFrame, period: int = ATR_PERIOD) -> pd.Series:
     tr = pd.concat(
         [df["high"] - df["low"], (df["high"] - prev_close).abs(), (df["low"] - prev_close).abs()], axis=1
     ).max(axis=1)
-    return tr.rolling(period).mean().shift(1)
+    atr = tr.rolling(period).mean().shift(1)
+    return atr.where(atr > 0)  # ATR = 0 to martwe notowania (same zamkniecia): skoku nie da sie wtedy zmierzyc
 
 
 def find_jumps(df: pd.DataFrame, k: float = JUMP_ATR) -> list[tuple[pd.Timestamp, float]]:
@@ -146,7 +149,8 @@ def quality_report(df: pd.DataFrame, symbol: str, interval: str, always_open: bo
         return rep
     rep.bars, rep.start, rep.end = len(df), df.index[0], df.index[-1]
     rep.gaps = find_gaps(df.index, interval, always_open)
-    rep.zero_range = int((df["high"] == df["low"]).sum())
+    zero = df["high"] == df["low"]
+    rep.zero_range, rep.zero_range_recent = int(zero.sum()), int(zero.iloc[-RECENT_BARS:].sum())
     rep.jumps = find_jumps(df)
     if source_symbol:
         flags = roll_flags(df, source_symbol)
@@ -156,18 +160,18 @@ def quality_report(df: pd.DataFrame, symbol: str, interval: str, always_open: bo
 
 
 def format_reports(reports: list[QualityReport], markdown: bool = False) -> str:
-    head = ["symbol", "swiec", "od", "do", "luki", "najdl. luka", "zero-zasieg", f"skoki>{JUMP_ATR:g}ATR", "najwiekszy skok"]
+    head = ["symbol", "swiec", "od", "do", "luki", "najdl. luka", "zero-zasieg", f"w ost. {RECENT_BARS}", f"skoki>{JUMP_ATR:g}ATR", "najwiekszy skok"]
     rows = []
     for r in reports:
         if not r.bars:
-            rows.append([r.symbol, "0", "-", "-", "-", "-", "-", "-", "brak danych w cache"])
+            rows.append([r.symbol, "0", "-", "-", "-", "-", "-", "-", "-", "brak danych w cache"])
             continue
         big = max(r.jumps, key=lambda j: abs(j[1]), default=None)
         gap = r.longest_gap
         rows.append([
             r.symbol, str(r.bars), str(r.start.date()), str(r.end.date()), str(len(r.gaps)),
             "-" if gap is None else (f"{gap.days} dni" if gap >= pd.Timedelta(days=2) else f"{gap / pd.Timedelta(hours=1):.0f} h"),
-            str(r.zero_range), str(len(r.jumps)),
+            str(r.zero_range), str(r.zero_range_recent), str(len(r.jumps)),
             "-" if big is None else f"{big[1]:+.1f} ATR {big[0].date()}",
         ])
     if markdown:
