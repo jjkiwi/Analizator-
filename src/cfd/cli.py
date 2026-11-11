@@ -148,7 +148,12 @@ def cmd_backtest(args) -> None:
         except DataSourceError as exc:
             print(f"{inst.symbol}: {exc}")
             continue
-        trades = run_backtest(df, strategy.generate(df), inst.costs, max_bars=args.max_bars)
+        from .data.quality import roll_mask
+
+        roll = roll_mask(inst, df)
+        signals = strategy.generate(df).copy()
+        signals.loc[roll, "side"] = 0
+        trades = run_backtest(df, signals, inst.costs, max_bars=args.max_bars, roll=roll)
         cut = df.index[int(len(df) * args.split)]
         print(f"\n== {inst.symbol} | {strategy.name} | {args.interval} | {len(df)} swiec ==")
         _print_stats("  calosc        ", summarize(trades))
@@ -166,7 +171,10 @@ def cmd_walkforward(args) -> None:
         except DataSourceError as exc:
             print(f"{inst.symbol}: {exc}")
             continue
-        res = walk_forward(df, REGISTRY[args.strategy], PARAM_GRIDS.get(args.strategy, {}), inst.costs, args.train, args.test)
+        from .data.quality import roll_mask
+
+        res = walk_forward(df, REGISTRY[args.strategy], PARAM_GRIDS.get(args.strategy, {}), inst.costs, args.train,
+                           args.test, roll=roll_mask(inst, df))
         print(f"\n== {inst.symbol} | {args.strategy} | {args.interval} | okien: {len(res.folds)} ==")
         for f in res.folds:
             print(f"  test od {f['test_start'].date()}: parametry {f['params']}, transakcji {f['test_trades']}, wynik {f['test_total_r']:+.1f}R")

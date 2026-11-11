@@ -10,6 +10,10 @@ def latest_signal(inst: Instrument, strategy, df: pd.DataFrame) -> Signal | None
     if len(df) < 3:
         return None
     closed = df.iloc[:-1]
+    from .data.quality import roll_mask
+
+    if roll_mask(inst, closed)[-1]:
+        return None  # swieca rolowania kontraktu: skok ceny jest sztuczny
     row = strategy.generate(closed).iloc[-1]
     if row["side"] == 0 or not (row["sl_dist"] > 0 and row["tp_dist"] > 0):
         return None

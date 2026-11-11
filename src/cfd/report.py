@@ -8,6 +8,7 @@ from pathlib import Path
 
 from dataclasses import replace
 
+from .data.quality import roll_mask
 from .strategies import PARAM_GRIDS, REGISTRY
 from .validation import verdict, walk_forward
 
@@ -24,7 +25,8 @@ def build_rows(instruments, data_service, interval: str, strategies: list[str], 
             rows.append({"symbol": inst.symbol, "category": inst.category, "error": str(exc)[:120]})
             continue
         for name in strategies:
-            res = walk_forward(df, REGISTRY[name], PARAM_GRIDS.get(name, {}), costs, train_bars, test_bars)
+            res = walk_forward(df, REGISTRY[name], PARAM_GRIDS.get(name, {}), costs, train_bars, test_bars,
+                               roll=roll_mask(inst, df))
             st = res.stats
             v, why = verdict(st, res.folds) if res.folds else ("fail", "za krotka historia na walk-forward")
             rows.append({

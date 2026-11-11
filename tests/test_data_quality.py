@@ -85,3 +85,21 @@ def test_roll_calendar_ignores_incomplete_last_month():
     days = pd.bdate_range("2026-01-01", "2026-03-10", tz="UTC")
     assert max(expiry_dates("NG=F", days)).month == 2
     assert max(expiry_dates("CL=F", days)).month == 2
+
+
+def test_roll_mask_gap_rule_only_for_daily_futures():
+    import numpy as np
+    import pandas as pd
+
+    from cfd.data.quality import roll_mask
+    from cfd.models import Instrument
+
+    idx = pd.date_range("2025-01-01", periods=60, freq="B", tz="UTC")
+    close = np.full(60, 100.0)
+    close[40:] = 130.0  # luka +30 przy ATR ~1
+    df = pd.DataFrame({"open": close, "high": close + 0.5, "low": close - 0.5, "close": close}, index=idx)
+    fut = roll_mask(Instrument("LEANHOGS", "x", "commodities", {"yahoo": "HE=F"}), df)
+    assert fut.sum() == 1 and fut[40]
+    assert not roll_mask(Instrument("DE40", "x", "indices", {"yahoo": "^GDAXI"}), df).any()
+    hourly = df.set_axis(pd.date_range("2025-01-01", periods=60, freq="h", tz="UTC"))
+    assert not roll_mask(Instrument("LEANHOGS", "x", "commodities", {"yahoo": "HE=F"}), hourly).any()

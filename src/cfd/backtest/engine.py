@@ -5,10 +5,16 @@ Zalozenia (wszystkie na niekorzysc strategii):
 - jesli w jednej swiecy zasieg obejmuje i SL, i TP, przyjmujemy SL,
 - luka przez poziom = realizacja po cenie otwarcia (gorszej niz poziom dla SL),
 - spread odejmowany w calosci, swap naliczany za kazda noc kalendarzowa.
+
+Rolowanie (`roll`): na pierwszej swiecy po wygasnieciu kontraktu seria ciagla przeskakuje na nowy kontrakt.
+Tej roznicy na CFD nie da sie zarobic ani stracic (broker wyrownuje ja korekta przy rolowaniu), wiec otwarta
+pozycja jest przesuwana o luke otwarcia: wejscie, SL i TP razem. Luka nie daje wtedy ani zysku, ani straty.
 """
 from __future__ import annotations
 
 import pandas as pd
+
+import numpy as np
 
 from ..models import Costs, Trade
 
@@ -18,6 +24,7 @@ def run_backtest(
     signals: pd.DataFrame,
     costs: Costs = Costs(),
     max_bars: int | None = None,
+    roll: pd.Series | np.ndarray | None = None,
 ) -> list[Trade]:
     o, h, l, c = (df[k].to_numpy() for k in ("open", "high", "low", "close"))
     side = signals["side"].to_numpy()
@@ -25,6 +32,7 @@ def run_backtest(
     tp_d = signals["tp_dist"].to_numpy()
     times = df.index
     n = len(df)
+    is_roll = np.zeros(n, dtype=bool) if roll is None else np.asarray(roll, dtype=bool)
     trades: list[Trade] = []
     pos: dict | None = None
 
@@ -51,6 +59,11 @@ def run_backtest(
         pos = None
 
     for i in range(n):
+        if pos is not None and i > pos["i"] and is_roll[i] and not is_roll[i - 1]:
+            shift = o[i] - c[i - 1]  # luka rolowania: przesuwamy cala pozycje, wynik bez zmian
+            pos["entry"] += shift
+            pos["sl"] += shift
+            pos["tp"] += shift
         if pos is not None:
             s, sl, tp = pos["side"], pos["sl"], pos["tp"]
             if s > 0:

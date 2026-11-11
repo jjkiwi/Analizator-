@@ -142,6 +142,22 @@ def roll_flags(df: pd.DataFrame, source_symbol: str) -> pd.Series:
     return flags
 
 
+def roll_mask(inst, df: pd.DataFrame) -> np.ndarray:
+    """Maska swiec rolowania dla instrumentu (wg tickera Yahoo). Przyczynowa: zna tylko dane do otwarcia swiecy.
+
+    1. Kalendarz wygasniec (`roll_flags`): ropa WTI i gaz, wszystkie interwaly.
+    2. Pozostale kontrakty ciagle (`=F`) na swiecach dziennych: luka otwarcia ponad JUMP_ATR x ATR z poprzednich
+       swiec. Tak duza luka na dziennym kontrakcie to w praktyce zmiana kontraktu (np. wieprzowina), nie ruch rynku.
+    Serie bez `=F` (indeksy kasowe, krypto): same False.
+    """
+    symbol = (getattr(inst, "sources", None) or {}).get("yahoo", "")
+    mask = roll_flags(df, symbol).to_numpy(dtype=bool).copy()
+    if symbol.endswith("=F") and len(df) > ATR_PERIOD + 2 and (df.index[-1] - df.index[0]) / (len(df) - 1) >= pd.Timedelta(hours=20):
+        gap = ((df["open"] - df["close"].shift(1)) / atr_prev(df)).abs()
+        mask |= (gap > JUMP_ATR).fillna(False).to_numpy()
+    return mask
+
+
 def quality_report(df: pd.DataFrame, symbol: str, interval: str, always_open: bool = False,
                    source_symbol: str | None = None) -> QualityReport:
     rep = QualityReport(symbol=symbol, interval=interval)

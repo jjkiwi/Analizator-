@@ -8,6 +8,7 @@ from __future__ import annotations
 import itertools
 from dataclasses import dataclass, field
 
+import numpy as np
 import pandas as pd
 
 from ..backtest import run_backtest, summarize
@@ -24,12 +25,15 @@ class WalkForwardResult:
         return summarize(self.trades)
 
 
-def _window_trades(df, strategy, costs, start: int, end: int, max_bars) -> list[Trade]:
+def _window_trades(df, strategy, costs, start: int, end: int, max_bars, roll=None) -> list[Trade]:
     """Transakcje otwarte w [start, end). Wskazniki licza sie na calej historii do `end`."""
     hist = df.iloc[:end]
     signals = strategy.generate(hist).copy()
     signals.iloc[:start, signals.columns.get_loc("side")] = 0
-    return run_backtest(hist, signals, costs, max_bars=max_bars)
+    if roll is not None:
+        roll = roll[:end]
+        signals.loc[roll, "side"] = 0  # sygnal ze swiecy rolowania opiera sie na sztucznym skoku
+    return run_backtest(hist, signals, costs, max_bars=max_bars, roll=roll)
 
 
 def walk_forward(
@@ -41,8 +45,12 @@ def walk_forward(
     test_bars: int = 250,
     min_train_trades: int = 5,
     max_bars: int | None = None,
+    roll=None,
 ) -> WalkForwardResult:
+    """roll: maska swiec rolowania (patrz `cfd.data.quality.roll_mask`); None = bez korekty."""
     res = WalkForwardResult()
+    if roll is not None:
+        roll = np.asarray(roll, dtype=bool)
     combos = [dict(zip(grid, vals)) for vals in itertools.product(*grid.values())] or [{}]
     start = 0
     while start + train_bars + test_bars <= len(df):
@@ -50,7 +58,7 @@ def walk_forward(
         te_end = tr_end + test_bars
         best, best_score = None, None
         for params in combos:
-            st = summarize(_window_trades(df, strategy_cls(**params), costs, start, tr_end, max_bars))
+            st = summarize(_window_trades(df, strategy_cls(**params), costs, start, tr_end, max_bars, roll))
             if st.get("trades", 0) < min_train_trades:
                 continue
             if best_score is None or st["expectancy_r"] > best_score:
@@ -60,7 +68,7 @@ def walk_forward(
             # Brak dodatniej przewagi na treningu = w tym oknie nie handlujemy.
             fold.update(params=None, train_expectancy_r=best_score, test_trades=0, test_total_r=0.0)
         else:
-            trades = _window_trades(df, strategy_cls(**best), costs, tr_end, te_end, max_bars)
+            trades = _window_trades(df, strategy_cls(**best), costs, tr_end, te_end, max_bars, roll)
             res.trades.extend(trades)
             fold.update(
                 params=best,

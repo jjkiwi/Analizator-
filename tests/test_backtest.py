@@ -67,3 +67,24 @@ def test_strategy_signals_do_not_look_ahead(candles):
     full = TrendPullback().generate(candles)
     part = TrendPullback().generate(candles.iloc[:1000])
     assert (full["side"].iloc[:1000] == part["side"]).all()
+
+
+def test_roll_gap_gives_no_profit_or_loss():
+    """Luka rolowania przesuwa cala pozycje: bez korekty byloby TP, z korekta pozycja trwa dalej."""
+    import numpy as np
+    import pandas as pd
+
+    from cfd.backtest import run_backtest
+
+    idx = pd.date_range("2026-01-01", periods=6, freq="D", tz="UTC")
+    close = [100, 100, 100, 110, 110, 110]  # skok +10 na swiecy 3 to rolowanie
+    df = pd.DataFrame({"open": [100, 100, 100, 110, 110, 110], "high": [c + 0.5 for c in close],
+                       "low": [c - 0.5 for c in close], "close": close}, index=idx)
+    sig = pd.DataFrame({"side": [1, 0, 0, 0, 0, 0], "sl_dist": 2.0, "tp_dist": 4.0}, index=idx)
+    plain = run_backtest(df, sig)
+    assert plain[0].exit_reason == "tp" and plain[0].r_multiple > 2  # sztuczny zysk
+    roll = np.array([False, False, False, True, False, False])
+    fixed = run_backtest(df, sig, roll=roll)
+    assert fixed[0].exit_reason == "end" and abs(fixed[0].r_multiple) < 1e-9
+    short = run_backtest(df, sig.assign(side=[-1, 0, 0, 0, 0, 0]), roll=roll)
+    assert short[0].exit_reason == "end" and abs(short[0].r_multiple) < 1e-9  # bez sztucznej straty na SL
