@@ -3,26 +3,30 @@
 Analiza rynku i sygnały dla CFD w XTB: technika, fundamenty, newsy, kalendarz makro.
 Nie składa zleceń. Decyzja i transakcja są po stronie użytkownika.
 
-## Stan: v0.2
+## Stan: v0.3
 
-Cały kod ma testy jednostkowe (57), ale **żaden adapter sieciowy nie był uruchomiony na prawdziwych danych**:
-środowisko, w którym powstał, nie miało dostępu do tych serwisów. Weryfikacja to zadania w `CLAUDE_CODE/ZADANIA.md`.
+Adaptery sieciowe zostały sprawdzone na żywych danych (listopad 2026); wyniki, liczby i lista rzeczy niesprawdzonych
+są w `CLAUDE_CODE/WYNIKI.md`, otwarte pytania w `DECYZJE.md`. Testy (`pytest`) nie wymagają sieci: korzystają
+z zapisanych próbek prawdziwych odpowiedzi w `tests/fixtures/`.
+
+**Walidacja walk-forward: żadna z trzech strategii nie ma potwierdzonej przewagi**, dlatego `alert_strategies` jest puste.
 
 | Obszar | Co jest | Sprawdzone |
 |---|---|---|
 | Instrumenty | 45 symboli XTB z mapowaniem na źródła | lista i mapowania do weryfikacji |
-| Świece | Yahoo, Stooq, Binance, źródła zapasowe, cache Parquet | tylko na atrapach |
+| Świece | Yahoo, Stooq, Binance, źródła zapasowe, cache Parquet, `cfd data-quality` | Yahoo i Binance tak; Stooq blokuje automat |
 | Wskaźniki | SMA, EMA, RSI, ATR, ADX, Bollinger, Donchian, MACD, reżim rynku | tak |
-| Strategie | trend_pullback, donchian_breakout, mean_reversion | logika tak, skuteczność nie |
+| Strategie | trend_pullback, donchian_breakout, mean_reversion | logika tak; skuteczność: brak przewagi (B1) |
 | Backtest | spread, swap, luki, podział in/out-of-sample | tak |
-| Walidacja | walk-forward z doborem parametrów, ocena PASS/WEAK/FAIL, raport HTML | na danych syntetycznych |
+| Walidacja | walk-forward z doborem parametrów, ocena PASS/WEAK/FAIL, raport HTML, test kosztów ×2 | tak, na danych rynkowych |
 | Dziennik | zapis i rozliczanie sygnałów (forward test), SQLite | tak |
-| Newsy | RSS/Atom, deduplikacja, mapowanie na instrumenty, klasyfikacja regułowa i LLM | parsowanie tak, feedy nie |
-| Makro | kalendarz, reguły reakcji na odczyt vs prognoza, alert przed publikacją | logika tak, źródło nie |
-| Fundamenty | bias −2..+2 z serii FRED, konfigurowany w YAML | obliczenia tak, serie nie |
+| Newsy | RSS/Atom, deduplikacja, mapowanie na instrumenty, klasyfikacja regułowa i LLM | feedy tak (18 działa); LLM tylko na atrapie |
+| Makro | kalendarz, reguły reakcji na odczyt vs prognoza, alert przed publikacją | tak; odczyty po publikacji tylko dla USA |
+| Fundamenty | bias −2..+2 z serii FRED, zapasów EIA i pozycjonowania COT | tak, bez kluczy; API z kluczem nie |
 | Fuzja | technika + bias + newsy = ocena zgodności sygnału | tak |
 | Powiadomienia | Telegram albo konsola | formatowanie tak, wysyłka nie |
-| Praca ciągła | `cfd run`, kontrola zdrowia źródeł, zbiorcze alerty o awariach | na atrapach |
+| Praca ciągła | `cfd run`, kontrola zdrowia źródeł, zbiorcze alerty o awariach, warianty w `deploy/` | przebieg tak; `deploy/` nie |
+| Wielkość pozycji | `cfd size`: loty dla zadanego ryzyka | obliczenia tak; mnożniki lota do uzupełnienia |
 | Panel | statyczny HTML z bazy (`cfd dashboard`) | tak |
 
 ## Start
@@ -37,6 +41,8 @@ cp .env.example .env            # klucze: patrz DECYZJE.md
 
 ```bash
 cfd check-sources               # które mapowania źródeł działają
+cfd data-quality --interval 1d  # luki, świece o zerowym zasięgu, skoki (rolowanie)
+cfd size US500 --entry 5000 --sl 4980 --risk-pct 1 --equity 10000 --lot-multiplier 50 --currency USD --fx-rate 4.0
 cfd fetch --interval 1d         # pobierz historię do cache
 cfd backtest GOLD --strategy donchian_breakout
 cfd walkforward US500 --strategy trend_pullback
@@ -98,6 +104,6 @@ DECYZJE.md                pytania do użytkownika
 - Backtest: jedna pozycja naraz, brak poślizgu poza lukami.
 - Darmowe newsy docierają z opóźnieniem od kilkudziesięciu sekund do kilku minut.
 - Klasyfikator regułowy dobrze ocenia wagę newsa, słabo kierunek.
-- Odczyty makro po publikacji: darmowe źródło jeszcze nieznalezione (zadanie D2).
+- Odczyty makro po publikacji: automatycznie tylko USA (FRED, BLS, EIA), z opóźnieniem do ok. 40 minut; reszta ręcznie (`cfd macro set-actual`).
 - Reguły makro i składowe biasu to podręcznikowe heurystyki, nie model.
-- Fundamenty spółek, zapasy EIA i pozycjonowanie COT: jeszcze niezaimplementowane.
+- Fundamenty spółek: jeszcze niezaimplementowane (czeka na listę spółek).
