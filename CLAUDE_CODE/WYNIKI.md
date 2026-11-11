@@ -262,10 +262,70 @@ Yahoo `=F` to kontrakt najbliższy bez korekty: w pierwszej sesji po wygaśnięc
 ## B1. Raport walk-forward
 
 **Co zrobione.** `cfd report --interval 1d` i `--interval 4h` na cache z A3 (41 instrumentów × 3 strategie = 123 kombinacje
-na interwał; ZINC i NICKEL nie mają danych). Dopisana opcja `cfd report --cost-mult 2` (mnoży spread i swapy, wynik w
-`reports/walidacja_<int>_koszty_x2.*`), żeby test „koszty ×2” był powtarzalny. Progi walidacji i siatki parametrów bez zmian.
+na interwał; ZINC i NICKEL nie mają danych). Opcja `cfd report --cost-mult 2` mnoży spread i swapy (test odporności).
+Raport liczony dwa razy: najpierw na założonych kosztach, potem (2026-11-11) po dwóch zmianach z decyzji użytkownika:
+swapy z tabeli XTB (B2) i wykluczenie świec rolowania. Progi walidacji i siatki parametrów bez zmian.
 
-**Co wyszło.**
+**Wykluczenie rolowań: co zmienione w kodzie.**
+- `data/quality.py: roll_mask` — maska świec rolowania: kalendarz wygaśnięć dla ropy WTI i gazu (wszystkie interwały)
+  oraz, dla pozostałych kontraktów `=F` na świecach dziennych, luka otwarcia ponad 8 ATR z poprzednich świec.
+  Oflagowane na 1d: OIL.WTI 314, NATGAS 314, LEANHOGS 47, PLATINUM 11, CATTLE 7, PALLADIUM 6, pozostałe 0–3.
+- `backtest/engine.py` — otwarta pozycja jest na świecy rolowania przesuwana o lukę (wejście, SL i TP razem),
+  więc skok nie daje zysku ani straty. `validation/walkforward.py`, `report.py`, `cli.py` — sygnał ze świecy rolowania
+  jest zerowany. `scanner.py` — skaner na żywo nie zgłasza sygnału ze świecy rolowania.
+- Uzasadnienie (zasada 6): to usunięcie ruchów, których na CFD nie ma, a nie poluzowanie progów. Zmiana działa w obie
+  strony: zabiera sztuczne zyski i sztuczne straty.
+- Ograniczenie: mniejsze rolowania Brenta, benzyny, zbóż i metali nie są wykrywane (brak kalendarzy, luka poniżej 8 ATR).
+
+**Co wyszło (aktualne: swapy XTB, rolowania wykluczone, spready założone).**
+
+| Interwał | Koszty | PASS | WEAK | FAIL |
+|---|---|---|---|---|
+| 1d | swapy XTB, spready założone | 5 | 22 | 96 |
+| 1d | ×2 | 2 | 10 | 111 |
+| 4h | swapy XTB, spready założone | 1 | 7 | 115 |
+| 4h | ×2 | 2 | 1 | 120 |
+
+Lista PASS z kontrolą dodatkową:
+
+| Instrument | Strategia | Int. | Trans. | Skut. | Oczek. R | PF | Suma R | Max DD | Koszty ×2 | Drugi interwał |
+|---|---|---|---|---|---|---|---|---|---|---|
+| SPA35 | donchian_breakout | 1d | 122 | 45% | +0.28 | 1.45 | +34.4 | -8.9% | WEAK (112 trans., +0.17R, PF 1.24) | FAIL (5 trans., -0.68R, PF 0.44) |
+| VIX | mean_reversion | 1d | 103 | 54% | +0.39 | 1.78 | +39.8 | -9.1% | PASS (103 trans., +0.38R, PF 1.76) | FAIL (24 trans., +0.24R, PF 1.48) |
+| SOYBEAN | donchian_breakout | 1d | 97 | 42% | +0.21 | 1.32 | +20.3 | -9.4% | WEAK (88 trans., +0.09R, PF 1.13) | FAIL (20 trans., +0.17R, PF 1.28) |
+| LEANHOGS | mean_reversion | 1d | 37 | 51% | +0.38 | 1.55 | +14.2 | -10.3% | PASS (37 trans., +0.28R, PF 1.38) | FAIL (0 trans.) |
+| PALLADIUM | trend_pullback | 1d | 66 | 52% | +0.19 | 1.34 | +12.6 | -5.9% | WEAK (61 trans., +0.09R, PF 1.16) | FAIL (29 trans., -0.00R, PF 1.00) |
+| ALUMINIUM | mean_reversion | 4h | 41 | 54% | +0.35 | 1.71 | +14.4 | -3.2% | PASS (41 trans., +0.26R, PF 1.50) | FAIL (10 trans., -1.19R, PF 0.22) |
+
+**Które PASS przetrwały: żaden.** Koszty ×2 przetrwały trzy (VIX i LEANHOGS na 1d, ALUMINIUM na 4h), ale żadna kombinacja
+nie ma PASS na drugim interwale, a każda z tych trzech ma osobne zastrzeżenie:
+
+- **VIX** — `^VIX` to indeks kasowy; CFD w XTB jest na kontrakcie futures z contango. Wynik z indeksu nie przenosi się
+  na instrument, którym da się handlować.
+- **LEANHOGS** — 37 transakcji, a wynik powstał dopiero po usunięciu 47 świec rolowania (przedtem +0,00R przy 62 transakcjach).
+  Tak duża zależność od jednej korekty danych to powód do nieufności, nie do zaufania. Na 4h brak transakcji.
+- **ALUMINIUM** — dane 4h dziurawe, dużo świec o zerowym zasięgu (A3), 41 transakcji.
+
+**Co zmieniły swapy XTB i wykluczenie rolowań** (1d): z listy PASS wypadły OIL donchian_breakout (+0,20R → +0,10R),
+NATGAS mean_reversion (+0,26R → +0,21R) i SILVER mean_reversion (+0,35R → +0,25R); wszystkie trzy to teraz WEAK.
+Doszły SOYBEAN donchian_breakout i LEANHOGS mean_reversion. Podejrzenie z pierwszego raportu, że PASS na gazie to artefakt
+rolowania, potwierdziło się tylko częściowo: wynik spadł, ale pozostał dodatni.
+
+**Obraz zbiorczy.** 5 PASS na 123 kombinacje to ok. 4%, czyli tyle, ile daje przypadek. Suma wyników wszystkich
+instrumentów jest ujemna dla każdej strategii na obu interwałach:
+
+| Strategia | 1d: transakcje | 1d: suma R | 1d: mediana oczek. R | 4h: transakcje | 4h: suma R | 4h: mediana oczek. R |
+|---|---|---|---|---|---|---|
+| trend_pullback | 2681 | −139,7 | −0,08 | 958 | −59,1 | −0,01 |
+| donchian_breakout | 3566 | −355,9 | −0,09 | 1537 | −46,9 | −0,14 |
+| mean_reversion | 1892 | −218,5 | −0,19 | 756 | −101,4 | −0,16 |
+
+**Wniosek: żadna strategia nie przechodzi walidacji.** `alert_strategies` zostaje puste.
+
+**Zastrzeżenia.** Spready to nadal założenia. Historia 4h z Yahoo to ok. 2 lata, więc okien testowych jest mało.
+Stara historia bez zasięgu świec (A3) nie jest odfiltrowana. Pełny raport liczy się ok. 4 min (1d) i ok. 2 min (4h).
+
+### Pierwszy przebieg (koszty założone, rolowania nieodfiltrowane) — dla porównania
 
 | Interwał | Koszty | PASS | WEAK | FAIL |
 |---|---|---|---|---|
@@ -305,20 +365,31 @@ jest ujemna dla każdej strategii na obu interwałach:
 | donchian_breakout | 3813 | −491,7 | −0,09 | 1535 | −25,0 | −0,12 |
 | mean_reversion | 2015 | −197,8 | −0,16 | 788 | −100,7 | −0,16 |
 
-**Wniosek: żadna strategia nie przechodzi walidacji.** `alert_strategies` zostaje puste. Kandydatów do forward testu
-(dziennik i tak zapisuje wszystkie sygnały) raport nie wskazuje; najmniej zła jest `trend_pullback`.
-
-**Zastrzeżenia.** Koszty to założenia, nie dane XTB (B2). Historia 4h z Yahoo to ok. 2 lata, więc okien testowych jest mało
-i wiele kombinacji 4h pada na „za mało transakcji”. Świece rolowania i stara historia bez zasięgu (A3) nie są odfiltrowane:
-to pytania 4 i 5 w `DECYZJE.md`; każda z tych zmian wymaga powtórzenia raportu.
-
-**Nie działa / uwagi.** Pełny raport liczy się ok. 4 min (1d) i ok. 6 min (4h).
-
 ## B2. Koszty z XTB
 
-Nie wykonane: czeka na specyfikację instrumentów od użytkownika (decyzja 1 w `DECYZJE.md`). Raport B1 jest liczony na
-założeniach z `cost_defaults`. Po dostarczeniu danych: wpisać `costs` per instrument w `config/instruments.yaml`,
-mnożniki lota w `config/contracts.yaml` i powtórzyć B1.
+**Co zrobione (częściowo).** Użytkownik dostarczył PDF „Tabela stawek punktów swapowych... obowiązująca od 09.11.2026”.
+Stawki kosztów finansowania dla wszystkich 43 instrumentów są wpisane w `config/instruments.yaml` w polu `costs`
+(stawka dzienna w % × 365 / 100; wartość dodatnia = koszt) i B1 jest powtórzone.
+
+| Grupa | Long rocznie | Short rocznie | Założenie sprzed zmiany (long / short) |
+|---|---|---|---|
+| US500, US100, US30, US2000 | 8,0% | 0,08% | 6% / 1% |
+| DE40 | 6,5% | 1,6% | 6% / 1% |
+| GOLD, COCOA, COFFEE, SUGAR | 12,6% | 4,6% | 6–8% / 1–2% |
+| OIL, OIL.WTI, NATGAS, GASOLINE | 15,6% | 7,7% | 8% / 2% |
+| SILVER, PLATINUM, PALLADIUM | 14,1% | 6,2% | 6% / 1% |
+| pozostałe towary (zboża, miedź, aluminium) | 8,5% | 0,6% | 8% / 2% |
+| BITCOIN, ETHEREUM, SOLANA | 35,5% | 10,1% | 25% / 10% |
+
+**Co nie działa.**
+- PDF nie zawiera spreadów ani wartości nominalnej lota: spready w `cost_defaults` to nadal założenia, a
+  `config/contracts.yaml` jest pusty.
+- Strona https://www.xtb.com/pl/specyfikacja-instrumentow (wskazana przez użytkownika) nie ma tabeli w HTML; ładuje ją
+  skrypt z adresu, który odpowiedział HTTP 403 (zapora). Zabezpieczenia nie obchodziłem; do programu nie dodałem
+  żadnego pobierania z XTB (zasada 2).
+- AUS200 ma w XTB symbol `AU200.cash`: stawka wzięta z tego wiersza, nazwa w konfiguracji bez zmian.
+- Stawki XTB się zmieniają; po nowej tabeli trzeba je wpisać ponownie (ręcznie).
+- Backtest liczy swap jako stały procent ceny wejścia za każdą noc kalendarzową; XTB liczy od bieżącej ceny.
 
 ## B3. Kalkulator wielkości pozycji
 

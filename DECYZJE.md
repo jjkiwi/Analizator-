@@ -108,3 +108,11 @@ na swoim komputerze, nie do czatu i nie do tego pliku.
    część obecnych trzeba by usunąć albo dopisać resztę ręcznie w ustawieniach. Alternatywa: uruchomić te sprawdzenia u siebie.
 5. **Stare wpisy w `cfd health`.** Wyłączone feedy (Bankier, CNBC) nadal widnieją jako BŁĄD z wcześniejszych prób.
    Czy `cfd health` ma pokazywać tylko źródła aktywne w konfiguracji?
+
+### Odpowiedzi użytkownika z 2026-11-11 i co z nich wynikło
+
+- **Rolowania: wykluczyć.** Zrobione (`WYNIKI.md`, B1). Korekta wsteczna cen nie była potrzebna.
+- **Koszty XTB.** Swapy wpisane z PDF-a. Nadal potrzebne: **spready i wartość nominalna 1 lota** (z walutą).
+  Strona specyfikacji XTB odrzuca automat (403), więc potrzebny jest dokument, zrzuty ekranu albo wklejony tekst tabeli.
+- **Telegram i alerty: poczekać.** Nic nie zmieniane; `alert_strategies` puste.
+- **Nowe pytanie:** symbol AUS200 w konfiguracji a `AU200.cash` w XTB: zmienić nazwę w `instruments.yaml`?
