@@ -8,9 +8,11 @@
 #          Rozne zrodla to rozne instrumenty bazowe: Yahoo "=F" to kontrakt futures, Stooq "^..." to indeks kasowy.
 # UWAGA 2a: ZINC i NICKEL nie maja darmowego zrodla (Yahoo nie ma kontraktow LME; ZNC=F to martwa seria
 #          rozliczeniowa bez obrotu). Patrz DECYZJE.md.
-# UWAGA 3: koszty w `cost_defaults` to ZALOZENIA robocze, nie dane XTB.
-#          Podmien je na wartosci ze specyfikacji instrumentow w xStation
-#          (mozesz tez nadpisac koszt na pojedynczym instrumencie polem `costs`).
+# UWAGA 3: SWAPY per instrument (pole `costs`) pochodza z tabeli XTB "Tabela stawek punktow swapowych...
+#          obowiazujaca od 09.11.2026" (PDF od uzytkownika). Przeliczenie: stawka dzienna w % x 365 / 100,
+#          dodatnia = koszt. XTB zmienia te stawki: po nowej tabeli trzeba je wpisac ponownie.
+#          AUS200 ma w XTB symbol AU200.cash (stawka wzieta z tego wiersza).
+#          SPREADY w `cost_defaults` to nadal ZALOZENIA robocze, nie dane XTB.
 
 cost_defaults:
   indices:     {spread_pct: 0.0003, swap_long_annual_pct: 0.06, swap_short_annual_pct: 0.01}
@@ -21,56 +23,56 @@ cost_defaults:
 
 instruments:
   # ---------- INDEKSY ----------
-  - {symbol: US500,   name: "S&P 500",         category: indices, sources: {yahoo: "ES=F",  stooq: "^spx"}}
-  - {symbol: US100,   name: "Nasdaq 100",      category: indices, sources: {yahoo: "NQ=F",  stooq: "^ndx"}}
-  - {symbol: US30,    name: "Dow Jones",       category: indices, sources: {yahoo: "YM=F",  stooq: "^dji"}}
-  - {symbol: US2000,  name: "Russell 2000",    category: indices, sources: {yahoo: "RTY=F"}}
-  - {symbol: DE40,    name: "DAX",             category: indices, sources: {yahoo: "^GDAXI", stooq: "^dax"}}
-  - {symbol: UK100,   name: "FTSE 100",        category: indices, sources: {yahoo: "^FTSE", stooq: "^ukx"}}
-  - {symbol: FRA40,   name: "CAC 40",          category: indices, sources: {yahoo: "^FCHI", stooq: "^cac"}}
-  - {symbol: EU50,    name: "Euro Stoxx 50",   category: indices, sources: {yahoo: "^STOXX50E"}}
-  - {symbol: SPA35,   name: "IBEX 35",         category: indices, sources: {yahoo: "^IBEX"}}
-  - {symbol: ITA40,   name: "FTSE MIB",        category: indices, sources: {yahoo: "FTSEMIB.MI"}}
-  - {symbol: NED25,   name: "AEX",             category: indices, sources: {yahoo: "^AEX"}}
-  - {symbol: SUI20,   name: "SMI",             category: indices, sources: {yahoo: "^SSMI"}}
+  - {symbol: US500,   name: "S&P 500",         category: indices, sources: {yahoo: "ES=F",  stooq: "^spx"}, costs: {swap_long_annual_pct: 0.0803, swap_short_annual_pct: 0.00081}}
+  - {symbol: US100,   name: "Nasdaq 100",      category: indices, sources: {yahoo: "NQ=F",  stooq: "^ndx"}, costs: {swap_long_annual_pct: 0.0803, swap_short_annual_pct: 0.00081}}
+  - {symbol: US30,    name: "Dow Jones",       category: indices, sources: {yahoo: "YM=F",  stooq: "^dji"}, costs: {swap_long_annual_pct: 0.0803, swap_short_annual_pct: 0.00081}}
+  - {symbol: US2000,  name: "Russell 2000",    category: indices, sources: {yahoo: "RTY=F"}, costs: {swap_long_annual_pct: 0.0803, swap_short_annual_pct: 0.00081}}
+  - {symbol: DE40,    name: "DAX",             category: indices, sources: {yahoo: "^GDAXI", stooq: "^dax"}, costs: {swap_long_annual_pct: 0.06531, swap_short_annual_pct: 0.0158}}
+  - {symbol: UK100,   name: "FTSE 100",        category: indices, sources: {yahoo: "^FTSE", stooq: "^ukx"}, costs: {swap_long_annual_pct: 0.086, swap_short_annual_pct: 0.00525}}
+  - {symbol: FRA40,   name: "CAC 40",          category: indices, sources: {yahoo: "^FCHI", stooq: "^cac"}, costs: {swap_long_annual_pct: 0.07038, swap_short_annual_pct: 0.02087}}
+  - {symbol: EU50,    name: "Euro Stoxx 50",   category: indices, sources: {yahoo: "^STOXX50E"}, costs: {swap_long_annual_pct: 0.07038, swap_short_annual_pct: 0.02087}}
+  - {symbol: SPA35,   name: "IBEX 35",         category: indices, sources: {yahoo: "^IBEX"}, costs: {swap_long_annual_pct: 0.07038, swap_short_annual_pct: 0.02087}}
+  - {symbol: ITA40,   name: "FTSE MIB",        category: indices, sources: {yahoo: "FTSEMIB.MI"}, costs: {swap_long_annual_pct: 0.07038, swap_short_annual_pct: 0.02087}}
+  - {symbol: NED25,   name: "AEX",             category: indices, sources: {yahoo: "^AEX"}, costs: {swap_long_annual_pct: 0.07038, swap_short_annual_pct: 0.02087}}
+  - {symbol: SUI20,   name: "SMI",             category: indices, sources: {yahoo: "^SSMI"}, costs: {swap_long_annual_pct: 0.08537, swap_short_annual_pct: 0.00588}}
   # W20: Stooq ma pelna historie dzienna; Yahoo WIG20.WA ma tylko 1h (730 dni), swiece dzienne sa wtedy skladane z 1h.
-  - {symbol: W20,     name: "WIG20",           category: indices, sources: {stooq: "wig20", yahoo: "WIG20.WA"}}
-  - {symbol: JP225,   name: "Nikkei 225",      category: indices, sources: {yahoo: "^N225", stooq: "^nkx"}}
-  - {symbol: AUS200,  name: "ASX 200",         category: indices, sources: {yahoo: "^AXJO"}}
-  - {symbol: HK.cash, name: "Hang Seng",       category: indices, sources: {yahoo: "^HSI",  stooq: "^hsi"}}
-  - {symbol: VIX,     name: "VIX",             category: indices, sources: {yahoo: "^VIX"}}
-  - {symbol: USDIDX,  name: "Indeks dolara",   category: indices, sources: {yahoo: "DX-Y.NYB"}}
+  - {symbol: W20,     name: "WIG20",           category: indices, sources: {stooq: "wig20", yahoo: "WIG20.WA"}, costs: {swap_long_annual_pct: 0.08243, swap_short_annual_pct: 0.00882}}
+  - {symbol: JP225,   name: "Nikkei 225",      category: indices, sources: {yahoo: "^N225", stooq: "^nkx"}, costs: {swap_long_annual_pct: 0.05806, swap_short_annual_pct: 0.03319}}
+  - {symbol: AUS200,  name: "ASX 200",         category: indices, sources: {yahoo: "^AXJO"}, costs: {swap_long_annual_pct: 0.09373, swap_short_annual_pct: 0.0}}
+  - {symbol: HK.cash, name: "Hang Seng",       category: indices, sources: {yahoo: "^HSI",  stooq: "^hsi"}, costs: {swap_long_annual_pct: 0.08561, swap_short_annual_pct: 0.0059}}
+  - {symbol: VIX,     name: "VIX",             category: indices, sources: {yahoo: "^VIX"}, costs: {swap_long_annual_pct: 0.08537, swap_short_annual_pct: 0.00588}}
+  - {symbol: USDIDX,  name: "Indeks dolara",   category: indices, sources: {yahoo: "DX-Y.NYB"}, costs: {swap_long_annual_pct: 0.08537, swap_short_annual_pct: 0.00588}}
 
   # ---------- SUROWCE ----------
-  - {symbol: OIL,       name: "Ropa Brent",     category: commodities, sources: {yahoo: "BZ=F"}}
-  - {symbol: OIL.WTI,   name: "Ropa WTI",       category: commodities, sources: {yahoo: "CL=F", stooq: "cl.f"}}
-  - {symbol: NATGAS,    name: "Gaz ziemny",     category: commodities, sources: {yahoo: "NG=F", stooq: "ng.f"}}
-  - {symbol: GASOLINE,  name: "Benzyna",        category: commodities, sources: {yahoo: "RB=F"}}
-  - {symbol: COCOA,     name: "Kakao",          category: commodities, sources: {yahoo: "CC=F"}}
-  - {symbol: COFFEE,    name: "Kawa",           category: commodities, sources: {yahoo: "KC=F"}}
-  - {symbol: SUGAR,     name: "Cukier",         category: commodities, sources: {yahoo: "SB=F"}}
-  - {symbol: COTTON,    name: "Bawelna",        category: commodities, sources: {yahoo: "CT=F"}}
-  - {symbol: CORN,      name: "Kukurydza",      category: commodities, sources: {yahoo: "ZC=F"}}
-  - {symbol: WHEAT,     name: "Pszenica",       category: commodities, sources: {yahoo: "ZW=F"}}
-  - {symbol: SOYBEAN,   name: "Soja",           category: commodities, sources: {yahoo: "ZS=F"}}
-  - {symbol: SOYOIL,    name: "Olej sojowy",    category: commodities, sources: {yahoo: "ZL=F"}}
-  - {symbol: CATTLE,    name: "Bydlo",          category: commodities, sources: {yahoo: "LE=F"}}
-  - {symbol: LEANHOGS,  name: "Wieprzowina",    category: commodities, sources: {yahoo: "HE=F"}}
-  - {symbol: COPPER,    name: "Miedz",          category: commodities, sources: {yahoo: "HG=F", stooq: "hg.f"}}
-  - {symbol: ALUMINIUM, name: "Aluminium",      category: commodities, sources: {yahoo: "ALI=F"}}
-  - {symbol: ZINC,      name: "Cynk",           category: commodities, sources: {}}
-  - {symbol: NICKEL,    name: "Nikiel",         category: commodities, sources: {}}
+  - {symbol: OIL,       name: "Ropa Brent",     category: commodities, sources: {yahoo: "BZ=F"}, costs: {swap_long_annual_pct: 0.15634, swap_short_annual_pct: 0.07685}}
+  - {symbol: OIL.WTI,   name: "Ropa WTI",       category: commodities, sources: {yahoo: "CL=F", stooq: "cl.f"}, costs: {swap_long_annual_pct: 0.15634, swap_short_annual_pct: 0.07685}}
+  - {symbol: NATGAS,    name: "Gaz ziemny",     category: commodities, sources: {yahoo: "NG=F", stooq: "ng.f"}, costs: {swap_long_annual_pct: 0.15634, swap_short_annual_pct: 0.07685}}
+  - {symbol: GASOLINE,  name: "Benzyna",        category: commodities, sources: {yahoo: "RB=F"}, costs: {swap_long_annual_pct: 0.15634, swap_short_annual_pct: 0.07685}}
+  - {symbol: COCOA,     name: "Kakao",          category: commodities, sources: {yahoo: "CC=F"}, costs: {swap_long_annual_pct: 0.12593, swap_short_annual_pct: 0.04644}}
+  - {symbol: COFFEE,    name: "Kawa",           category: commodities, sources: {yahoo: "KC=F"}, costs: {swap_long_annual_pct: 0.12593, swap_short_annual_pct: 0.04644}}
+  - {symbol: SUGAR,     name: "Cukier",         category: commodities, sources: {yahoo: "SB=F"}, costs: {swap_long_annual_pct: 0.12593, swap_short_annual_pct: 0.04644}}
+  - {symbol: COTTON,    name: "Bawelna",        category: commodities, sources: {yahoo: "CT=F"}, costs: {swap_long_annual_pct: 0.08537, swap_short_annual_pct: 0.00588}}
+  - {symbol: CORN,      name: "Kukurydza",      category: commodities, sources: {yahoo: "ZC=F"}, costs: {swap_long_annual_pct: 0.08537, swap_short_annual_pct: 0.00588}}
+  - {symbol: WHEAT,     name: "Pszenica",       category: commodities, sources: {yahoo: "ZW=F"}, costs: {swap_long_annual_pct: 0.08537, swap_short_annual_pct: 0.00588}}
+  - {symbol: SOYBEAN,   name: "Soja",           category: commodities, sources: {yahoo: "ZS=F"}, costs: {swap_long_annual_pct: 0.08537, swap_short_annual_pct: 0.00588}}
+  - {symbol: SOYOIL,    name: "Olej sojowy",    category: commodities, sources: {yahoo: "ZL=F"}, costs: {swap_long_annual_pct: 0.08537, swap_short_annual_pct: 0.00588}}
+  - {symbol: CATTLE,    name: "Bydlo",          category: commodities, sources: {yahoo: "LE=F"}, costs: {swap_long_annual_pct: 0.08537, swap_short_annual_pct: 0.00588}}
+  - {symbol: LEANHOGS,  name: "Wieprzowina",    category: commodities, sources: {yahoo: "HE=F"}, costs: {swap_long_annual_pct: 0.08537, swap_short_annual_pct: 0.00588}}
+  - {symbol: COPPER,    name: "Miedz",          category: commodities, sources: {yahoo: "HG=F", stooq: "hg.f"}, costs: {swap_long_annual_pct: 0.08537, swap_short_annual_pct: 0.00588}}
+  - {symbol: ALUMINIUM, name: "Aluminium",      category: commodities, sources: {yahoo: "ALI=F"}, costs: {swap_long_annual_pct: 0.08537, swap_short_annual_pct: 0.00588}}
+  - {symbol: ZINC,      name: "Cynk",           category: commodities, sources: {}, costs: {swap_long_annual_pct: 0.08537, swap_short_annual_pct: 0.00588}}
+  - {symbol: NICKEL,    name: "Nikiel",         category: commodities, sources: {}, costs: {swap_long_annual_pct: 0.08537, swap_short_annual_pct: 0.00588}}
 
   # ---------- METALE SZLACHETNE ----------
-  - {symbol: GOLD,      name: "Zloto",          category: metals, sources: {yahoo: "GC=F", stooq: "gc.f"}}
-  - {symbol: SILVER,    name: "Srebro",         category: metals, sources: {yahoo: "SI=F", stooq: "si.f"}}
-  - {symbol: PLATINUM,  name: "Platyna",        category: metals, sources: {yahoo: "PL=F"}}
-  - {symbol: PALLADIUM, name: "Pallad",         category: metals, sources: {yahoo: "PA=F"}}
+  - {symbol: GOLD,      name: "Zloto",          category: metals, sources: {yahoo: "GC=F", stooq: "gc.f"}, costs: {swap_long_annual_pct: 0.12593, swap_short_annual_pct: 0.04644}}
+  - {symbol: SILVER,    name: "Srebro",         category: metals, sources: {yahoo: "SI=F", stooq: "si.f"}, costs: {swap_long_annual_pct: 0.14113, swap_short_annual_pct: 0.06164}}
+  - {symbol: PLATINUM,  name: "Platyna",        category: metals, sources: {yahoo: "PL=F"}, costs: {swap_long_annual_pct: 0.14113, swap_short_annual_pct: 0.06164}}
+  - {symbol: PALLADIUM, name: "Pallad",         category: metals, sources: {yahoo: "PA=F"}, costs: {swap_long_annual_pct: 0.14113, swap_short_annual_pct: 0.06164}}
 
   # ---------- KRYPTO (top 3; trzecia pozycja do potwierdzenia) ----------
-  - {symbol: BITCOIN,   name: "Bitcoin",        category: crypto, sources: {binance: "BTCUSDT", yahoo: "BTC-USD"}}
-  - {symbol: ETHEREUM,  name: "Ethereum",       category: crypto, sources: {binance: "ETHUSDT", yahoo: "ETH-USD"}}
-  - {symbol: SOLANA,    name: "Solana",         category: crypto, sources: {binance: "SOLUSDT", yahoo: "SOL-USD"}}
+  - {symbol: BITCOIN,   name: "Bitcoin",        category: crypto, sources: {binance: "BTCUSDT", yahoo: "BTC-USD"}, costs: {swap_long_annual_pct: 0.35486, swap_short_annual_pct: 0.10139}}
+  - {symbol: ETHEREUM,  name: "Ethereum",       category: crypto, sources: {binance: "ETHUSDT", yahoo: "ETH-USD"}, costs: {swap_long_annual_pct: 0.35486, swap_short_annual_pct: 0.10139}}
+  - {symbol: SOLANA,    name: "Solana",         category: crypto, sources: {binance: "SOLUSDT", yahoo: "SOL-USD"}, costs: {swap_long_annual_pct: 0.35486, swap_short_annual_pct: 0.10139}}
 
   # ---------- AKCJE: dopisz swoja liste, np. ----------
   # - {symbol: AAPL.US, name: "Apple", category: stocks, sources: {yahoo: "AAPL"}}
