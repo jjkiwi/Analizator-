@@ -11,6 +11,8 @@ log = logging.getLogger(__name__)
 
 # Yahoo trzyma dane godzinowe tylko 730 dni wstecz (sprawdzone: 729 dni dziala, 731 zwraca blad).
 _INTRADAY_MAX_DAYS = 729
+# Dane 30-minutowe: ok. 60 dni (wg dokumentacji yfinance; limit niesprawdzony na zywo).
+_M30_MAX_DAYS = 59
 # Tyle historii 1h pobieramy co najmniej przy swiecach 4h, zeby pewnie ustalic poczatek sesji.
 _ANCHOR_LOOKBACK_DAYS = 60
 _AGG = {"open": "first", "high": "max", "low": "min", "close": "last", "volume": "sum"}
@@ -23,13 +25,13 @@ class YahooAdapter:
     Konwencje indeksu (zawsze UTC):
     - 1d: data sesji gieldowej o 00:00 UTC (Yahoo podaje polnoc czasu gieldy, co po zamianie
       na UTC dawaloby 04:00/05:00 zaleznie od czasu letniego),
-    - 1h: poczatek swiecy,
+    - 1h, 30m: poczatek swiecy,
     - 4h: swiece liczone od otwarcia sesji w czasie gieldy (np. 18:00 Nowy Jork dla CME),
       a nie od polnocy UTC; patrz `resample_sessions`.
     """
 
     name = "yahoo"
-    intervals = ("1h", "4h", "1d")
+    intervals = ("30m", "1h", "4h", "1d")
 
     def _download(self, source_symbol: str, yf_interval: str, start: datetime | None) -> pd.DataFrame:
         """Surowa odpowiedz yfinance: kolumny Open..Volume, indeks w strefie gieldy."""
@@ -56,6 +58,9 @@ class YahooAdapter:
         now = datetime.now(timezone.utc)
         if interval == "1d":
             return self._fetch_daily(source_symbol, start, now)
+        if interval == "30m":
+            floor = now - timedelta(days=_M30_MAX_DAYS)
+            return shape_yahoo(self._download(source_symbol, "30m", max(start, floor) if start else floor), "30m", start)
         floor = now - timedelta(days=_INTRADAY_MAX_DAYS)
         dl_start = max(start, floor) if start else floor
         if interval == "4h":
@@ -92,7 +97,7 @@ def shape_yahoo(raw: pd.DataFrame, interval: str, start: datetime | None = None)
     if interval == "1d":
         raw = raw.set_axis(_session_dates(idx))
         return normalize_candles(raw)
-    if interval == "1h":
+    if interval in ("1h", "30m"):
         return normalize_candles(raw)
     local = normalize_candles(raw).tz_convert(idx.tz)
     if interval == "1d_from_1h":

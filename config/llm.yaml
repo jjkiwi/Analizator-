@@ -1,0 +1,16 @@
+# Lancuch darmowych modeli do klasyfikacji newsow. Probowane po kolei; gdy wszystkie zawioda, decyduja reguly.
+# Kazdy wpis to endpoint zgodny ze standardem OpenAI (/chat/completions). Klucz czytany ze zmiennej `key_env`:
+# dostawca bez ustawionego klucza jest pomijany, wiec wystarczy zalozyc konto u jednego lub dwoch.
+#
+# Nazwy modeli i limity darmowych planow zmieniaja sie co kilka tygodni. Wartosci ponizej sa NIESPRAWDZONE:
+# zadanie C3 w CLAUDE_CODE/ZADANIA.md polega na ich weryfikacji i porownaniu jakosci na prawdziwych newsach.
+
+timeout_seconds: 20
+providers:
+  - {name: gemini,     base_url: "https://generativelanguage.googleapis.com/v1beta/openai", model: "gemini-flash-latest",             key_env: GEMINI_API_KEY}
+  - {name: groq,       base_url: "https://api.groq.com/openai/v1",                          model: "openai/gpt-oss-120b",             key_env: GROQ_API_KEY}
+  - {name: openrouter, base_url: "https://openrouter.ai/api/v1",                            model: "moonshotai/kimi-k2:free",         key_env: OPENROUTER_API_KEY}
+  - {name: nvidia,     base_url: "https://integrate.api.nvidia.com/v1",                     model: "moonshotai/kimi-k2.6",            key_env: NVIDIA_API_KEY}
+  - {name: mistral,    base_url: "https://api.mistral.ai/v1",                               model: "mistral-small-latest",            key_env: MISTRAL_API_KEY}
+  # Do testow lokalnych (Ollama wystawia endpoint zgodny z OpenAI; klucz moze byc dowolny):
+  - {name: ollama,     base_url: "http://localhost:11434/v1",                               model: "qwen3:8b",                        key_env: OLLAMA_API_KEY}

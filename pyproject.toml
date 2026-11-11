@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "analizator-cfd"
-version = "0.2.1"
+version = "0.3.1"
 description = "Analiza rynku i sygnaly dla CFD (bez skladania zlecen)"
 requires-python = ">=3.11"
 dependencies = [
@@ -18,7 +18,6 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=8"]
-llm = ["anthropic>=1.0"]  # klasyfikator newsow LLM; bez pakietu dzialaja same reguly
 
 [project.scripts]
 cfd = "cfd.cli:main"

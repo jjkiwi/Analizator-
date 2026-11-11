@@ -12,6 +12,7 @@ DEFAULTS = {
     "fundamentals": {"refresh_hours": 24},
     "health": {"alert_after_failures": 3},
     "dashboard": {"refresh_minutes": 5, "path": "reports/panel.html"},
+    "quiet_hours": {"start": 23, "end": 8, "tz": "Europe/Warsaw"},
 }
 
 

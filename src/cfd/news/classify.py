@@ -6,6 +6,8 @@ import os
 import re
 from dataclasses import dataclass, field
 
+import httpx
+
 from .models import NewsItem
 
 log = logging.getLogger(__name__)
@@ -55,7 +57,7 @@ class RuleClassifier:
 
 _PROMPT = """Jestes analitykiem rynkow finansowych. Ocen naglowek pod katem krotkoterminowego wplywu na wskazane instrumenty CFD.
 
-Naglowek: {title}
+Naglowek (moze byc w dowolnym jezyku): {title}
 Opis: {summary}
 Zrodlo: {source}
 Instrumenty: {symbols}
@@ -65,103 +67,109 @@ directions: dla kazdego podanego symbolu "up" (wzrostowo), "down" (spadkowo) alb
 reason: jedno zdanie po polsku."""
 
 # Structured outputs (output_config.format): odpowiedz jest gwarantowanym JSON-em zgodnym ze schematem.
-_SCHEMA = {
-    "type": "object",
-    "properties": {
-        "importance": {"type": "integer", "enum": [1, 2, 3]},
-        "directions": {
-            "type": "array",
-            "items": {
-                "type": "object",
-                "properties": {"symbol": {"type": "string"}, "direction": {"type": "string", "enum": ["up", "down", "none"]}},
-                "required": ["symbol", "direction"],
-                "additionalProperties": False,
-            },
-        },
-        "reason": {"type": "string"},
-    },
-    "required": ["importance", "directions", "reason"],
-    "additionalProperties": False,
-}
-_DIR = {"up": 1, "down": -1, "none": 0}
+def parse_llm_json(text: str, symbols: list[str], classifier: str = "llm") -> Classification:
+    """Wyciaga obiekt JSON z odpowiedzi modelu (modele czesto dodaja tekst lub ```json wokol)."""
+    start, end = text.find("{"), text.rfind("}")
+    if start < 0 or end <= start:
+        raise ValueError("brak obiektu JSON w odpowiedzi")
+    data = json.loads(text[start : end + 1])
+    importance = min(3, max(1, int(data["importance"])))
+    raw = data.get("directions") or {}
+    directions = {s: max(-1, min(1, int(raw.get(s, 0)))) for s in symbols}
+    return Classification(importance, directions, str(data.get("reason", ""))[:300], classifier)
 
-DEFAULT_MODEL = "claude-haiku-5-5"
-# Cennik Claude Haiku 5.5 (USD za 1 mln tokenow, prompt do 100 tys. tokenow). Do szacowania kosztu.
-PRICE_INPUT_PER_MTOK, PRICE_OUTPUT_PER_MTOK = 0.10, 0.50
+
+@dataclass(frozen=True)
+class Provider:
+    name: str
+    base_url: str
+    model: str
+    key_env: str
+
+
+class ChainClassifier:
+    """Lancuch dostawcow zgodnych z API OpenAI. Pierwsza poprawna odpowiedz wygrywa, na koncu reguly.
+
+    Dostawca, ktory zawiodl, jest pomijany przez `cooldown` sekund, zeby nie tracic czasu
+    na endpoint z wyczerpanym limitem przy kazdym newsie.
+    """
+
+    name = "chain"
+
+    def __init__(self, providers: list[Provider], timeout: float = 20.0, fallback=None, cooldown: float = 600.0, post=None):
+        self.providers = [p for p in providers if os.environ.get(p.key_env)]
+        self.timeout, self.cooldown = timeout, cooldown
+        self.fallback = fallback or RuleClassifier()
+        self._blocked_until: dict[str, float] = {}
+        self._post = post or self._http_post
+
+    @classmethod
+    def from_file(cls, path="config/llm.yaml", **kw):
+        import yaml
+        from pathlib import Path
+
+        raw = yaml.safe_load(Path(path).read_text(encoding="utf-8"))
+        return cls([Provider(**p) for p in raw.get("providers", [])], timeout=raw.get("timeout_seconds", 20.0), **kw)
+
+    def _http_post(self, provider: Provider, prompt: str) -> str:
+        resp = httpx.post(
+            provider.base_url.rstrip("/") + "/chat/completions",
+            headers={"Authorization": f"Bearer {os.environ[provider.key_env]}", "Content-Type": "application/json"},
+            json={"model": provider.model, "temperature": 0, "max_tokens": 300,
+                  "messages": [{"role": "user", "content": prompt}]},
+            timeout=self.timeout,
+        )
+        resp.raise_for_status()
+        return resp.json()["choices"][0]["message"]["content"] or ""
+
+    def classify(self, item: NewsItem, match: dict) -> Classification:
+        import time
+
+        prompt = _PROMPT.format(title=item.title, summary=item.summary[:500] or "-", source=item.source, symbols=", ".join(match["symbols"]))
+        now = time.monotonic()
+        for p in self.providers:
+            if self._blocked_until.get(p.name, 0) > now:
+                continue
+            try:
+                return parse_llm_json(self._post(p, prompt), match["symbols"], f"llm:{p.name}")
+            except Exception as exc:  # limit, awaria, zly JSON: probujemy nastepnego
+                log.warning("dostawca %s zawiodl (%s)", p.name, type(exc).__name__)
+                self._blocked_until[p.name] = now + self.cooldown
+        return self.fallback.classify(item, match)
 
 
 class LLMClassifier:
-    """Klasyfikacja przez Messages API Anthropic (oficjalne SDK `anthropic`).
-
-    Wymaga ANTHROPIC_API_KEY i pakietu `anthropic`; przy kazdym bledzie wraca do regul.
-    Claude Haiku 5.5 ma domyslnie wlaczone myslenie, ktore wlicza sie do `max_tokens`: stad zapas
-    tokenow i `effort: low` (klasyfikacja naglowka nie wymaga dlugiego rozumowania).
-    """
+    """Klasyfikacja przez API Anthropic (opcja platna). Wymaga ANTHROPIC_API_KEY; przy bledzie wraca do regul."""
 
     name = "llm"
+    URL = "https://api.anthropic.com/v1/messages"
 
-    def __init__(self, api_key: str | None = None, model: str | None = None, timeout: float = 30.0,
-                 fallback=None, client=None, max_tokens: int = 1024, effort: str = "low"):
+    def __init__(self, api_key: str | None = None, model: str | None = None, timeout: float = 30.0, fallback=None):
         self.api_key = api_key or os.environ.get("ANTHROPIC_API_KEY", "")
-        self.model = model or os.environ.get("CFD_LLM_MODEL") or DEFAULT_MODEL
+        self.model = model or os.environ.get("CFD_LLM_MODEL", "claude-haiku-5-5")
         self.timeout = timeout
         self.fallback = fallback or RuleClassifier()
-        self.max_tokens = max_tokens
-        self.effort = effort
-        self._client = client
-        self.calls = 0
-        self.input_tokens = 0
-        self.output_tokens = 0
-
-    @property
-    def cost_usd(self) -> float:
-        """Koszt dotychczasowych wywolan wg cennika Haiku 5.5 (inny model = inne stawki)."""
-        return (self.input_tokens * PRICE_INPUT_PER_MTOK + self.output_tokens * PRICE_OUTPUT_PER_MTOK) / 1e6
-
-    def _get_client(self):
-        if self._client is None:
-            import anthropic  # import leniwy: bez klucza pakiet nie jest potrzebny
-
-            self._client = anthropic.Anthropic(api_key=self.api_key, timeout=self.timeout, max_retries=1)
-        return self._client
 
     def _call(self, prompt: str) -> str:
-        resp = self._get_client().messages.create(
-            model=self.model,
-            max_tokens=self.max_tokens,
-            output_config={"effort": self.effort, "format": {"type": "json_schema", "schema": _SCHEMA}},
-            messages=[{"role": "user", "content": prompt}],
+        resp = httpx.post(
+            self.URL,
+            headers={"x-api-key": self.api_key, "anthropic-version": "2023-06-01", "content-type": "application/json"},
+            json={"model": self.model, "max_tokens": 300, "messages": [{"role": "user", "content": prompt}]},
+            timeout=self.timeout,
         )
-        usage = getattr(resp, "usage", None)
-        self.calls += 1
-        self.input_tokens += getattr(usage, "input_tokens", 0) or 0
-        self.output_tokens += getattr(usage, "output_tokens", 0) or 0
-        if resp.stop_reason in ("refusal", "max_tokens"):
-            raise ValueError(f"odpowiedz przerwana: stop_reason={resp.stop_reason}")
-        # Odpowiedz moze zaczynac sie od blokow `thinking`: czytamy po typie, nie po pozycji.
-        return "".join(b.text for b in resp.content if b.type == "text")
+        resp.raise_for_status()
+        return "".join(b.get("text", "") for b in resp.json().get("content", []) if b.get("type") == "text")
 
     @staticmethod
     def parse(text: str, symbols: list[str]) -> Classification:
-        start, end = text.find("{"), text.rfind("}")
-        data = json.loads(text[start : end + 1])
-        importance = min(3, max(1, int(data["importance"])))
-        raw = data.get("directions") or {}
-        if isinstance(raw, list):  # format ze schematu: [{"symbol": ..., "direction": "up"|"down"|"none"}]
-            raw = {d.get("symbol"): d.get("direction") for d in raw if isinstance(d, dict)}
-
-        def to_int(v) -> int:
-            return _DIR[v] if v in _DIR else max(-1, min(1, int(v or 0)))
-
-        directions = {s: to_int(raw.get(s, 0)) for s in symbols}
-        return Classification(importance, directions, str(data.get("reason", ""))[:300], "llm")
+        return parse_llm_json(text, symbols, "llm")
 
     def classify(self, item: NewsItem, match: dict) -> Classification:
-        if not self.api_key and self._client is None:
+        if not self.api_key:
             return self.fallback.classify(item, match)
         prompt = _PROMPT.format(title=item.title, summary=item.summary[:500] or "-", source=item.source, symbols=", ".join(match["symbols"]))
         try:
             return self.parse(self._call(prompt), match["symbols"])
-        except Exception as exc:  # siec, limit, brak pakietu, odmowa, zly JSON: alert wazniejszy niz idealna ocena
-            log.warning("LLM nie odpowiedzial poprawnie (%s: %s), uzywam regul", type(exc).__name__, exc)
+        except Exception as exc:  # siec, limit, zly JSON: alert wazniejszy niz idealna ocena
+            log.warning("LLM nie odpowiedzial poprawnie (%s), uzywam regul", exc)
             return self.fallback.classify(item, match)

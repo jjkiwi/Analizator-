@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 import numpy as np
 import pandas as pd
 
-STEP = {"1h": pd.Timedelta(hours=1), "4h": pd.Timedelta(hours=4), "1d": pd.Timedelta(days=1)}
+STEP = {"30m": pd.Timedelta(minutes=30), "1h": pd.Timedelta(hours=1), "4h": pd.Timedelta(hours=4), "1d": pd.Timedelta(days=1)}
 JUMP_ATR = 8.0
 ATR_PERIOD = 14
 # Tyle kolejnych dni roboczych bez swiecy uznajemy jeszcze za swieta (np. Boze Narodzenie + drugi dzien).

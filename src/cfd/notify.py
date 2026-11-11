@@ -2,7 +2,10 @@ from __future__ import annotations
 
 import logging
 import os
+import sqlite3
+from datetime import datetime, timezone
 from typing import Protocol
+from zoneinfo import ZoneInfo
 
 import httpx
 
@@ -39,6 +42,51 @@ class TelegramNotifier:
         except httpx.HTTPError as exc:
             log.error("Telegram: nie udalo sie wyslac: %s", type(exc).__name__)
             return False
+
+
+def in_quiet_hours(now: datetime, start: int, end: int, tz: str) -> bool:
+    """Czy `now` (UTC) wypada w ciszy nocnej [start, end) liczonej w strefie `tz`. start == end wylacza cisze."""
+    if start == end:
+        return False
+    hour = now.astimezone(ZoneInfo(tz)).hour
+    return start <= hour < end if start < end else hour >= start or hour < end
+
+
+class QuietNotifier:
+    """Opakowanie na powiadomienia: w ciszy nocnej odklada wiadomosci do bazy, rano wysyla je jako jedno podsumowanie."""
+
+    def __init__(self, inner: Notifier, conn: sqlite3.Connection, start: int = 23, end: int = 8, tz: str = "Europe/Warsaw", clock=None):
+        self.inner, self.conn, self.start, self.end, self.tz = inner, conn, start, end, tz
+        self._clock = clock or (lambda: datetime.now(timezone.utc))
+
+    def send(self, text: str) -> bool:
+        if in_quiet_hours(self._clock(), self.start, self.end, self.tz):
+            self.conn.execute("INSERT INTO outbox (text) VALUES (?)", (text,))
+            self.conn.commit()
+            return True
+        self.flush()
+        return self.inner.send(text)
+
+    def flush(self) -> int:
+        """Wysyla zalegle wiadomosci (poza cisza). Zwraca ich liczbe."""
+        if in_quiet_hours(self._clock(), self.start, self.end, self.tz):
+            return 0
+        rows = self.conn.execute("SELECT id, text FROM outbox ORDER BY id").fetchall()
+        if not rows:
+            return 0
+        header = f"🌙 Podsumowanie nocy: {len(rows)} powiadomień\n\n"
+        chunks, current = [], header
+        for r in rows:
+            block = r["text"] + "\n\n———\n\n"
+            if len(current) + len(block) > 3800:
+                chunks.append(current)
+                current = ""
+            current += block
+        chunks.append(current)
+        if all(self.inner.send(c.rstrip("—\n ")) for c in chunks):
+            self.conn.execute("DELETE FROM outbox WHERE id <= ?", (rows[-1]["id"],))
+            self.conn.commit()
+        return len(rows)
 
 
 def notifier_from_env() -> Notifier:

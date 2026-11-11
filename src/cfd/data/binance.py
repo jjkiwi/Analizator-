@@ -20,7 +20,7 @@ class BinanceAdapter:
     """
 
     name = "binance"
-    intervals = ("1h", "4h", "1d")
+    intervals = ("30m", "1h", "4h", "1d")
     HOSTS = ("https://api.binance.com", "https://data-api.binance.vision")
     PATH = "/api/v3/klines"
     PAGE = 1000

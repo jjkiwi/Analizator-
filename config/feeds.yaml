@@ -30,24 +30,46 @@ feeds:
   - {name: boj_news,       url: "https://www.boj.or.jp/en/rss/whatsnew.xml",                  poll_seconds: 300, enabled: false}  # niezweryfikowane (host zablokowany w srodowisku testowym)
   - {name: snb_press,      url: "https://www.snb.ch/public/en/rss/pressrel",                  poll_seconds: 300, enabled: false}  # niezweryfikowane (host zablokowany w srodowisku testowym)
 
-# Dodatkowo dla kazdego zapytania powstaje feed Google News (wyszukiwanie RSS).
-# Wpis to napis albo slownik {q, hl, gl, ceid}; komplet hl/gl/ceid jest konieczny (inaczej 302).
-# `when: "1d"` ogranicza wyniki do ostatniej doby (bez tego wracaja tez artykuly sprzed tygodni).
-# Uwaga: Google zastrzega w feedzie uzytek osobisty, niekomercyjny, w czytniku RSS.
+# Dodatkowo dla kazdego zapytania powstaje feed Google News (wyszukiwanie RSS), osobno per jezyk.
+# Klasyfikator LLM czyta dowolny jezyk; mapowanie na instrumenty opiera sie na slowach z keywords.yaml,
+# dlatego kazdy jezyk ma tam swoje odpowiedniki.
 google_news:
   enabled: true
   poll_seconds: 300
-  when: "1d"
-  params: {hl: "en-US", gl: "US", ceid: "US:en"}
-  queries:
-    - "Federal Reserve interest rates"
-    - "OPEC oil production"
-    - "crude oil prices"
-    - "natural gas prices"
-    - "gold price"
-    - "stock market today"
-    - "bitcoin"
-    - "ECB interest rates"
-    # polskie zrodla posrednio (zastepuja Bankier/PAP/NBP, dopoki ich feedy nie sa potwierdzone)
-    - {q: "NBP stopy procentowe", hl: "pl", gl: "PL", ceid: "PL:pl"}
-    - {q: "GPW WIG20",            hl: "pl", gl: "PL", ceid: "PL:pl"}
+  when: "1d"   # tylko ostatnia doba (bez tego wracaja artykuly sprzed tygodni); komplet hl/gl/ceid konieczny (inaczej 302)
+  locales:
+    - params: {hl: "en-US", gl: "US", ceid: "US:en"}
+      queries:
+        - "Federal Reserve interest rates"
+        - "OPEC oil production"
+        - "crude oil prices"
+        - "natural gas prices"
+        - "gold price"
+        - "stock market today"
+        - "bitcoin OR ethereum OR solana"
+        - "ECB interest rates"
+        - "\"Arm Holdings\" OR \"Marvell\" OR \"Broadcom\" OR \"Take-Two\""
+        - "\"Constellation Energy\" OR \"Uranium Energy\" OR \"MP Materials\" OR \"Monster Beverage\" OR \"Revolution Medicines\""
+        - "\"Oxford Instruments\" OR \"Oxford Biomedica\" OR LVMH OR \"International Airlines Group\""
+    - params: {hl: "pl", gl: "PL", ceid: "PL:pl"}
+      queries:
+        - "stopy procentowe NBP RPP"
+        - "WIG20 giełda"
+        - "\"CD Projekt\" OR \"Dino Polska\" OR Żabka OR AmRest OR \"Citi Handlowy\" OR \"Erste Bank Polska\""
+        - "Synektik OR Creotech OR DataWalk OR Bloober OR \"Ten Square Games\" OR Medicalgorithmics"
+        - "cyber_Folks OR \"Rainbow Tours\" OR Astarta OR Niewiadów OR Syn2bio OR \"GPW SA\""
+    - params: {hl: "de", gl: "DE", ceid: "DE:de"}
+      queries:
+        - "DAX Börse heute"
+        - "EZB Zinsen"
+        - "Ölpreis OR Gaspreis"
+    - params: {hl: "fr", gl: "FR", ceid: "FR:fr"}
+      queries:
+        - "CAC 40 bourse"
+        - "BCE taux directeurs"
+        - "LVMH"
+    - params: {hl: "es", gl: "ES", ceid: "ES:es"}
+      queries:
+        - "IBEX 35 bolsa"
+        - "IAG aerolíneas"
+        - "precio del petróleo"

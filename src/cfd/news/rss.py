@@ -39,14 +39,19 @@ def load_feeds(path: Path | str = "config/feeds.yaml", include_disabled: bool = 
     feeds = [FeedConfig(**f) for f in raw.get("feeds", [])]
     g = raw.get("google_news") or {}
     if g.get("enabled"):
-        for entry in g.get("queries", []):
-            entry = {"q": entry} if isinstance(entry, str) else dict(entry)
-            q = entry.pop("q")
-            params = {**g.get("params", {}), **entry}
-            text = f"{q} when:{g['when']}" if g.get("when") else q
-            qs = urlencode({"q": text, **params})
-            slug = re.sub(r"\W+", "_", q.lower()).strip("_")
-            feeds.append(FeedConfig(f"gnews_{slug}", f"https://news.google.com/rss/search?{qs}", g.get("poll_seconds", 300)))
+        # stary format (jedno `params` + `queries`) jest nadal akceptowany
+        locales = g.get("locales") or [{"params": g.get("params", {}), "queries": g.get("queries", [])}]
+        for loc in locales:
+            lang = str(loc.get("params", {}).get("hl", "")).split("-")[0].lower()
+            for entry in loc.get("queries", []):
+                entry = {"q": entry} if isinstance(entry, str) else dict(entry)
+                q = entry.pop("q")
+                params = {**loc.get("params", {}), **entry}
+                text = f"{q} when:{g['when']}" if g.get("when") else q
+                qs = urlencode({"q": text, **params})
+                slug = re.sub(r"\W+", "_", q.lower()).strip("_")[:40]
+                name = f"gnews_{lang}_{slug}" if lang and len(locales) > 1 else f"gnews_{slug}"
+                feeds.append(FeedConfig(name, f"https://news.google.com/rss/search?{qs}", g.get("poll_seconds", 300)))
     return feeds if include_disabled else [f for f in feeds if f.enabled]
 
 

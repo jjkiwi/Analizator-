@@ -1,0 +1,7 @@
+# Funkcje sa wywolywane przez pg_cron z wlasnym sekretem w naglowku (x-cron-secret),
+# dlatego weryfikacja JWT Supabase jest wylaczona. Sekret sprawdza kod funkcji.
+[functions.news-poll]
+verify_jwt = false
+
+[functions.macro-poll]
+verify_jwt = false
