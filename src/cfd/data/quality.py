@@ -33,8 +33,8 @@ class QualityReport:
 
 def _missing_bdays(prev: pd.DatetimeIndex, cur: pd.DatetimeIndex) -> np.ndarray:
     """Liczba dni roboczych (pon-pt) lezacych w calosci miedzy dwiema swiecami."""
-    a = (prev.normalize() + pd.Timedelta(days=1)).values.astype("datetime64[D]")
-    b = cur.normalize().values.astype("datetime64[D]")
+    a = (prev.normalize() + pd.Timedelta(days=1)).tz_localize(None).to_numpy().astype("datetime64[D]")
+    b = cur.normalize().tz_localize(None).to_numpy().astype("datetime64[D]")
     return np.busday_count(a, b)
 
 
@@ -59,7 +59,7 @@ def find_gaps(index: pd.DatetimeIndex, interval: str, always_open: bool = False)
             mask = missing > HOLIDAY_BDAYS
         else:
             counts = pd.Series(diff).value_counts()
-            sessions = max(len(np.unique(index.normalize())), 1)
+            sessions = max(index.normalize().nunique(), 1)
             regular = set(counts[counts >= max(3, 0.05 * sessions)].index)
             crosses_day = cur.normalize() > prev.normalize()
             calendar_break = crosses_day & (diff >= pd.Timedelta(hours=12)) & (missing <= HOLIDAY_BDAYS)
@@ -101,14 +101,13 @@ def expiry_dates(source_symbol: str, sessions: pd.DatetimeIndex) -> list[pd.Time
     if source_symbol not in ("CL=F", "NG=F") or len(days) < 30:
         return []
     out = []
-    for _, month_days in pd.Series(days, index=days).groupby([days.year, days.month]):
-        d = pd.DatetimeIndex(month_days.values, tz=days.tz)
+    for period in days.tz_localize(None).to_period("M").unique():
+        d = days[(days.year == period.year) & (days.month == period.month)]
         if source_symbol == "NG=F":
-            ref = d  # wszystkie sesje miesiaca; wygasniecie = 3. od konca
-            pick = 3
+            ref, pick = d, 3  # 3. sesja od konca miesiaca
         else:
-            ref = d[d.day <= 25]
-            pick = 4 if len(ref) and ref[-1].day == 25 else 3  # 3 dni robocze przed 25. (lub przed ostatnim dniem roboczym)
+            # 3 dni robocze przed 25. dniem; gdy 25. jest wolny, przed ostatnim dniem roboczym sprzed 25.
+            ref, pick = d[d.day <= 25], 4
         if len(ref) >= pick:
             out.append(ref[-pick])
     # ostatni miesiac w danych moze byc niepelny: regula "od konca miesiaca" bylaby wtedy bledna
