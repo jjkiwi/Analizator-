@@ -45,7 +45,7 @@ class RuleClassifier:
 
 _PROMPT = """Jestes analitykiem rynkow finansowych. Ocen naglowek pod katem krotkoterminowego wplywu na wskazane instrumenty CFD.
 
-Naglowek: {title}
+Naglowek (moze byc w dowolnym jezyku): {title}
 Opis: {summary}
 Zrodlo: {source}
 Instrumenty: {symbols}
@@ -57,8 +57,79 @@ importance: 3 = nowe, nieoczekiwane zdarzenie mogace ruszyc cena w ciagu godzin;
 directions: +1 wzrostowo, -1 spadkowo, 0 niejasne lub brak wplywu. Uzyj dokladnie podanych symboli. Gdy masz watpliwosci, dawaj 0."""
 
 
+def parse_llm_json(text: str, symbols: list[str], classifier: str = "llm") -> Classification:
+    """Wyciaga obiekt JSON z odpowiedzi modelu (modele czesto dodaja tekst lub ```json wokol)."""
+    start, end = text.find("{"), text.rfind("}")
+    if start < 0 or end <= start:
+        raise ValueError("brak obiektu JSON w odpowiedzi")
+    data = json.loads(text[start : end + 1])
+    importance = min(3, max(1, int(data["importance"])))
+    raw = data.get("directions") or {}
+    directions = {s: max(-1, min(1, int(raw.get(s, 0)))) for s in symbols}
+    return Classification(importance, directions, str(data.get("reason", ""))[:300], classifier)
+
+
+@dataclass(frozen=True)
+class Provider:
+    name: str
+    base_url: str
+    model: str
+    key_env: str
+
+
+class ChainClassifier:
+    """Lancuch dostawcow zgodnych z API OpenAI. Pierwsza poprawna odpowiedz wygrywa, na koncu reguly.
+
+    Dostawca, ktory zawiodl, jest pomijany przez `cooldown` sekund, zeby nie tracic czasu
+    na endpoint z wyczerpanym limitem przy kazdym newsie.
+    """
+
+    name = "chain"
+
+    def __init__(self, providers: list[Provider], timeout: float = 20.0, fallback=None, cooldown: float = 600.0, post=None):
+        self.providers = [p for p in providers if os.environ.get(p.key_env)]
+        self.timeout, self.cooldown = timeout, cooldown
+        self.fallback = fallback or RuleClassifier()
+        self._blocked_until: dict[str, float] = {}
+        self._post = post or self._http_post
+
+    @classmethod
+    def from_file(cls, path="config/llm.yaml", **kw):
+        import yaml
+        from pathlib import Path
+
+        raw = yaml.safe_load(Path(path).read_text(encoding="utf-8"))
+        return cls([Provider(**p) for p in raw.get("providers", [])], timeout=raw.get("timeout_seconds", 20.0), **kw)
+
+    def _http_post(self, provider: Provider, prompt: str) -> str:
+        resp = httpx.post(
+            provider.base_url.rstrip("/") + "/chat/completions",
+            headers={"Authorization": f"Bearer {os.environ[provider.key_env]}", "Content-Type": "application/json"},
+            json={"model": provider.model, "temperature": 0, "max_tokens": 300,
+                  "messages": [{"role": "user", "content": prompt}]},
+            timeout=self.timeout,
+        )
+        resp.raise_for_status()
+        return resp.json()["choices"][0]["message"]["content"] or ""
+
+    def classify(self, item: NewsItem, match: dict) -> Classification:
+        import time
+
+        prompt = _PROMPT.format(title=item.title, summary=item.summary[:500] or "-", source=item.source, symbols=", ".join(match["symbols"]))
+        now = time.monotonic()
+        for p in self.providers:
+            if self._blocked_until.get(p.name, 0) > now:
+                continue
+            try:
+                return parse_llm_json(self._post(p, prompt), match["symbols"], f"llm:{p.name}")
+            except Exception as exc:  # limit, awaria, zly JSON: probujemy nastepnego
+                log.warning("dostawca %s zawiodl (%s)", p.name, type(exc).__name__)
+                self._blocked_until[p.name] = now + self.cooldown
+        return self.fallback.classify(item, match)
+
+
 class LLMClassifier:
-    """Klasyfikacja przez API Anthropic. Wymaga ANTHROPIC_API_KEY; przy bledzie wraca do regul."""
+    """Klasyfikacja przez API Anthropic (opcja platna). Wymaga ANTHROPIC_API_KEY; przy bledzie wraca do regul."""
 
     name = "llm"
     URL = "https://api.anthropic.com/v1/messages"
@@ -81,12 +152,7 @@ class LLMClassifier:
 
     @staticmethod
     def parse(text: str, symbols: list[str]) -> Classification:
-        start, end = text.find("{"), text.rfind("}")
-        data = json.loads(text[start : end + 1])
-        importance = min(3, max(1, int(data["importance"])))
-        raw = data.get("directions") or {}
-        directions = {s: max(-1, min(1, int(raw.get(s, 0)))) for s in symbols}
-        return Classification(importance, directions, str(data.get("reason", ""))[:300], "llm")
+        return parse_llm_json(text, symbols, "llm")
 
     def classify(self, item: NewsItem, match: dict) -> Classification:
         if not self.api_key:

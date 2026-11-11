@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#101820">
+<title>Analizator CFD</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="bar">
+  <h1>Analizator CFD</h1>
+  <span id="stamp" class="stamp" aria-live="polite"></span>
+  <button id="refresh" class="ghost" type="button" aria-label="Odśwież dane">Odśwież</button>
+</header>
+
+<main id="app" hidden>
+  <nav class="tabs" role="tablist" aria-label="Widoki">
+    <button role="tab" data-view="signals" aria-selected="true">Sygnały</button>
+    <button role="tab" data-view="news">Newsy</button>
+    <button role="tab" data-view="macro">Makro</button>
+    <button role="tab" data-view="bias">Fundamenty</button>
+    <button role="tab" data-view="state">Stan</button>
+  </nav>
+  <div id="filters" class="filters"></div>
+  <section id="view" aria-live="polite"></section>
+  <p class="note">Ceny pochodzą ze źródeł danych, nie z XTB. Poziomy przelicz w xStation. To nie jest porada inwestycyjna.</p>
+</main>
+
+<main id="login" hidden>
+  <h2>Zaloguj się</h2>
+  <p>Podaj adres e-mail. Dostaniesz link, który otworzy panel na tym urządzeniu.</p>
+  <label for="email">E-mail</label>
+  <input id="email" type="email" autocomplete="email" inputmode="email" required>
+  <button id="send-link" type="button">Wyślij link</button>
+  <p id="login-msg" class="msg" aria-live="polite"></p>
+</main>
+
+<script src="config.js"></script>
+<script type="module" src="app.js"></script>
+</body>
+</html>

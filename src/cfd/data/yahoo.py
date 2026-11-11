@@ -6,23 +6,23 @@ import pandas as pd
 
 from .base import DataSourceError, normalize_candles
 
-# Yahoo trzyma dane godzinowe tylko ok. 730 dni wstecz.
-_INTRADAY_MAX_DAYS = 729
+# Yahoo ogranicza historie intraday: 1h ok. 730 dni, 30m ok. 60 dni.
+_MAX_DAYS = {"1h": 729, "30m": 59}
 
 
 class YahooAdapter:
     """yfinance to nieoficjalny klient Yahoo Finance: darmowy, opozniony, bywa zawodny."""
 
     name = "yahoo"
-    intervals = ("1h", "4h", "1d")
+    intervals = ("30m", "1h", "4h", "1d")
 
     def fetch(self, source_symbol: str, interval: str, start: datetime | None) -> pd.DataFrame:
         import yfinance as yf
 
         now = datetime.now(timezone.utc)
-        yf_interval = "1h" if interval in ("1h", "4h") else "1d"
-        if yf_interval == "1h":
-            floor = now - timedelta(days=_INTRADAY_MAX_DAYS)
+        yf_interval = {"30m": "30m", "1h": "1h", "4h": "1h"}.get(interval, "1d")
+        if yf_interval in _MAX_DAYS:
+            floor = now - timedelta(days=_MAX_DAYS[yf_interval])
             start = max(start, floor) if start else floor
         kwargs = {"interval": yf_interval, "auto_adjust": False}
         if start:

@@ -27,7 +27,9 @@ def test_config_loads_with_costs():
     inst = load_instruments(CONFIG)
     assert {"US500", "GOLD", "OIL.WTI", "BITCOIN"} <= set(inst)
     assert inst["US500"].costs.spread_pct > 0
-    assert {i.category for i in inst.values()} == {"indices", "commodities", "metals", "crypto"}
+    assert {i.category for i in inst.values()} == {"indices", "commodities", "metals", "crypto", "stocks"}
+    assert "ZINC" not in inst and inst["CDR.PL"].sources == {"yahoo": "CDR.WA", "stooq": "cdr"}
+    assert inst["CDR.PL"].costs.swap_long_annual_pct == 0
 
 
 def test_normalize_drops_bad_rows(candles):

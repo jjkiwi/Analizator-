@@ -1,0 +1,52 @@
+# Tor wolny: skan techniczny po zamknieciu swiecy. Stan roboczy (swiece, dziennik SQLite) wedruje miedzy
+# przebiegami w cache Actions; zrodlem prawdy dla sygnalow jest Supabase (pull na starcie, push na koncu).
+#
+# UWAGA o limitach: przebieg co 30 minut to ok. 1440 uruchomien miesiecznie. W repozytorium PRYWATNYM
+# przekroczy to darmowa pule minut; w PUBLICZNYM Actions sa bezplatne. Patrz DECYZJE.md, punkt 17.
+# Harmonogram GitHuba bywa opozniony o kilka-kilkanascie minut: dla H1 i wyzej to bez znaczenia, dla M30 juz nie.
+name: skan
+on:
+  schedule:
+    - cron: "2,32 * * * *"
+  workflow_dispatch:
+    inputs:
+      intervals:
+        description: "Interwaly (np. '1d 4h') albo 'auto'"
+        default: "auto"
+concurrency:
+  group: skan
+  cancel-in-progress: false
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12", cache: pip}
+      - run: pip install -e .
+      - name: Przywroc stan roboczy
+        uses: actions/cache/restore@v4
+        with:
+          path: data
+          key: stan-${{ github.run_id }}
+          restore-keys: stan-
+      - name: Pobierz otwarte sygnaly i swieze newsy z Supabase
+        if: env.SUPABASE_URL != ''
+        run: cfd sync pull
+      - name: Skan
+        run: cfd -v run --once --jobs scan --intervals ${{ github.event.inputs.intervals || 'auto' }}
+      - name: Wyslij wyniki do Supabase
+        if: env.SUPABASE_URL != '' && always()
+        run: cfd sync push
+      - name: Zapisz stan roboczy
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: data
+          key: stan-${{ github.run_id }}

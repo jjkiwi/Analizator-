@@ -1,0 +1,48 @@
+# Raz dziennie: bias fundamentalny (FRED) i raz w tygodniu raport walidacji strategii jako artefakt.
+name: dzienne
+on:
+  schedule:
+    - cron: "40 5 * * *"
+  workflow_dispatch:
+jobs:
+  fundamentals:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+      FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12", cache: pip}
+      - run: pip install -e .
+      - uses: actions/cache/restore@v4
+        with:
+          path: data
+          key: stan-${{ github.run_id }}
+          restore-keys: stan-
+      - name: Bias fundamentalny
+        if: env.FRED_API_KEY != ''
+        run: cfd -v run --once --jobs fundamentals
+      - name: Raport walidacji
+        run: |
+          if [ "$(date -u +%u)" = "1" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            cfd fetch --interval 1d
+            cfd report --interval 1d
+          fi
+      - uses: actions/upload-artifact@v4
+        if: hashFiles('reports/**') != ''
+        with:
+          name: raport-walidacji
+          path: reports/
+      - name: Wyslij do Supabase
+        if: env.SUPABASE_URL != '' && always()
+        run: cfd sync push
+      - uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: data
+          key: stan-${{ github.run_id }}

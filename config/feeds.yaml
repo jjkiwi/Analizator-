@@ -13,17 +13,45 @@ feeds:
   - {name: marketwatch,    url: "https://feeds.content.dowjones.io/public/rss/mw_topstories", poll_seconds: 120}
   - {name: coindesk,       url: "https://www.coindesk.com/arc/outboundfeeds/rss/",           poll_seconds: 120}
 
-# Dodatkowo dla kazdego zapytania powstaje feed Google News (wyszukiwanie RSS).
+# Dodatkowo dla kazdego zapytania powstaje feed Google News (wyszukiwanie RSS), osobno per jezyk.
+# Klasyfikator LLM czyta dowolny jezyk; mapowanie na instrumenty opiera sie na slowach z keywords.yaml,
+# dlatego kazdy jezyk ma tam swoje odpowiedniki.
 google_news:
   enabled: true
   poll_seconds: 300
-  params: {hl: "en-US", gl: "US", ceid: "US:en"}
-  queries:
-    - "Federal Reserve interest rates"
-    - "OPEC oil production"
-    - "crude oil prices"
-    - "natural gas prices"
-    - "gold price"
-    - "stock market today"
-    - "bitcoin"
-    - "ECB interest rates"
+  locales:
+    - params: {hl: "en-US", gl: "US", ceid: "US:en"}
+      queries:
+        - "Federal Reserve interest rates"
+        - "OPEC oil production"
+        - "crude oil prices"
+        - "natural gas prices"
+        - "gold price"
+        - "stock market today"
+        - "bitcoin OR ethereum OR solana"
+        - "ECB interest rates"
+        - "\"Arm Holdings\" OR \"Marvell\" OR \"Broadcom\" OR \"Take-Two\""
+        - "\"Constellation Energy\" OR \"Uranium Energy\" OR \"MP Materials\" OR \"Monster Beverage\" OR \"Revolution Medicines\""
+        - "\"Oxford Instruments\" OR \"Oxford Biomedica\" OR LVMH OR \"International Airlines Group\""
+    - params: {hl: "pl", gl: "PL", ceid: "PL:pl"}
+      queries:
+        - "stopy procentowe NBP RPP"
+        - "WIG20 giełda"
+        - "\"CD Projekt\" OR \"Dino Polska\" OR Żabka OR AmRest OR \"Citi Handlowy\" OR \"Erste Bank Polska\""
+        - "Synektik OR Creotech OR DataWalk OR Bloober OR \"Ten Square Games\" OR Medicalgorithmics"
+        - "cyber_Folks OR \"Rainbow Tours\" OR Astarta OR Niewiadów OR Syn2bio OR \"GPW SA\""
+    - params: {hl: "de", gl: "DE", ceid: "DE:de"}
+      queries:
+        - "DAX Börse heute"
+        - "EZB Zinsen"
+        - "Ölpreis OR Gaspreis"
+    - params: {hl: "fr", gl: "FR", ceid: "FR:fr"}
+      queries:
+        - "CAC 40 bourse"
+        - "BCE taux directeurs"
+        - "LVMH"
+    - params: {hl: "es", gl: "ES", ceid: "ES:es"}
+      queries:
+        - "IBEX 35 bolsa"
+        - "IAG aerolíneas"
+        - "precio del petróleo"

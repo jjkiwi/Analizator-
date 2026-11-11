@@ -1,113 +1,124 @@
-# Zadania dla Claude Code
+# Zadania dla Claude Code (v0.3)
 
-Kolejność ma znaczenie: późniejsze zadania zależą od wcześniejszych.
-Oznaczenia: **[SIEĆ]** wymaga internetu, **[KLUCZ]** wymaga klucza z `.env` (jeśli go nie ma, pomiń i odnotuj),
-**[DECYZJA]** wymaga odpowiedzi w `DECYZJE.md`.
+Kolejność ma znaczenie. Oznaczenia: **[SIEĆ]** wymaga internetu, **[KLUCZ]** wymaga klucza (gdy go nie ma, pomiń
+i odnotuj), **[KONTO]** wymaga konta założonego przez użytkownika, **[DECYZJA]** wymaga odpowiedzi w `DECYZJE.md`.
 
 ## A. Dane rynkowe
 
-### A1. Sprawdzenie mapowań źródeł [SIEĆ]
+### A1. Mapowania źródeł [SIEĆ]
 `cfd check-sources > CLAUDE_CODE/check-sources.txt`
-- Popraw w `config/instruments.yaml` każdy symbol oznaczony BLAD (sprawdź właściwy ticker w Yahoo/Stooq).
-- Znajdź darmowe źródło dla ZINC, NICKEL i danych intraday dla W20. Jeśli nie istnieje, zostaw puste i odnotuj.
-- Porównaj ostatnie ceny zamknięcia między źródłami tego samego instrumentu. Różnica powyżej ~2%
-  oznacza inny instrument bazowy (futures vs indeks kasowy): odnotuj, to wpływa na poziomy SL/TP.
+- Popraw w `config/instruments.yaml` każdy symbol z BLAD. Szczególnie niepewne są akcje (31 pozycji dodanych
+  mechanicznie: `.PL`→`.WA`, `.UK`→`.L`, `.FR`→`.PA`, `.ES`→`.MC`) oraz `1YD.DE`, `SPL.PL`, `GNS.PL`, `S2B.PL`, `CRQ.PL`.
+- Porównaj ostatnie zamknięcia między źródłami tego samego instrumentu. Różnica powyżej ~2% oznacza inny
+  instrument bazowy (futures vs indeks kasowy): odnotuj.
+- Spółki z UK są notowane w pensach (GBX): sprawdź, czy ceny z Yahoo zgadzają się skalą z tym, co pokazuje XTB.
 
-### A2. Naprawa adapterów [SIEĆ]
-Pliki: `src/cfd/data/yahoo.py`, `stooq.py`, `binance.py`. Sprawdź na żywych danych:
-- Yahoo: interwały 1d i 1h, strefa czasowa indeksu, limit ~730 dni dla 1h, resampling do 4h
-  (czy granice świec 4h mają sens dla kontraktów futures handlowanych prawie całą dobę).
-- Stooq: czy pobieranie CSV działa bez klucza/captcha i jaki jest limit dzienny. Jeśli wymaga klucza lub blokuje, odnotuj.
-- Binance: czy `api.binance.com` jest dostępne z tej lokalizacji. Jeśli nie, dodaj zapasowy host publicznych danych.
+### A2. Adaptery [SIEĆ]
+Pliki `src/cfd/data/{yahoo,stooq,binance}.py`. Sprawdź na żywych danych:
+- Yahoo: interwały 1d, 1h, 30m; strefa czasowa; limity historii (1h ~730 dni, 30m ~60 dni); resampling do 4h.
+- Stooq: czy CSV działa bez klucza/captcha, jaki jest limit dzienny.
+- Binance: czy `api.binance.com` odpowiada z GitHub Actions (adresy USA bywają blokowane). Jeśli nie, dodaj zapasowy host.
+- **Uruchom to samo z GitHub Actions** (`workflow_dispatch` w `skan`): Yahoo częściej ogranicza adresy centrów danych.
 - Zapisz po jednej surowej odpowiedzi do `tests/fixtures/` i dopisz testy parsowania.
 
-### A3. Historia i jakość danych [SIEĆ]
-`cfd fetch --interval 1d`, potem `4h` i `1h`.
-Dopisz polecenie `cfd data-quality`, które dla każdego instrumentu raportuje: liczbę świec, zakres dat,
-luki dłuższe niż oczekiwane (weekendy i święta pomiń), świece o zerowym zasięgu, skoki ceny powyżej 8 ATR
-(kandydaci na rolowanie kontraktu futures). Wynik do `CLAUDE_CODE/WYNIKI.md`.
-Ważne: Yahoo zwraca dla `=F` kontrakt ciągły bez korekty rolowania. Sprawdź na ropie i gazie, jak duże
-są skoki przy rolowaniu, i zaproponuj obejście (np. korekta wsteczna albo wykluczenie świec rolowania z sygnałów).
+### A3. Historia i jakość [SIEĆ]
+`cfd fetch` dla 1d, 4h, 1h, 30m. Dopisz `cfd data-quality`: liczba świec, zakres dat, luki (bez weekendów i świąt),
+świece o zerowym zasięgu, skoki powyżej 8 ATR. Yahoo zwraca dla `=F` kontrakt ciągły bez korekty rolowania:
+sprawdź skoki na ropie i gazie i zaproponuj obejście.
 
 ## B. Walidacja strategii
 
 ### B1. Raport walk-forward
-`cfd report --interval 1d` oraz `cfd report --interval 4h` (wynik w `reports/`).
-Skopiuj do `WYNIKI.md` tabelę: ile kombinacji PASS / WEAK / FAIL, lista PASS z liczbami.
-Przy ~40 instrumentach i 3 strategiach kilka PASS pojawi się przez przypadek. Dla każdego PASS sprawdź
-dodatkowo: wynik przy kosztach ×2 i wynik na drugim interwale. Odnotuj, które PASS to przetrwały.
+`cfd report` dla 1d, 4h i 1h. Dla 30m historii jest za mało: odnotuj to, nie obchodź.
+Do `WYNIKI.md`: liczba PASS / WEAK / FAIL i lista PASS. Dla każdego PASS sprawdź wynik przy kosztach ×2
+i na sąsiednim interwale. Przy ~70 instrumentach i 3 strategiach kilka PASS pojawi się przez przypadek.
 
-### B2. Koszty z XTB [DECYZJA]
-Gdy użytkownik dostarczy specyfikację instrumentów (spread, punkty swapowe, wartość lota), wpisz ją do
-`config/instruments.yaml` w polu `costs` per instrument i powtórz B1. Do tego czasu raport liczony jest na założeniach.
+### B2. Koszty z XTB [SIEĆ]
+Strona `https://www.xtb.com/pl/specyfikacja-instrumentow` ładuje tabelę JavaScriptem, więc zwykłe pobranie
+zwraca pustą stronę. Odczytaj ją **jednorazowo** w przeglądarce (lub z dokumentów PDF podlinkowanych jako
+"Sprawdź dokumenty") i wpisz do `config/instruments.yaml` w polu `costs` per instrument: spread, punkty swapowe
+long/short przeliczone na procent roczny, a osobno (nowe pola) wartość lota i walutę. Potem powtórz B1.
+Zapisz datę odczytu: te wartości się zmieniają.
 
-### B3. Kalkulator wielkości pozycji [DECYZJA]
-Dopisz `cfd size SYMBOL --entry X --sl Y --risk-pct Z --equity E`: wolumen w lotach tak, by strata na SL
-wyniosła zadany procent kapitału. Wymaga wartości lota i waluty instrumentu ze specyfikacji XTB (B2).
+### B3. Kalkulator pozycji
+`cfd size SYMBOL --entry X --sl Y --risk-pct Z --equity E`: wolumen, przy którym strata na SL to zadany procent
+kapitału. Rachunek w PLN, więc uwzględnij przewalutowanie. Wymaga danych z B2.
 
 ## C. Newsy
 
 ### C1. Feedy [SIEĆ]
-`cfd news check-feeds`. Usuń lub popraw niedziałające adresy w `config/feeds.yaml`.
-Dodaj polskie źródła (PAP Biznes, komunikaty ESPI/EBI, NBP) i brakujące banki centralne, jeśli mają RSS.
-Sprawdź, czy Google News RSS nie blokuje przy odpytywaniu co 5 minut.
+`cfd news check-feeds`. Popraw lub usuń niedziałające adresy w `config/feeds.yaml`. Dodaj PAP Biznes,
+komunikaty ESPI/EBI i NBP, jeśli mają RSS. Sprawdź, czy Google News RSS nie blokuje 30 zapytań co 5 minut
+(także z adresów Supabase).
 
-### C2. Jakość mapowania i klasyfikacji [SIEĆ]
-Uruchom `cfd news poll` kilkanaście razy w odstępach kilku minut, potem `cfd news list --min-importance 1 --limit 200`.
-- Policz fałszywe trafienia słów kluczowych (podejrzane: "fed", "eth", "ether", "gold", "corn", "sugar", "boj", "lng", "gpw").
-  Popraw `config/keywords.yaml`: usuń lub zawęź wieloznaczne słowa.
-- Oceń ręcznie 50 newsów z wagą 3 z klasyfikatora regułowego: ile faktycznie było pilnych. Wynik do `WYNIKI.md`.
-- Zmierz opóźnienie: czas publikacji w feedzie vs czas pobrania. To odpowiedź na pytanie, jak szybki jest tor newsowy.
+### C2. Jakość mapowania [SIEĆ]
+`cfd news poll` kilkanaście razy co kilka minut, potem `cfd news list --min-importance 1 --limit 200`.
+- Policz fałszywe trafienia (podejrzane: "fed", "eth", "ether", "gold", "corn", "sugar", "boj", "lng", "ibex",
+  "erste group", "marvell", "iberia"). Zawęź `config/keywords.yaml`.
+- Oceń ręcznie 50 newsów z wagą 3 i 50 z wagą 2 z reguł. Użytkownik chce alertów od wagi 2: jeśli wychodzi
+  więcej niż ~30 alertów dziennie, zaproponuj zaostrzenie reguł, zamiast po cichu zmieniać próg.
+- Zmierz opóźnienie: czas publikacji vs czas pobrania, osobno per język.
 
-### C3. Klasyfikator LLM [KLUCZ: ANTHROPIC_API_KEY]
-Sprawdź w dokumentacji aktualną nazwę taniego modelu i poprawność wywołania w `news/classify.py`.
-Porównaj na tych samych 50 newsach reguły vs LLM. Oszacuj koszt miesięczny przy zaobserwowanym wolumenie
-(pamiętaj, że do LLM trafiają tylko newsy z wagą regułową ≥ 2).
+### C3. Darmowe modele [KLUCZ: dowolny z config/llm.yaml]
+Dla każdego dostawcy z kluczem: sprawdź w dokumentacji aktualną nazwę modelu, adres i limity darmowego planu,
+popraw `config/llm.yaml`. Porównaj na tych samych 100 newsach (w tym polskich, niemieckich, francuskich,
+hiszpańskich): reguły vs każdy model. Miary: zgodność wagi z oceną ręczną, sensowność kierunku, czas odpowiedzi,
+odsetek odpowiedzi niebędących poprawnym JSON. Ustaw kolejność łańcucha według wyniku.
 
 ## D. Kalendarz makro
 
-### D1. Źródło kalendarza [SIEĆ]
-`cfd macro refresh`, potem `cfd macro upcoming`. Zweryfikuj adres i format w `macro/sources.py`
-(spisane z pamięci), strefę czasową wydarzeń i limit zapytań. Dopisz test na zapisanej próbce.
+### D1. Źródło [SIEĆ]
+`cfd macro refresh`, `cfd macro upcoming`. Zweryfikuj adres, format i strefę czasową (parsery w `macro/sources.py`
+i `supabase/functions/_shared/macro.ts`). Sprawdź limit zapytań: funkcja odświeża co 60 minut.
 
-### D2. Odczyty bieżące ("actual") [SIEĆ]
-Obecne źródło najpewniej nie podaje odczytu po publikacji. Znajdź darmowy sposób: publiczne API urzędów
-(BLS, BEA, EIA, Eurostat), FRED z opóźnieniem albo publiczna strona, którą wolno scrapować.
-Zaimplementuj jako drugi adapter uzupełniający `actual`. Jeśli nic rozsądnego nie istnieje, opisz to
-i zostaw `cfd macro set-actual` plus tor newsowy.
+### D2. Odczyty bieżące [SIEĆ]
+Znajdź darmowe źródło pola `actual` (API urzędów: BLS, BEA, EIA, Eurostat; FRED z opóźnieniem; strona publiczna
+dopuszczająca scraping). Zaimplementuj w obu językach albo opisz, dlaczego się nie da.
 
 ## E. Fundamenty
 
 ### E1. FRED [KLUCZ: FRED_API_KEY]
-`cfd bias check`, popraw błędne identyfikatory serii w `config/fundamentals.yaml` (niepewne: `WCESTUS1`),
-potem `cfd bias update` i `cfd bias show`. Oceń, czy wyniki są sensowne na tle ostatnich miesięcy.
+`cfd bias check`, popraw identyfikatory (niepewny `WCESTUS1`), `cfd bias update`, `cfd bias show`.
 
 ### E2. Zapasy i pozycjonowanie [SIEĆ]
-- Adapter EIA (zapasy ropy, benzyny, gazu; darmowy klucz) jako składowe biasu dla OIL, OIL.WTI, GASOLINE, NATGAS.
-- Adapter raportów COT z CFTC. Funkcja `positioning_percentile` już istnieje w `fundamentals/bias.py`.
-  Dodaj typ składowej "percentyl pozycjonowania" (kontrariańsko przy skrajnościach).
+Adapter EIA i adapter COT z CFTC jako nowe typy składowych biasu (`positioning_percentile` już istnieje).
 
-### E3. Akcje [DECYZJA: lista spółek]
-Po dostarczeniu listy: mapowania w `instruments.yaml`, moduł fundamentów spółek (wycena, dynamika wyników,
-daty raportów) z yfinance i SEC EDGAR, alert przed raportem kwartalnym, dla spółek z GPW komunikaty ESPI.
+### E3. Akcje [SIEĆ]
+Moduł fundamentów spółek dla 31 pozycji z `instruments.yaml`: wycena, dynamika wyników, daty raportów
+(yfinance, SEC EDGAR dla USA), alert przed raportem kwartalnym, komunikaty ESPI dla spółek z GPW.
+Użytkownik te akcje posiada: sygnał SHORT traktuj jako ostrzeżenie, nie zachętę do krótkiej sprzedaży (patrz DECYZJE 19).
 
-## F. Powiadomienia i praca ciągła
+## F. Wdrożenie w chmurze
 
-### F1. Telegram [KLUCZ: TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID]
-`cfd notify-test`. Sprawdź formatowanie wszystkich typów wiadomości (`notify.py`) na telefonie.
+### F1. Supabase [KONTO]
+- `supabase link`, `supabase db push` (migracja `0001_init.sql`).
+- Sekrety funkcji: `CRON_SECRET` (wygeneruj losowy), `TELEGRAM_*`, klucze modeli.
+- `cfd export-config`, potem `supabase functions deploy news-poll macro-poll`.
+- Wywołaj każdą funkcję ręcznie z nagłówkiem `x-cron-secret` i sprawdź odpowiedź oraz tabele.
+- Dopiero potem harmonogram: `supabase/cron.sql.template` (zweryfikuj składnię `pg_cron`/`pg_net` w dokumentacji).
+- Sprawdź limity darmowego planu: liczba wywołań funkcji miesięcznie (2 funkcje × co minutę ≈ 86 tys.),
+  czas wykonania, rozmiar bazy, usypianie nieaktywnych projektów. Jeśli limit wywołań jest za niski,
+  połącz obie funkcje w jedną albo wydłuż odstęp i odnotuj.
+- Auth: wyłącz rejestrację, dodaj użytkownika (e-mail właściciela), ustaw adres przekierowania na domenę panelu.
 
-### F2. Pierwszy pełny przebieg [SIEĆ]
-`cfd -v run --once`, potem `cfd health`, `cfd journal`, `cfd dashboard`. Napraw wszystko, co padnie.
-Następnie `cfd run` na co najmniej godzinę: obserwuj zużycie pamięci, liczbę zapytań do każdego serwisu
-i czy żaden nie zaczyna odrzucać połączeń.
+### F2. GitHub Actions [KONTO] [DECYZJA 17]
+Sekrety repozytorium: `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`, `TELEGRAM_*`, `FRED_API_KEY`.
+Uruchom `testy`, potem ręcznie `skan` z `intervals: 1d`. Zmierz czas przebiegu i policz miesięczne zużycie minut
+dla harmonogramu co 30 minut. Sprawdź, czy cache `data/` wraca między przebiegami i jak duży jest.
 
-### F3. Uruchamianie w tle [DECYZJA: gdzie ma działać]
-Przygotuj wariant dla wybranego środowiska: usługa systemd, Harmonogram zadań Windows albo Dockerfile
-z `docker-compose.yml`. Automatyczny restart po awarii, rotacja logów, odświeżanie `reports/panel.html` co kilka minut.
+### F3. Panel [KONTO]
+Wpisz adres projektu i klucz `anon` do `web/config.js`, wdróż na Vercel (`vercel.json` wskazuje katalog `web`).
+Panel nie był otwierany w przeglądarce: sprawdź logowanie linkiem, wszystkie pięć widoków na telefonie
+(jasny i ciemny motyw), instalację jako PWA. Rozważ dołączenie biblioteki supabase-js lokalnie zamiast z esm.sh.
+
+### F4. Próba generalna
+Zostaw całość na dobę. Sprawdź: liczbę alertów, działanie ciszy nocnej (23–8 czasu polskiego) i porannego
+podsumowania, brak duplikatów alertów, tabelę `source_health`, logi funkcji.
 
 ## G. Później (nie zaczynaj bez decyzji)
 
-- **G1. Ceny na żywo** z API brokera na koncie demo (Capital.com lub IG): `LivePriceAdapter`, a w alercie newsowym
-  informacja, o ile rynek ruszył się od publikacji. Wymaga założenia konta przez użytkownika i sprawdzenia regulaminu API.
-- **G2. Pełny panel PWA** (FastAPI + React) zamiast statycznego HTML.
-- **G3. Nowe strategie i filtr reżimu rynku** (`features.regime` już istnieje) dopiero po wynikach B1.
+- **G1. Ceny na żywo** z API brokera na koncie demo (Capital.com lub IG): konto zakłada użytkownik.
+  `LivePriceAdapter`, a w alercie newsowym informacja, o ile rynek ruszył się od publikacji.
+- **G2. Rozbudowa panelu**: wykresy, historia sygnału, kalkulator pozycji.
+- **G3. Nowe strategie i filtr reżimu rynku** dopiero po wynikach B1.
+- **G4. Przeniesienie na własną maszynę**, jeśli całość się sprawdzi (`cfd run` już to obsługuje).

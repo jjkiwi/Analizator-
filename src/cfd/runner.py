@@ -65,15 +65,16 @@ def health_fail(ctx: Context, source: str, error: str, alert: bool = True) -> bo
 
 # ---------- zadania ----------
 
-def job_scan(ctx: Context) -> int:
+def job_scan(ctx: Context, intervals: list[str] | None = None) -> int:
     cfg = ctx.settings["scan"]
+    intervals = cfg["intervals"] if intervals is None else intervals
     strategies = [REGISTRY[name]() for name in cfg["strategies"] if name in REGISTRY]
     new = 0
     broken: list[str] = []
     for inst in ctx.instruments.values():
         if not inst.sources:
             continue
-        for interval in cfg["intervals"]:
+        for interval in intervals:
             try:
                 df, source = ctx.data.update(inst, interval)
                 health_ok(ctx, f"candles:{source}")
@@ -187,12 +188,18 @@ def _due(ctx: Context, name: str, every_seconds: float) -> bool:
     return False
 
 
-def run_once(ctx: Context) -> dict:
-    """Jeden pelny przebieg wszystkich zadan. Blad jednego zadania nie zatrzymuje pozostalych."""
+JOBS = {"fundamentals": job_fundamentals, "macro": job_macro, "news": job_news, "scan": job_scan}
+
+
+def run_once(ctx: Context, jobs: list[str] | None = None, intervals: list[str] | None = None) -> dict:
+    """Jeden przebieg wybranych zadan (domyslnie wszystkich). Blad jednego nie zatrzymuje pozostalych."""
     out = {}
-    for name, job in (("fundamentals", job_fundamentals), ("macro", job_macro), ("news", job_news), ("scan", job_scan)):
+    if hasattr(ctx.notifier, "flush"):
+        ctx.notifier.flush()
+    for name in jobs or list(JOBS):
+        job = JOBS[name]
         try:
-            out[name] = job(ctx)
+            out[name] = job(ctx, intervals) if name == "scan" else job(ctx)
         except Exception as exc:
             log.exception("zadanie %s padlo", name)
             out[name] = f"BLAD: {type(exc).__name__}: {exc}"

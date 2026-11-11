@@ -2,7 +2,9 @@
 
 scan:
   every_minutes: 15
-  intervals: ["1d", "4h"]
+  # 30m: Yahoo daje tylko ~60 dni historii, wiec strategii na 30m nie da sie zwalidowac walk-forward.
+  # Sygnaly 30m sa zbierane w dzienniku (forward test), ale traktuj je jako eksperyment.
+  intervals: ["1d", "4h", "1h", "30m"]
   # Wszystkie strategie z tej listy trafiaja do dziennika (forward test)...
   strategies: [trend_pullback, donchian_breakout, mean_reversion]
   # ...ale alert dostajesz tylko z tych, ktore przeszly walidacje. Domyslnie zadna.
@@ -11,9 +13,9 @@ scan:
 
 news:
   every_seconds: 60
-  alert_min_importance: 3
+  alert_min_importance: 2   # 3 = pilne (🔴), 2 = istotne (🟡); oba ida jako powiadomienie
   max_age_hours: 12
-  use_llm: true            # bez ANTHROPIC_API_KEY i tak dzialaja same reguly
+  use_llm: true             # lancuch darmowych modeli z config/llm.yaml; bez kluczy dzialaja same reguly
 
 macro:
   refresh_minutes: 60
@@ -25,3 +27,8 @@ fundamentals:
 
 health:
   alert_after_failures: 3
+
+quiet_hours:               # w tym czasie powiadomienia sa odkladane i wysylane rano jako jedno podsumowanie
+  start: 23
+  end: 8
+  tz: "Europe/Warsaw"

@@ -12,7 +12,7 @@ class BinanceAdapter:
     """Publiczne API Binance (bez klucza). Dane spot na zywo."""
 
     name = "binance"
-    intervals = ("1h", "4h", "1d")
+    intervals = ("30m", "1h", "4h", "1d")
     URL = "https://api.binance.com/api/v3/klines"
     PAGE = 1000
 

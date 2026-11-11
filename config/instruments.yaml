@@ -13,7 +13,8 @@ cost_defaults:
   commodities: {spread_pct: 0.0010, swap_long_annual_pct: 0.08, swap_short_annual_pct: 0.02}
   metals:      {spread_pct: 0.0005, swap_long_annual_pct: 0.06, swap_short_annual_pct: 0.01}
   crypto:      {spread_pct: 0.0030, swap_long_annual_pct: 0.25, swap_short_annual_pct: 0.10}
-  stocks:      {spread_pct: 0.0010, swap_long_annual_pct: 0.07, swap_short_annual_pct: 0.02}
+  # Akcje trzymane jako prawdziwe akcje (nie CFD): brak swapu, koszt to spread i ewentualne przewalutowanie.
+  stocks:      {spread_pct: 0.0030, swap_long_annual_pct: 0.0, swap_short_annual_pct: 0.0}
 
 instruments:
   # ---------- INDEKSY ----------
@@ -53,8 +54,6 @@ instruments:
   - {symbol: LEANHOGS,  name: "Wieprzowina",    category: commodities, sources: {yahoo: "HE=F"}}
   - {symbol: COPPER,    name: "Miedz",          category: commodities, sources: {yahoo: "HG=F", stooq: "hg.f"}}
   - {symbol: ALUMINIUM, name: "Aluminium",      category: commodities, sources: {yahoo: "ALI=F"}}
-  - {symbol: ZINC,      name: "Cynk",           category: commodities, sources: {}}
-  - {symbol: NICKEL,    name: "Nikiel",         category: commodities, sources: {}}
 
   # ---------- METALE SZLACHETNE ----------
   - {symbol: GOLD,      name: "Zloto",          category: metals, sources: {yahoo: "GC=F", stooq: "gc.f"}}
@@ -67,6 +66,35 @@ instruments:
   - {symbol: ETHEREUM,  name: "Ethereum",       category: crypto, sources: {binance: "ETHUSDT", yahoo: "ETH-USD"}}
   - {symbol: SOLANA,    name: "Solana",         category: crypto, sources: {binance: "SOLUSDT", yahoo: "SOL-USD"}}
 
-  # ---------- AKCJE: dopisz swoja liste, np. ----------
-  # - {symbol: AAPL.US, name: "Apple", category: stocks, sources: {yahoo: "AAPL"}}
-  # - {symbol: PKN.PL,  name: "Orlen", category: stocks, sources: {yahoo: "PKN.WA", stooq: "pkn"}}
+  # ---------- AKCJE (z wyciagu XTB; mapowania Yahoo wg konwencji gield, NIESPRAWDZONE) ----------
+  - {symbol: ARM.US,   name: "ARM", category: stocks, sources: {yahoo: "ARM"}}
+  - {symbol: CEG.US,   name: "Constellation Energy", category: stocks, sources: {yahoo: "CEG"}}
+  - {symbol: MNST.US,  name: "Monster Beverage", category: stocks, sources: {yahoo: "MNST"}}
+  - {symbol: MP.US,    name: "MP Materials", category: stocks, sources: {yahoo: "MP"}}
+  - {symbol: MRVL.US,  name: "Marvell", category: stocks, sources: {yahoo: "MRVL"}}
+  - {symbol: RVMD.US,  name: "Revolution Medicines", category: stocks, sources: {yahoo: "RVMD"}}
+  - {symbol: TTWO.US,  name: "Take-Two Interactive", category: stocks, sources: {yahoo: "TTWO"}}
+  - {symbol: UEC.US,   name: "Uranium Energy", category: stocks, sources: {yahoo: "UEC"}}
+  - {symbol: 1YD.DE,   name: "Broadcom (Xetra)", category: stocks, sources: {yahoo: "1YD.DE"}}
+  - {symbol: MC.FR,    name: "LVMH", category: stocks, sources: {yahoo: "MC.PA"}}
+  - {symbol: IAG.ES,   name: "IAG", category: stocks, sources: {yahoo: "IAG.MC"}}
+  - {symbol: OXB.UK,   name: "Oxford Biomedica", category: stocks, sources: {yahoo: "OXB.L"}}
+  - {symbol: OXIG.UK,  name: "Oxford Instruments", category: stocks, sources: {yahoo: "OXIG.L"}}
+  - {symbol: AST.PL,   name: "Astarta", category: stocks, sources: {yahoo: "AST.WA", stooq: "ast"}}
+  - {symbol: BHW.PL,   name: "Citi Handlowy", category: stocks, sources: {yahoo: "BHW.WA", stooq: "bhw"}}
+  - {symbol: BLO.PL,   name: "Bloober Team", category: stocks, sources: {yahoo: "BLO.WA", stooq: "blo"}}
+  - {symbol: CBF.PL,   name: "Cyber_Folks", category: stocks, sources: {yahoo: "CBF.WA", stooq: "cbf"}}
+  - {symbol: CDR.PL,   name: "CD Projekt", category: stocks, sources: {yahoo: "CDR.WA", stooq: "cdr"}}
+  - {symbol: CRQ.PL,   name: "Creotech Quantum", category: stocks, sources: {yahoo: "CRQ.WA", stooq: "crq"}}
+  - {symbol: DAT.PL,   name: "DataWalk", category: stocks, sources: {yahoo: "DAT.WA", stooq: "dat"}}
+  - {symbol: DNP.PL,   name: "Dino Polska", category: stocks, sources: {yahoo: "DNP.WA", stooq: "dnp"}}
+  - {symbol: EAT.PL,   name: "AmRest", category: stocks, sources: {yahoo: "EAT.WA", stooq: "eat"}}
+  - {symbol: GNS.PL,   name: "Niewiadow PGM", category: stocks, sources: {yahoo: "GNS.WA", stooq: "gns"}}
+  - {symbol: GPW.PL,   name: "GPW", category: stocks, sources: {yahoo: "GPW.WA", stooq: "gpw"}}
+  - {symbol: MDG.PL,   name: "Medicalgorithmics", category: stocks, sources: {yahoo: "MDG.WA", stooq: "mdg"}}
+  - {symbol: RBW.PL,   name: "Rainbow Tours", category: stocks, sources: {yahoo: "RBW.WA", stooq: "rbw"}}
+  - {symbol: S2B.PL,   name: "Syn2bio", category: stocks, sources: {yahoo: "S2B.WA", stooq: "s2b"}}
+  - {symbol: SNT.PL,   name: "Synektik", category: stocks, sources: {yahoo: "SNT.WA", stooq: "snt"}}
+  - {symbol: SPL.PL,   name: "Erste Bank Polska", category: stocks, sources: {yahoo: "SPL.WA", stooq: "spl"}}
+  - {symbol: TEN.PL,   name: "Ten Square Games", category: stocks, sources: {yahoo: "TEN.WA", stooq: "ten"}}
+  - {symbol: ZAB.PL,   name: "Zabka Group", category: stocks, sources: {yahoo: "ZAB.WA", stooq: "zab"}}

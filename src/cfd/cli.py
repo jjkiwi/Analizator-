@@ -50,21 +50,24 @@ def _context(args):
     """Sklada wszystko, czego potrzebuje praca ciagla. Brakujace klucze = dana czesc jest wylaczona."""
     from .fundamentals import FredClient, load_components
     from .macro import FairEconomyCalendar, MacroRules
-    from .news import KeywordMapper, LLMClassifier, RuleClassifier, load_feeds
-    from .notify import notifier_from_env
+    from .news import ChainClassifier, KeywordMapper, RuleClassifier, load_feeds
+    from .notify import QuietNotifier, notifier_from_env
     from .runner import Context
 
     instruments = _instruments(args)
     settings = load_settings(_cfg(args, "settings.yaml"))
+    conn = _conn(args)
     rules = RuleClassifier()
-    use_llm = settings["news"]["use_llm"] and os.environ.get("ANTHROPIC_API_KEY")
+    chain = ChainClassifier.from_file(_cfg(args, "llm.yaml"), fallback=rules) if settings["news"]["use_llm"] else None
+    use_llm = bool(chain and chain.providers)
     fred = FredClient() if os.environ.get("FRED_API_KEY") else None
+    q = settings["quiet_hours"]
     return Context(
-        conn=_conn(args), settings=settings, instruments=instruments, data=_service(args),
-        notifier=notifier_from_env(),
+        conn=conn, settings=settings, instruments=instruments, data=_service(args),
+        notifier=QuietNotifier(notifier_from_env(), conn, q["start"], q["end"], q["tz"]),
         feeds=load_feeds(_cfg(args, "feeds.yaml")),
         mapper=KeywordMapper.from_file(_cfg(args, "keywords.yaml"), set(instruments)),
-        classifier=LLMClassifier(fallback=rules) if use_llm else rules,
+        classifier=chain if use_llm else rules,
         cheap_classifier=rules if use_llm else None,
         macro_source=FairEconomyCalendar(), macro_rules=MacroRules.from_file(_cfg(args, "macro_rules.yaml")),
         fund_components=load_components(_cfg(args, "fundamentals.yaml")),
@@ -295,12 +298,61 @@ def cmd_health(args) -> None:
 def cmd_run(args) -> None:
     from .runner import run_forever, run_once
 
+    from datetime import datetime, timezone
+
+    from .scanner import due_intervals
+
     ctx = _context(args)
-    if args.once:
-        for name, result in run_once(ctx).items():
-            print(f"{name:<13} {result}")
-    else:
-        run_forever(ctx)
+    if not args.once:
+        return run_forever(ctx)
+    intervals = None
+    if args.intervals == ["auto"]:
+        intervals = due_intervals(datetime.now(timezone.utc), ctx.settings["scan"]["intervals"])
+        print(f"interwaly w tym przebiegu: {intervals}")
+    elif args.intervals:
+        intervals = args.intervals
+    for name, result in run_once(ctx, args.jobs, intervals).items():
+        print(f"{name:<13} {result}")
+
+
+def cmd_sync(args) -> None:
+    from . import sync
+
+    sb, conn = sync.SupabaseClient(), _conn(args)
+    if args.action in ("pull", "both"):
+        print(f"pull: otwarte sygnaly {sync.pull_open_signals(conn, sb)}, newsy {sync.pull_news_directions(conn, sb)}")
+    if args.action in ("push", "both"):
+        print(f"push: {sync.push(conn, sb)}")
+
+
+def cmd_export_config(args) -> None:
+    """Zapisuje konfiguracje toru szybkiego jako JSON dla funkcji Supabase (jedno zrodlo prawdy: pliki YAML)."""
+    import json
+
+    import yaml
+
+    from .news import load_feeds
+
+    instruments = _instruments(args)
+    kw = yaml.safe_load(_cfg(args, "keywords.yaml").read_text(encoding="utf-8"))
+    known = set(instruments)
+    settings = load_settings(_cfg(args, "settings.yaml"))
+    out = {
+        "symbols": sorted(known),
+        "feeds": [vars(f) for f in load_feeds(_cfg(args, "feeds.yaml"))],
+        "keywords": {
+            "instruments": {s: w for s, w in kw.get("instruments", {}).items() if s in known and w},
+            "topics": {n: {"keywords": t["keywords"], "symbols": [s for s in t["symbols"] if s in known]} for n, t in kw.get("topics", {}).items()},
+            "high_impact": kw.get("high_impact", []),
+        },
+        "macro_rules": yaml.safe_load(_cfg(args, "macro_rules.yaml").read_text(encoding="utf-8"))["rules"],
+        "llm": yaml.safe_load(_cfg(args, "llm.yaml").read_text(encoding="utf-8")),
+        "news": settings["news"], "macro": settings["macro"], "quiet_hours": settings["quiet_hours"],
+    }
+    path = Path(args.out)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8")
+    print(f"Zapisano {path} ({len(out['feeds'])} feedow, {len(out['symbols'])} symboli)")
 
 
 def cmd_dashboard(args) -> None:
@@ -329,7 +381,7 @@ def main(argv: list[str] | None = None) -> None:
             sp.add_argument("symbols", nargs="*", help="symbole XTB; puste = wszystkie")
             sp.add_argument("--category")
         if interval:
-            sp.add_argument("--interval", default="1d", choices=["1h", "4h", "1d"])
+            sp.add_argument("--interval", default="1d", choices=["30m", "1h", "4h", "1d"])
         sp.set_defaults(fn=fn)
         return sp
 
@@ -381,6 +433,12 @@ def main(argv: list[str] | None = None) -> None:
     add("health", cmd_health, "stan zrodel danych", symbols=False, interval=False)
     sp = add("run", cmd_run, "praca ciagla (albo --once: jeden przebieg)", symbols=False, interval=False)
     sp.add_argument("--once", action="store_true")
+    sp.add_argument("--jobs", nargs="*", choices=["fundamentals", "macro", "news", "scan"], help="domyslnie wszystkie")
+    sp.add_argument("--intervals", nargs="*", help="np. 1h 4h albo 'auto' = te, na ktorych wlasnie zamknela sie swieca")
+    sp = add("sync", cmd_sync, "synchronizacja z Supabase: push | pull | both", symbols=False, interval=False)
+    sp.add_argument("action", choices=["push", "pull", "both"])
+    sp = add("export-config", cmd_export_config, "konfiguracja dla funkcji Supabase (JSON)", symbols=False, interval=False)
+    sp.add_argument("--out", default="supabase/functions/_shared/config.json")
     sp = add("dashboard", cmd_dashboard, "wygeneruj statyczny panel HTML", symbols=False, interval=False)
     sp.add_argument("--out", default="reports/panel.html")
     add("notify-test", cmd_notify_test, "wyslij testowe powiadomienie", symbols=False, interval=False)

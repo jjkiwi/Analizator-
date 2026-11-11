@@ -31,10 +31,15 @@ def load_feeds(path: Path | str = "config/feeds.yaml") -> list[FeedConfig]:
     feeds = [FeedConfig(**f) for f in raw.get("feeds", [])]
     g = raw.get("google_news") or {}
     if g.get("enabled"):
-        for q in g.get("queries", []):
-            qs = urlencode({"q": q, **g.get("params", {})})
-            slug = re.sub(r"\W+", "_", q.lower()).strip("_")
-            feeds.append(FeedConfig(f"gnews_{slug}", f"https://news.google.com/rss/search?{qs}", g.get("poll_seconds", 300)))
+        # stary format (jedno `params` + `queries`) jest nadal akceptowany
+        locales = g.get("locales") or [{"params": g.get("params", {}), "queries": g.get("queries", [])}]
+        for loc in locales:
+            lang = str(loc.get("params", {}).get("hl", "")).split("-")[0].lower()
+            for q in loc.get("queries", []):
+                qs = urlencode({"q": q, **loc.get("params", {})})
+                slug = re.sub(r"\W+", "_", q.lower()).strip("_")[:40]
+                name = f"gnews_{lang}_{slug}" if lang and len(locales) > 1 else f"gnews_{slug}"
+                feeds.append(FeedConfig(name, f"https://news.google.com/rss/search?{qs}", g.get("poll_seconds", 300)))
     return feeds
 
 

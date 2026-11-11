@@ -6,7 +6,7 @@ from typing import Protocol
 import pandas as pd
 
 COLUMNS = ["open", "high", "low", "close", "volume"]
-INTERVALS = ("1h", "4h", "1d")
+INTERVALS = ("30m", "1h", "4h", "1d")
 
 
 class DataSourceError(RuntimeError):
