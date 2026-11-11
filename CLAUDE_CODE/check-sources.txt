@@ -29,3 +29,34 @@ OIL        yahoo    OK    BZ=F         ostatnia swieca 2026-11-10 close 92.09
 OIL.WTI    yahoo    OK    CL=F         ostatnia swieca 2026-11-10 close 86.49
 OIL.WTI    stooq    BLAD  cl.f         stooq cl.f: HTTPStatusError: Client error '404 Not Found' for url 'https://stooq.com/q/d/l/?s=cl.f&i=d&d1=2026
 NATGAS     yahoo    OK    NG=F         ostatnia swieca 2026-11-10 close 3.319
+NATGAS     stooq    BLAD  ng.f         stooq ng.f: ConnectError: [Errno 104] Connection reset by peer
+GASOLINE   yahoo    OK    RB=F         ostatnia swieca 2026-11-10 close 2.6256
+COCOA      yahoo    OK    CC=F         ostatnia swieca 2026-11-10 close 4852
+COFFEE     yahoo    OK    KC=F         ostatnia swieca 2026-11-10 close 266.75
+SUGAR      yahoo    OK    SB=F         ostatnia swieca 2026-11-10 close 18.15
+COTTON     yahoo    OK    CT=F         ostatnia swieca 2026-11-09 close 78.78
+CORN       yahoo    OK    ZC=F         ostatnia swieca 2026-11-10 close 448
+WHEAT      yahoo    OK    ZW=F         ostatnia swieca 2026-11-10 close 591.5
+SOYBEAN    yahoo    OK    ZS=F         ostatnia swieca 2026-11-10 close 1226.75
+SOYOIL     yahoo    OK    ZL=F         ostatnia swieca 2026-11-10 close 62.71
+CATTLE     yahoo    OK    LE=F         ostatnia swieca 2026-11-10 close 222.55
+LEANHOGS   yahoo    OK    HE=F         ostatnia swieca 2026-11-10 close 55.875
+COPPER     yahoo    OK    HG=F         ostatnia swieca 2026-11-10 close 6.272
+COPPER     stooq    BLAD  hg.f         stooq hg.f: ConnectError: [Errno 104] Connection reset by peer
+ALUMINIUM  yahoo    OK    ALI=F        ostatnia swieca 2026-11-10 close 3112.25
+ZINC       --       BRAK ZRODLA
+NICKEL     --       BRAK ZRODLA
+GOLD       yahoo    OK    GC=F         ostatnia swieca 2026-11-10 close 4040.5
+GOLD       stooq    BLAD  gc.f         stooq gc.f: ConnectError: [Errno 104] Connection reset by peer
+SILVER     yahoo    OK    SI=F         ostatnia swieca 2026-11-10 close 51.525
+SILVER     stooq    BLAD  si.f         stooq si.f: ConnectError: [Errno 104] Connection reset by peer
+PLATINUM   yahoo    OK    PL=F         ostatnia swieca 2026-11-10 close 1541.7
+PALLADIUM  yahoo    OK    PA=F         ostatnia swieca 2026-11-10 close 1026.5
+BITCOIN    binance  OK    BTCUSDT      ostatnia swieca 2026-11-10 close 73736
+BITCOIN    yahoo    OK    BTC-USD      ostatnia swieca 2026-11-10 close 73642.6
+ETHEREUM   binance  OK    ETHUSDT      ostatnia swieca 2026-11-10 close 2057.34
+ETHEREUM   yahoo    OK    ETH-USD      ostatnia swieca 2026-11-10 close 2054.75
+SOLANA     binance  OK    SOLUSDT      ostatnia swieca 2026-11-10 close 83.37
+SOLANA     yahoo    OK    SOL-USD      ostatnia swieca 2026-11-10 close 83.27
+
+Dziala: 44, nie dziala: 16
