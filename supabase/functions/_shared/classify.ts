@@ -18,14 +18,30 @@ export interface Provider {
 const UP = /\b(surge[sd]?|soar(?:s|ed)?|jump(?:s|ed)?|rall(?:y|ies|ied)|climb(?:s|ed)?|gain(?:s|ed)?|record high|rośnie|rosną|drożeje|rekord)(?![\p{L}])/iu;
 const DOWN = /\b(plunge[sd]?|tumble[sd]?|slump(?:s|ed)?|sinks?|sank|drop(?:s|ped)?|falls?|fell|slide[sd]?|crash(?:es|ed)?|record low|spada|spadają|tanieje|traci)(?![\p{L}])/iu;
 
-/** Darmowy klasyfikator bez sieci. Wage ocenia przyzwoicie, kierunek tylko gdy news mowi wprost o ruchu ceny. */
+// Zapowiedzi, prognozy i komentarze: fraza wysokiej wagi pada w nich bez nowego zdarzenia. 1:1 z Pythonem.
+const SOFT = new RegExp(
+  "(?<![\\p{L}\\p{N}_])(ahead|tests?|next|focus|market today|markets today|markets wrap|recap|await(?:s|ing)?|looms?|loom(?:ing)?|" +
+    "brac(?:e|es|ed|ing)|eyes?|eyed|forecasts?|outlook|preview|what to expect|predictions?|analysis|could|might|expected to|" +
+    "explained|live updates?|week ahead|here(?:'|’)s what|opinion|odds|bets?|przed|prognoz[\\p{L}\\p{N}_]*|zapowied[\\p{L}\\p{N}_]*|" +
+    "komentarz[\\p{L}\\p{N}_]*)(?![\\p{L}\\p{N}_])|\\?",
+  "iu",
+);
+
+/**
+ * Darmowy klasyfikator bez sieci. Waga 3 = fraza wysokiej wagi w tytule, o ile tytul nie jest zapowiedzia,
+ * prognoza ani pytaniem (te dostaja 2). Kierunek tylko gdy news mowi wprost o ruchu ceny.
+ */
 export function classifyRules(item: NewsItem, match: Match): Classification {
-  const importance = match.highImpact ? 3 : match.direct.length ? 2 : 1;
+  let importance = match.highImpact ? 3 : match.direct.length ? 2 : 1;
+  let reason = match.highImpact ? "fraza wysokiej wagi" : match.direct.length ? "dotyczy instrumentu wprost" : "temat makro";
+  if (importance === 3 && SOFT.test(item.title)) {
+    importance = 2;
+    reason = "fraza wysokiej wagi, ale zapowiedz/prognoza/komentarz";
+  }
   const up = UP.test(item.title), down = DOWN.test(item.title);
   const d = up && !down ? 1 : down && !up ? -1 : 0;
   const directions: Record<string, number> = {};
   for (const s of match.symbols) directions[s] = match.direct.includes(s) ? d : 0;
-  const reason = match.highImpact ? "fraza wysokiej wagi" : match.direct.length ? "dotyczy instrumentu wprost" : "temat makro";
   return { importance, directions, reason, classifier: "rules" };
 }
 
@@ -40,7 +56,7 @@ Instrumenty: ${symbols.join(", ")}
 Odpowiedz WYLACZNIE obiektem JSON, bez zadnego innego tekstu:
 {"importance": 1|2|3, "directions": {"SYMBOL": -1|0|1}, "reason": "jedno zdanie po polsku"}
 
-importance: 3 = nowe, nieoczekiwane zdarzenie mogace ruszyc cena w ciagu godzin; 2 = istotne tlo; 1 = szum, komentarz, podsumowanie znanych faktow.
+importance: 3 = nowe, nieoczekiwane zdarzenie mogace ruszyc cena w ciagu godzin; 2 = istotne tlo; 1 = szum, komentarz, zapowiedz, podsumowanie znanych faktow.
 directions: +1 wzrostowo, -1 spadkowo, 0 niejasne lub brak wplywu. Uzyj dokladnie podanych symboli. Gdy masz watpliwosci, dawaj 0.`;
 }
 

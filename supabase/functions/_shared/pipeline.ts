@@ -20,7 +20,7 @@ export interface NewsDeps {
   getKey: (env: string) => string | undefined;
   fetchFeed: (url: string, source: string) => Promise<NewsItem[]>;
   quiet: QuietHours;
-  settings: { alert_min_importance: number; max_age_hours: number; use_llm: boolean };
+  settings: { alert_min_importance: number; max_age_hours: number; use_llm: boolean; repeat_cooldown_minutes?: number };
   healthAlertAfter: number;
   maxFeedsPerRun: number;
   maxLlmPerRun: number;
@@ -76,6 +76,19 @@ export async function runNews(feeds: FeedConfig[], d: NewsDeps): Promise<Record<
     fetched: `gte.${since}`, select: "norm_title", order: "fetched.desc", limit: "500",
   })).map((r) => r.norm_title);
 
+  // Jedno zdarzenie opisuje w ciagu godziny wiele redakcji roznymi slowami: waga 3 z regul dla tematu,
+  // ktory dostal juz 3 w ostatnich `repeat_cooldown_minutes`, spada do 2 (model nadal moze przyznac 3). 0 wylacza.
+  const cooldown = d.settings.repeat_cooldown_minutes ?? 60;
+  const topicKey = (m: { highImpactHits: string[]; direct: string[] }) => `${m.highImpactHits.join("|")}#${[...m.direct].sort().join("|")}`;
+  const seenTopics = new Set<string>();
+  if (cooldown > 0) {
+    const cut = new Date(now.getTime() - cooldown * 60_000).toISOString();
+    const old = await d.db.select<{ title: string; summary: string | null }>("news", {
+      importance: "eq.3", fetched: `gte.${cut}`, select: "title,summary",
+    });
+    for (const r of old) seenTopics.add(topicKey(d.mapper.match(`${r.title}. ${r.summary ?? ""}`, r.title)));
+  }
+
   const blocked = new Set(Object.entries(blockedUntil).filter(([, until]) => until > now.getTime()).map(([n]) => n));
   const blockedBefore = new Set(blocked);
   const rows: Record<string, unknown>[] = [];
@@ -86,10 +99,18 @@ export async function runNews(feeds: FeedConfig[], d: NewsDeps): Promise<Record<
     if (known.has(id)) continue;
     const norm = normalizeTitle(it.title);
     const dup = isDuplicate(norm, recent);
-    const match = d.mapper.match(`${it.title}. ${it.summary}`);
+    const match = d.mapper.match(`${it.title}. ${it.summary}`, it.title);
     let cls: Classification | null = null;
     if (match.symbols.length && !dup) {
       cls = classifyRules(it, match);
+      if (cls.importance === 3 && cooldown > 0) {
+        const key = topicKey(match);
+        if (seenTopics.has(key)) {
+          cls.importance = 2;
+          cls.reason = "kolejny news o temacie, ktory juz dostal wage 3";
+        }
+        seenTopics.add(key);
+      }
       // Reguly sa bramka: do modelu trafiaja tylko newsy z waga >= 2, i nie wiecej niz limit na przebieg.
       if (d.settings.use_llm && cls.importance >= 2 && llmCalls < d.maxLlmPerRun) {
         llmCalls++;

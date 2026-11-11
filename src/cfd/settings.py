@@ -7,7 +7,8 @@ import yaml
 
 DEFAULTS = {
     "scan": {"every_minutes": 15, "intervals": ["1d"], "strategies": ["trend_pullback"], "alert_strategies": [], "expire_bars": 40},
-    "news": {"every_seconds": 60, "alert_min_importance": 3, "max_age_hours": 12, "use_llm": True},
+    "news": {"every_seconds": 60, "alert_min_importance": 3, "max_age_hours": 12, "use_llm": True,
+             "repeat_cooldown_minutes": 60},
     "macro": {"refresh_minutes": 60, "alert_minutes_before": 30, "alert_min_importance": 3},
     "fundamentals": {"refresh_hours": 24},
     "health": {"alert_after_failures": 3},

@@ -113,7 +113,8 @@ def job_news(ctx: Context) -> int:
             health_ok(ctx, f"feed:{feed.name}")
         except Exception as exc:  # zepsuty feed nie moze zatrzymac pozostalych
             health_fail(ctx, f"feed:{feed.name}", f"{type(exc).__name__}: {exc}")
-    fresh = process_items(ctx.conn, items, ctx.mapper, ctx.classifier, ctx.cheap_classifier, cfg["max_age_hours"])
+    fresh = process_items(ctx.conn, items, ctx.mapper, ctx.classifier, ctx.cheap_classifier, cfg["max_age_hours"],
+                          repeat_cooldown_minutes=cfg.get("repeat_cooldown_minutes", 60))
     sent = 0
     for item, cls in fresh:
         if cls.importance >= cfg["alert_min_importance"]:

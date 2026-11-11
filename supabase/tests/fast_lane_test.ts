@@ -224,3 +224,41 @@ Deno.test("przebieg makro: odswiezenie, alert przed, reakcja po, bez powtorek i 
   eq(await runMacro(deps(new Date(now.getTime() + 122 * 60_000))), { refreshed: 1, alerts: 0 });
   eq(db.t.macro_events.find((e) => e.name === "CPI m/m")?.actual, 0.5);
 });
+
+Deno.test("mapper i reguly v0.3.1: skroty z wielkoscia liter, wykluczenia, tytul, zapowiedzi (1:1 z Pythonem)", () => {
+  const m = new KeywordMapper({
+    instruments: { GOLD: ["gold", "złoto"], JP225: ["nikkei", "cs:BOJ"] },
+    topics: { fed: { keywords: ["cs:Fed", "fomc"], symbols: ["US500"] } },
+    high_impact: ["rate cut", "cs:CPI"], high_impact_moves: ["surges", "record high"],
+    exclude: { GOLD: ["gold medal"] },
+  });
+  eq(m.match("He was fed up and fed the dog").topics, []);
+  eq(m.match("The Fed holds").topics, ["fed"]);
+  eq(m.match("FOMC minutes").topics, ["fed"]);
+  eq(m.match("boj to gratka; BOJ holds").direct, ["JP225"]);
+  eq(m.match("boj o medale").direct, []);
+  eq(m.match("She won a gold medal").direct, []);
+  eq(m.match("ZŁOTO drożeje").direct, ["GOLD"]);
+  // fraza wysokiej wagi liczy sie tylko w tytule
+  eq(m.match("Markets calm. Analysts discuss a rate cut", "Markets calm").highImpact, false);
+  eq(m.match("Fed delivers rate cut. More soon", "Fed delivers rate cut").highImpactHits, ["rate cut"]);
+  // ruch ceny liczy sie tylko razem z instrumentem wprost
+  eq(m.match("Tech surges", "Tech surges").highImpact, false);
+  eq(m.match("Gold surges to record high", "Gold surges to record high").highImpactHits, ["record high", "surges"]);
+  const item = (title: string): NewsItem => ({ source: "t", title, summary: "", url: "u", published: null });
+  const cls = (t: string) => classifyRules(item(t), m.match(t, t)).importance;
+  eq([cls("Fed delivers rate cut"), cls("Will the Fed deliver a rate cut?"), cls("CPI preview: what to expect"), cls("Gold steady")], [3, 2, 2, 2]);
+});
+
+Deno.test("przebieg newsow: druga waga 3 na ten sam temat w oknie spada do 2", async () => {
+  const db = memDb();
+  const mapper = new KeywordMapper({ instruments: { GOLD: ["gold"] }, topics: {}, high_impact: ["cs:CPI"] });
+  const now = new Date("2026-11-10T14:00:00Z");
+  const item = (title: string, n: number): NewsItem => ({ source: "f", title, summary: "", url: `https://x/${n}`, published: now });
+  const settings = { alert_min_importance: 2, max_age_hours: 24, use_llm: false, repeat_cooldown_minutes: 60 };
+  const feeds = [{ name: "f", url: "u", poll_seconds: 0, enabled: true }];
+  await runNews(feeds, newsDeps(db, [item("Gold jumps after CPI comes in hot", 1), item("CPI shock sends gold price higher today", 2)], [], now, { mapper, settings }));
+  eq(db.t.news.map((r) => r.importance), [3, 2]);
+  await runNews(feeds, newsDeps(db, [item("Bullion: gold extends rally on CPI surprise", 3)], [], new Date(now.getTime() + 600_000), { mapper, settings }));
+  eq(db.t.news.at(-1)!.importance, 2); // pamiec z bazy
+});

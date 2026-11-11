@@ -390,6 +390,8 @@ def cmd_export_config(args) -> None:
             "instruments": {s: w for s, w in kw.get("instruments", {}).items() if s in known and w},
             "topics": {n: {"keywords": t["keywords"], "symbols": [s for s in t["symbols"] if s in known]} for n, t in kw.get("topics", {}).items()},
             "high_impact": kw.get("high_impact", []),
+            "high_impact_moves": kw.get("high_impact_moves", []),
+            "exclude": {s: w for s, w in (kw.get("exclude") or {}).items() if s in known and w},
         },
         "macro_rules": yaml.safe_load(_cfg(args, "macro_rules.yaml").read_text(encoding="utf-8"))["rules"],
         "llm": yaml.safe_load(_cfg(args, "llm.yaml").read_text(encoding="utf-8")),

@@ -77,172 +77,194 @@
   {
    "name": "fed_press",
    "url": "https://www.federalreserve.gov/feeds/press_all.xml",
-   "poll_seconds": 120
+   "poll_seconds": 120,
+   "enabled": true
   },
   {
    "name": "ecb_press",
    "url": "https://www.ecb.europa.eu/rss/press.html",
-   "poll_seconds": 120
+   "poll_seconds": 120,
+   "enabled": true
   },
   {
    "name": "eia_today",
    "url": "https://www.eia.gov/rss/todayinenergy.xml",
-   "poll_seconds": 600
+   "poll_seconds": 600,
+   "enabled": true
   },
   {
    "name": "eia_press",
    "url": "https://www.eia.gov/rss/press_rss.xml",
-   "poll_seconds": 300
-  },
-  {
-   "name": "bankier_news",
-   "url": "https://www.bankier.pl/rss/wiadomosci.xml",
-   "poll_seconds": 120
-  },
-  {
-   "name": "bankier_gielda",
-   "url": "https://www.bankier.pl/rss/gielda.xml",
-   "poll_seconds": 120
-  },
-  {
-   "name": "cnbc_top",
-   "url": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
-   "poll_seconds": 120
+   "poll_seconds": 600,
+   "enabled": true
   },
   {
    "name": "marketwatch",
    "url": "https://feeds.content.dowjones.io/public/rss/mw_topstories",
-   "poll_seconds": 120
+   "poll_seconds": 120,
+   "enabled": true
+  },
+  {
+   "name": "wsj_markets",
+   "url": "https://feeds.content.dowjones.io/public/rss/RSSMarketsMain",
+   "poll_seconds": 120,
+   "enabled": true
   },
   {
    "name": "coindesk",
-   "url": "https://www.coindesk.com/arc/outboundfeeds/rss/",
-   "poll_seconds": 120
+   "url": "https://www.coindesk.com/arc/outboundfeeds/rss",
+   "poll_seconds": 120,
+   "enabled": true
   },
   {
    "name": "gnews_en_federal_reserve_interest_rates",
-   "url": "https://news.google.com/rss/search?q=Federal+Reserve+interest+rates&hl=en-US&gl=US&ceid=US%3Aen",
-   "poll_seconds": 300
+   "url": "https://news.google.com/rss/search?q=Federal+Reserve+interest+rates+when%3A1d&hl=en-US&gl=US&ceid=US%3Aen",
+   "poll_seconds": 300,
+   "enabled": true
   },
   {
    "name": "gnews_en_opec_oil_production",
-   "url": "https://news.google.com/rss/search?q=OPEC+oil+production&hl=en-US&gl=US&ceid=US%3Aen",
-   "poll_seconds": 300
+   "url": "https://news.google.com/rss/search?q=OPEC+oil+production+when%3A1d&hl=en-US&gl=US&ceid=US%3Aen",
+   "poll_seconds": 300,
+   "enabled": true
   },
   {
    "name": "gnews_en_crude_oil_prices",
-   "url": "https://news.google.com/rss/search?q=crude+oil+prices&hl=en-US&gl=US&ceid=US%3Aen",
-   "poll_seconds": 300
+   "url": "https://news.google.com/rss/search?q=crude+oil+prices+when%3A1d&hl=en-US&gl=US&ceid=US%3Aen",
+   "poll_seconds": 300,
+   "enabled": true
   },
   {
    "name": "gnews_en_natural_gas_prices",
-   "url": "https://news.google.com/rss/search?q=natural+gas+prices&hl=en-US&gl=US&ceid=US%3Aen",
-   "poll_seconds": 300
+   "url": "https://news.google.com/rss/search?q=natural+gas+prices+when%3A1d&hl=en-US&gl=US&ceid=US%3Aen",
+   "poll_seconds": 300,
+   "enabled": true
   },
   {
    "name": "gnews_en_gold_price",
-   "url": "https://news.google.com/rss/search?q=gold+price&hl=en-US&gl=US&ceid=US%3Aen",
-   "poll_seconds": 300
+   "url": "https://news.google.com/rss/search?q=gold+price+when%3A1d&hl=en-US&gl=US&ceid=US%3Aen",
+   "poll_seconds": 300,
+   "enabled": true
   },
   {
    "name": "gnews_en_stock_market_today",
-   "url": "https://news.google.com/rss/search?q=stock+market+today&hl=en-US&gl=US&ceid=US%3Aen",
-   "poll_seconds": 300
+   "url": "https://news.google.com/rss/search?q=stock+market+today+when%3A1d&hl=en-US&gl=US&ceid=US%3Aen",
+   "poll_seconds": 300,
+   "enabled": true
   },
   {
    "name": "gnews_en_bitcoin_or_ethereum_or_solana",
-   "url": "https://news.google.com/rss/search?q=bitcoin+OR+ethereum+OR+solana&hl=en-US&gl=US&ceid=US%3Aen",
-   "poll_seconds": 300
+   "url": "https://news.google.com/rss/search?q=bitcoin+OR+ethereum+OR+solana+when%3A1d&hl=en-US&gl=US&ceid=US%3Aen",
+   "poll_seconds": 300,
+   "enabled": true
   },
   {
    "name": "gnews_en_ecb_interest_rates",
-   "url": "https://news.google.com/rss/search?q=ECB+interest+rates&hl=en-US&gl=US&ceid=US%3Aen",
-   "poll_seconds": 300
+   "url": "https://news.google.com/rss/search?q=ECB+interest+rates+when%3A1d&hl=en-US&gl=US&ceid=US%3Aen",
+   "poll_seconds": 300,
+   "enabled": true
   },
   {
    "name": "gnews_en_arm_holdings_or_marvell_or_broadcom_or_t",
-   "url": "https://news.google.com/rss/search?q=%22Arm+Holdings%22+OR+%22Marvell%22+OR+%22Broadcom%22+OR+%22Take-Two%22&hl=en-US&gl=US&ceid=US%3Aen",
-   "poll_seconds": 300
+   "url": "https://news.google.com/rss/search?q=%22Arm+Holdings%22+OR+%22Marvell%22+OR+%22Broadcom%22+OR+%22Take-Two%22+when%3A1d&hl=en-US&gl=US&ceid=US%3Aen",
+   "poll_seconds": 300,
+   "enabled": true
   },
   {
    "name": "gnews_en_constellation_energy_or_uranium_energy_o",
-   "url": "https://news.google.com/rss/search?q=%22Constellation+Energy%22+OR+%22Uranium+Energy%22+OR+%22MP+Materials%22+OR+%22Monster+Beverage%22+OR+%22Revolution+Medicines%22&hl=en-US&gl=US&ceid=US%3Aen",
-   "poll_seconds": 300
+   "url": "https://news.google.com/rss/search?q=%22Constellation+Energy%22+OR+%22Uranium+Energy%22+OR+%22MP+Materials%22+OR+%22Monster+Beverage%22+OR+%22Revolution+Medicines%22+when%3A1d&hl=en-US&gl=US&ceid=US%3Aen",
+   "poll_seconds": 300,
+   "enabled": true
   },
   {
    "name": "gnews_en_oxford_instruments_or_oxford_biomedica_o",
-   "url": "https://news.google.com/rss/search?q=%22Oxford+Instruments%22+OR+%22Oxford+Biomedica%22+OR+LVMH+OR+%22International+Airlines+Group%22&hl=en-US&gl=US&ceid=US%3Aen",
-   "poll_seconds": 300
+   "url": "https://news.google.com/rss/search?q=%22Oxford+Instruments%22+OR+%22Oxford+Biomedica%22+OR+LVMH+OR+%22International+Airlines+Group%22+when%3A1d&hl=en-US&gl=US&ceid=US%3Aen",
+   "poll_seconds": 300,
+   "enabled": true
   },
   {
    "name": "gnews_pl_stopy_procentowe_nbp_rpp",
-   "url": "https://news.google.com/rss/search?q=stopy+procentowe+NBP+RPP&hl=pl&gl=PL&ceid=PL%3Apl",
-   "poll_seconds": 300
+   "url": "https://news.google.com/rss/search?q=stopy+procentowe+NBP+RPP+when%3A1d&hl=pl&gl=PL&ceid=PL%3Apl",
+   "poll_seconds": 300,
+   "enabled": true
   },
   {
    "name": "gnews_pl_wig20_giełda",
-   "url": "https://news.google.com/rss/search?q=WIG20+gie%C5%82da&hl=pl&gl=PL&ceid=PL%3Apl",
-   "poll_seconds": 300
+   "url": "https://news.google.com/rss/search?q=WIG20+gie%C5%82da+when%3A1d&hl=pl&gl=PL&ceid=PL%3Apl",
+   "poll_seconds": 300,
+   "enabled": true
   },
   {
    "name": "gnews_pl_cd_projekt_or_dino_polska_or_żabka_or_am",
-   "url": "https://news.google.com/rss/search?q=%22CD+Projekt%22+OR+%22Dino+Polska%22+OR+%C5%BBabka+OR+AmRest+OR+%22Citi+Handlowy%22+OR+%22Erste+Bank+Polska%22&hl=pl&gl=PL&ceid=PL%3Apl",
-   "poll_seconds": 300
+   "url": "https://news.google.com/rss/search?q=%22CD+Projekt%22+OR+%22Dino+Polska%22+OR+%C5%BBabka+OR+AmRest+OR+%22Citi+Handlowy%22+OR+%22Erste+Bank+Polska%22+when%3A1d&hl=pl&gl=PL&ceid=PL%3Apl",
+   "poll_seconds": 300,
+   "enabled": true
   },
   {
    "name": "gnews_pl_synektik_or_creotech_or_datawalk_or_bloo",
-   "url": "https://news.google.com/rss/search?q=Synektik+OR+Creotech+OR+DataWalk+OR+Bloober+OR+%22Ten+Square+Games%22+OR+Medicalgorithmics&hl=pl&gl=PL&ceid=PL%3Apl",
-   "poll_seconds": 300
+   "url": "https://news.google.com/rss/search?q=Synektik+OR+Creotech+OR+DataWalk+OR+Bloober+OR+%22Ten+Square+Games%22+OR+Medicalgorithmics+when%3A1d&hl=pl&gl=PL&ceid=PL%3Apl",
+   "poll_seconds": 300,
+   "enabled": true
   },
   {
    "name": "gnews_pl_cyber_folks_or_rainbow_tours_or_astarta_",
-   "url": "https://news.google.com/rss/search?q=cyber_Folks+OR+%22Rainbow+Tours%22+OR+Astarta+OR+Niewiad%C3%B3w+OR+Syn2bio+OR+%22GPW+SA%22&hl=pl&gl=PL&ceid=PL%3Apl",
-   "poll_seconds": 300
+   "url": "https://news.google.com/rss/search?q=cyber_Folks+OR+%22Rainbow+Tours%22+OR+Astarta+OR+Niewiad%C3%B3w+OR+Syn2bio+OR+%22GPW+SA%22+when%3A1d&hl=pl&gl=PL&ceid=PL%3Apl",
+   "poll_seconds": 300,
+   "enabled": true
   },
   {
    "name": "gnews_de_dax_börse_heute",
-   "url": "https://news.google.com/rss/search?q=DAX+B%C3%B6rse+heute&hl=de&gl=DE&ceid=DE%3Ade",
-   "poll_seconds": 300
+   "url": "https://news.google.com/rss/search?q=DAX+B%C3%B6rse+heute+when%3A1d&hl=de&gl=DE&ceid=DE%3Ade",
+   "poll_seconds": 300,
+   "enabled": true
   },
   {
    "name": "gnews_de_ezb_zinsen",
-   "url": "https://news.google.com/rss/search?q=EZB+Zinsen&hl=de&gl=DE&ceid=DE%3Ade",
-   "poll_seconds": 300
+   "url": "https://news.google.com/rss/search?q=EZB+Zinsen+when%3A1d&hl=de&gl=DE&ceid=DE%3Ade",
+   "poll_seconds": 300,
+   "enabled": true
   },
   {
    "name": "gnews_de_ölpreis_or_gaspreis",
-   "url": "https://news.google.com/rss/search?q=%C3%96lpreis+OR+Gaspreis&hl=de&gl=DE&ceid=DE%3Ade",
-   "poll_seconds": 300
+   "url": "https://news.google.com/rss/search?q=%C3%96lpreis+OR+Gaspreis+when%3A1d&hl=de&gl=DE&ceid=DE%3Ade",
+   "poll_seconds": 300,
+   "enabled": true
   },
   {
    "name": "gnews_fr_cac_40_bourse",
-   "url": "https://news.google.com/rss/search?q=CAC+40+bourse&hl=fr&gl=FR&ceid=FR%3Afr",
-   "poll_seconds": 300
+   "url": "https://news.google.com/rss/search?q=CAC+40+bourse+when%3A1d&hl=fr&gl=FR&ceid=FR%3Afr",
+   "poll_seconds": 300,
+   "enabled": true
   },
   {
    "name": "gnews_fr_bce_taux_directeurs",
-   "url": "https://news.google.com/rss/search?q=BCE+taux+directeurs&hl=fr&gl=FR&ceid=FR%3Afr",
-   "poll_seconds": 300
+   "url": "https://news.google.com/rss/search?q=BCE+taux+directeurs+when%3A1d&hl=fr&gl=FR&ceid=FR%3Afr",
+   "poll_seconds": 300,
+   "enabled": true
   },
   {
    "name": "gnews_fr_lvmh",
-   "url": "https://news.google.com/rss/search?q=LVMH&hl=fr&gl=FR&ceid=FR%3Afr",
-   "poll_seconds": 300
+   "url": "https://news.google.com/rss/search?q=LVMH+when%3A1d&hl=fr&gl=FR&ceid=FR%3Afr",
+   "poll_seconds": 300,
+   "enabled": true
   },
   {
    "name": "gnews_es_ibex_35_bolsa",
-   "url": "https://news.google.com/rss/search?q=IBEX+35+bolsa&hl=es&gl=ES&ceid=ES%3Aes",
-   "poll_seconds": 300
+   "url": "https://news.google.com/rss/search?q=IBEX+35+bolsa+when%3A1d&hl=es&gl=ES&ceid=ES%3Aes",
+   "poll_seconds": 300,
+   "enabled": true
   },
   {
    "name": "gnews_es_iag_aerolíneas",
-   "url": "https://news.google.com/rss/search?q=IAG+aerol%C3%ADneas&hl=es&gl=ES&ceid=ES%3Aes",
-   "poll_seconds": 300
+   "url": "https://news.google.com/rss/search?q=IAG+aerol%C3%ADneas+when%3A1d&hl=es&gl=ES&ceid=ES%3Aes",
+   "poll_seconds": 300,
+   "enabled": true
   },
   {
    "name": "gnews_es_precio_del_petróleo",
-   "url": "https://news.google.com/rss/search?q=precio+del+petr%C3%B3leo&hl=es&gl=ES&ceid=ES%3Aes",
-   "poll_seconds": 300
+   "url": "https://news.google.com/rss/search?q=precio+del+petr%C3%B3leo+when%3A1d&hl=es&gl=ES&ceid=ES%3Aes",
+   "poll_seconds": 300,
+   "enabled": true
   }
  ],
  "keywords": {
@@ -251,7 +273,7 @@
     "s&p 500",
     "s&p500",
     "sp500",
-    "wall street"
+    "cs:S&P"
    ],
    "US100": [
     "nasdaq",
@@ -260,21 +282,21 @@
    ],
    "US30": [
     "dow jones",
-    "dow industrials"
+    "dow industrials",
+    "cs:Dow"
    ],
    "US2000": [
     "russell 2000",
     "small caps"
    ],
    "DE40": [
-    "dax",
+    "cs:DAX",
     "german stocks",
-    "bundesbank",
     "deutsche aktien"
    ],
    "UK100": [
     "ftse 100",
-    "ftse",
+    "cs:FTSE",
     "bank of england"
    ],
    "FRA40": [
@@ -289,44 +311,51 @@
    "W20": [
     "wig20",
     "wig 20",
+    "cs:GPW",
+    "giełda papierów wartościowych",
     "warszawska giełda"
    ],
    "JP225": [
     "nikkei",
     "bank of japan",
-    "boj"
+    "cs:BOJ"
    ],
    "HK.cash": [
     "hang seng"
    ],
    "VIX": [
-    "vix",
+    "cs:VIX",
     "volatility index"
    ],
    "USDIDX": [
     "dollar index",
-    "dxy",
-    "us dollar"
+    "cs:DXY",
+    "us dollar",
+    "u.s. dollar"
    ],
    "OIL": [
     "brent"
    ],
    "SPA35": [
     "ibex 35",
-    "ibex",
+    "cs:IBEX",
     "bolsa española"
    ],
    "OIL.WTI": [
-    "wti",
+    "cs:WTI",
     "west texas"
    ],
    "NATGAS": [
     "natural gas",
+    "nat-gas",
     "henry hub",
-    "lng"
+    "lng exports",
+    "us lng",
+    "u.s. lng"
    ],
    "GASOLINE": [
-    "gasoline",
+    "gasoline prices",
+    "gasoline futures",
     "rbob"
    ],
    "COCOA": [
@@ -334,17 +363,27 @@
     "kakao"
    ],
    "COFFEE": [
-    "coffee",
-    "arabica"
+    "coffee prices",
+    "coffee futures",
+    "arabica",
+    "robusta"
    ],
    "SUGAR": [
-    "sugar"
+    "sugar prices",
+    "sugar futures",
+    "raw sugar",
+    "ceny cukru"
    ],
    "COTTON": [
-    "cotton"
+    "cotton prices",
+    "cotton futures"
    ],
    "CORN": [
-    "corn"
+    "corn prices",
+    "corn futures",
+    "corn crop",
+    "corn harvest",
+    "kukurydza"
    ],
    "WHEAT": [
     "wheat",
@@ -367,13 +406,17 @@
     "gold",
     "złoto",
     "bullion",
+    "cs:XAU",
+    "xau/usd",
+    "xauusd",
     "goldpreis",
     "prix de l'or",
     "precio del oro"
    ],
    "SILVER": [
     "silver",
-    "srebro"
+    "srebro",
+    "xag/usd"
    ],
    "PLATINUM": [
     "platinum",
@@ -385,12 +428,12 @@
    ],
    "BITCOIN": [
     "bitcoin",
-    "btc"
+    "cs:BTC"
    ],
    "ETHEREUM": [
     "ethereum",
-    "ether",
-    "eth"
+    "cs:Ether",
+    "cs:ETH"
    ],
    "SOLANA": [
     "solana"
@@ -507,8 +550,10 @@
    "fed": {
     "keywords": [
      "federal reserve",
-     "fed",
-     "fomc",
+     "cs:Fed",
+     "cs:Fed's",
+     "cs:Fed’s",
+     "cs:FOMC",
      "powell",
      "rate cut",
      "rate hike",
@@ -526,9 +571,12 @@
    },
    "us_inflation": {
     "keywords": [
-     "cpi",
+     "cs:CPI",
      "us inflation",
-     "pce",
+     "u.s. inflation",
+     "inflation report",
+     "inflation data",
+     "cs:PCE",
      "consumer prices",
      "producer prices"
     ],
@@ -555,13 +603,30 @@
      "USDIDX"
     ]
    },
+   "us_stocks": {
+    "keywords": [
+     "wall street",
+     "us stocks",
+     "u.s. stocks",
+     "stock futures"
+    ],
+    "symbols": [
+     "US500",
+     "US100",
+     "US30"
+    ]
+   },
    "ecb": {
     "keywords": [
-     "ecb",
+     "cs:ECB",
+     "cs:ECB's",
+     "cs:ECB’s",
      "european central bank",
      "lagarde",
-     "ezb",
-     "bce",
+     "bundesbank",
+     "cs:EBC",
+     "cs:EZB",
+     "cs:BCE",
      "europejski bank centralny"
     ],
     "symbols": [
@@ -570,12 +635,32 @@
      "FRA40"
     ]
    },
+   "boe": {
+    "keywords": [
+     "bank of england",
+     "cs:BoE"
+    ],
+    "symbols": [
+     "UK100"
+    ]
+   },
+   "boj": {
+    "keywords": [
+     "bank of japan",
+     "cs:BoJ",
+     "cs:BOJ"
+    ],
+    "symbols": [
+     "JP225"
+    ]
+   },
    "nbp": {
     "keywords": [
-     "nbp",
-     "rpp",
+     "cs:NBP",
+     "cs:RPP",
      "rada polityki pieniężnej",
-     "stopy procentowe"
+     "stopy procentowe",
+     "glapiński"
     ],
     "symbols": [
      "W20"
@@ -589,7 +674,7 @@
      "oil prices",
      "crude inventories",
      "strait of hormuz",
-     "ropa",
+     "ceny ropy",
      "ölpreis",
      "pétrole",
      "petróleo"
@@ -603,7 +688,8 @@
    "china": {
     "keywords": [
      "china stimulus",
-     "pboc",
+     "cs:PBOC",
+     "cs:PBoC",
      "chinese economy"
     ],
     "symbols": [
@@ -686,24 +772,101 @@
    "raises rates",
    "holds rates",
    "rate decision",
-   "emergency",
+   "emergency meeting",
+   "emergency rate",
    "payrolls",
-   "cpi",
+   "cs:CPI",
    "opec",
+   "opec+",
    "sanctions",
    "tariffs",
    "invasion",
-   "default",
-   "bankruptcy",
-   "halts",
+   "debt default",
+   "defaults on",
+   "files for bankruptcy",
+   "trading halted",
+   "halts trading",
+   "halts production",
+   "halts exports",
+   "obniża stopy",
+   "podnosi stopy",
+   "podwyżka stóp",
+   "obniżka stóp",
+   "stopy bez zmian"
+  ],
+  "high_impact_moves": [
    "record high",
    "record low",
+   "all-time high",
    "plunge",
+   "plunges",
    "crash",
+   "crashes",
    "surge",
-   "obniża stopy",
-   "podnosi stopy"
-  ]
+   "surges",
+   "soars",
+   "tumbles"
+  ],
+  "exclude": {
+   "GOLD": [
+    "gold medal",
+    "gold medals",
+    "golden",
+    "gold coast",
+    "gold standard",
+    "gold card",
+    "gold rate today",
+    "gold rates today",
+    "retail rates",
+    "24k",
+    "22k",
+    "24 carat",
+    "22 carat",
+    "gold miners",
+    "gold mining",
+    "barrick gold",
+    "kinross gold",
+    "gold fields",
+    "gold corp",
+    "gold stocks",
+    "gold stock",
+    "equinox gold",
+    "mining",
+    "cs:TSX",
+    "per tola",
+    "tola",
+    "tael",
+    "antam",
+    "10 gm",
+    "10 grams",
+    "lakh",
+    "cs:Rs",
+    "rupee",
+    "cs:VND",
+    "cs:IDR"
+   ],
+   "SILVER": [
+    "silver medal",
+    "silver lining",
+    "silver rate today",
+    "silver stocks",
+    "silver stock"
+   ],
+   "COPPER": [
+    "copper mountain"
+   ],
+   "SOYBEAN": [
+    "soybean oil"
+   ],
+   "COCOA": [
+    "hot cocoa"
+   ],
+   "BITCOIN": [
+    "bitcoin miner",
+    "bitcoin miners",
+    "bitcoin mining"
+   ]
+  }
  },
  "macro_rules": [
   {
@@ -924,7 +1087,8 @@
   "every_seconds": 60,
   "alert_min_importance": 2,
   "max_age_hours": 12,
-  "use_llm": true
+  "use_llm": true,
+  "repeat_cooldown_minutes": 60
  },
  "macro": {
   "refresh_minutes": 60,

@@ -15,6 +15,7 @@ news:
   every_seconds: 60
   alert_min_importance: 2   # 3 = pilne (🔴), 2 = istotne (🟡); oba ida jako powiadomienie
   max_age_hours: 12
+  repeat_cooldown_minutes: 60  # kolejna waga 3 z regul na ten sam temat w tym czasie spada do 2; 0 = wylaczone
   use_llm: true             # lancuch darmowych modeli z config/llm.yaml; bez kluczy dzialaja same reguly
 
 macro:
