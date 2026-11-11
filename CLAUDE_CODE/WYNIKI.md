@@ -7,6 +7,37 @@ Stan na 2026-11-11. Testy: `pytest` przechodzi w całości.
 Bankier i CNBC (403), polskie feedy i pozostałe banki centralne (hosty niedozwolone), Telegram, klasyfikator LLM na żywo,
 API FRED i EIA z kluczem. Szczegóły w sekcjach i w `DECYZJE.md`.
 
+## Scalenie z v0.3 (2026-11-11)
+
+Sekcje A–F poniżej powstały na paczce **v0.2** (41 instrumentów, bez akcji, bez Supabase). Po dostarczeniu paczki v0.3
+praca została scalona trójstronnie w gicie (wspólna baza: „v0.2 z czatu”). Stan po scaleniu: `pytest` 149, `deno test` 12.
+
+**Przeniesione do v0.3:** zweryfikowane adaptery świec i `cfd data-quality`, zapasowy host Binance, wykluczenie rolowań,
+swapy XTB, odczyty makro `actual`, FRED bez klucza, EIA, COT, poprawki feedów i słów kluczowych, tłumienie powtórek,
+`cfd size`, `cfd report --cost-mult`.
+
+**Rozstrzygnięte na rzecz v0.3:**
+- Klasyfikator: łańcuch darmowych modeli z `config/llm.yaml`; klasa dla API Anthropic przywrócona do postaci z v0.3
+  (moja wersja na SDK i `news/compare.py` usunięte). Poprawki reguł (`RuleClassifier`) zostały.
+- ZINC i NICKEL usunięte (decyzja 7). Google News w formacie `locales` (5 języków), z zachowanym `when: "1d"`.
+- Interwał 30m dodany do zweryfikowanego adaptera Yahoo (limit 59 dni przyjęty z dokumentacji, niesprawdzony na żywo).
+
+**Dopisane przy scalaniu:**
+- Tor szybki w TypeScripcie zgodny z Pythonem: skróty `cs:`, `exclude`, frazy wysokiej wagi tylko w tytule,
+  `high_impact_moves`, obniżanie zapowiedzi i pytań do wagi 2, tłumienie powtórek (`news.repeat_cooldown_minutes`).
+  Te same przypadki testowe dają identyczny wynik w obu językach. `cfd export-config` eksportuje nowe pola.
+
+**Nieaktualne po scaleniu (zostawione, do decyzji):**
+- `deploy/` (systemd, Docker, Windows) i zadanie `dashboard` w `cfd run`: decyzja 2 wybrała chmurę. Przydatne tylko dla G4.
+- Sekcje C3 i F3 poniżej opisują stan z v0.2.
+
+**Braki zgodności Python ↔ TypeScript:** odczyty `actual` (D2) działają tylko w Pythonie (`macro/actuals.py`);
+`supabase/functions/_shared/macro.ts` ich nie ma. Reguły EIA/COT/FRED dotyczą toru wolnego, więc TS ich nie potrzebuje.
+
+**Akcje (A1 z v0.3):** 30 z 31 mapowań Yahoo działa. `SPL.PL` → `SPL.WA` nie zwraca danych (spółka zmieniła nazwę na
+Erste Bank Polska; właściwy ticker do ustalenia). Spółki z UK są w pensach (OXB.L 555, OXIG.L 2628): do porównania ze skalą w XTB.
+Wyniki walk-forward dla akcji i dla interwału 1h: sekcja „B1 po scaleniu” na końcu pliku.
+
 ## A1. Sprawdzenie mapowań źródeł
 
 Stan na 2026-11-10/11. Pełny wynik: `CLAUDE_CODE/check-sources.txt` (działa 44, nie działa 16).
