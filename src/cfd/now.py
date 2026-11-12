@@ -210,13 +210,16 @@ def _card(s: dict) -> str:
         cls = " ok" if val in ("z_trendem", "zgodny") else " bad" if val in ("pod_trend", "przeciwny") else ""
         chips.append(f"<span class='chip{cls}'>{_e(FEATURE_NAMES[key])}: {_e(VALUE_NAMES.get(val, val))}</span>")
     rr = f"{s['rr']:.1f}" if s["rr"] else "–"
+    c = s.get("contract")
+    lot = (f"<div class='small mut'>XTB: 1 lot = cena × {c['lot_multiplier']:g} {_e(c['currency'])}, minimum {c['min_lot']:g} lota. "
+           f"Wielkość pozycji: <code>cfd size {_e(s['symbol'])}</code> z cenami z xStation.</div>") if c else ""
     card_cls = "card" + (" good" if s["filters"] else "") + (" stale" if s["already_hit"] else "")
     return f"""<div class="{card_cls}">
 <div class="head"><span class="sym">{_e(s['symbol'])} <span class="mut small">{_e(s['name'])}</span></span><span class="mut small">{_e(s['interval'])}</span></div>
 <div>{side} <span class="mut small">· {_e(s['strategy'])} · świeca zamknięta {_age(s['age_minutes'])}</span></div>
 <div class="levels"><div><b>Cena sygnału</b>{_num(s['ref_price'])}</div><div><b>Stop loss</b>{_num(s['stop_loss'])}</div><div><b>Take profit</b>{_num(s['take_profit'])}</div></div>
 <div class="small mut">Teraz {_num(s['last_price'])} · SL {s['sl_pct']:.2f}% od ceny · zysk do ryzyka {rr}</div>
-{stale}{filt}<div class="verdict {s['assessment']}"><b>{_e(s['assessment_text'].capitalize())}.</b> {measured}</div>
+{lot}{stale}{filt}<div class="verdict {s['assessment']}"><b>{_e(s['assessment_text'].capitalize())}.</b> {measured}</div>
 <div class="small mut">{_e(s['rationale'])}</div><div class="chips">{''.join(chips)}</div></div>"""
 
 

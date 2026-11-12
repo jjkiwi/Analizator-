@@ -912,3 +912,39 @@ i `vercel.json`: to panel z logowaniem i baza, a nie tor szybki. Bez konta Supab
 
 **Skutek.** Jedna wersja logiki newsów i makro (Python) zamiast dwóch. Testy: `pytest` 158.
 
+## B2/B3 uzupełnienie: specyfikacja XTB i wynik przed kosztami (2026-11-12)
+
+**Co zrobione.** Użytkownik dostarczył PDF „Specyfikacja instrumentów pochodnych CFD na waluty, indeksy, towary, kryptoaktywa”.
+- `config/contracts.yaml`: mnożnik lota, waluta, minimalny wolumen i krok dla wszystkich 41 instrumentów CFD
+  (np. US500 USD 50, DE40 EUR 25, GOLD USD 100, OIL USD 1000, NATGAS USD 30 000, W20 PLN 20). `cfd size` działa bez `--lot-multiplier`;
+  wynik zaokrągla do kroku z tabeli (np. 0,005 lota dla US500). Ekran pokazuje przy sygnale mnożnik i minimalny wolumen.
+- **Spready są w XTB zmienne** i specyfikacja ich nie podaje. W `cost_defaults` zostają założenia.
+
+**Czy brak spreadów zmienia wnioski? Nie.** Policzone na 31 011 transakcjach z danych niewidzianych (te same co w teście kontekstowym),
+jako wynik przed wszystkimi kosztami (spread i swap):
+
+| Interwał | Strategia | Transakcji | Średnio przed kosztami | t | Średni koszt | Średnio po kosztach |
+|---|---|---|---|---|---|---|
+| 1d | donchian_breakout | 5197 | +0,091 R | 3,8 | 0,144 R | −0,054 R |
+| 1d | trend_pullback | 3665 | +0,064 R | 2,8 | 0,102 R | −0,038 R |
+| 1d | mean_reversion | 2672 | −0,038 R | −1,4 | 0,083 R | −0,121 R |
+| 4h | donchian_breakout | 1692 | +0,065 R | 1,7 | 0,109 R | −0,044 R |
+| 4h | trend_pullback | 1071 | +0,024 R | 0,6 | 0,100 R | −0,075 R |
+| 4h | mean_reversion | 838 | −0,050 R | −1,1 | 0,103 R | −0,153 R |
+| 1h | donchian_breakout | 7531 | −0,015 R | −0,9 | 0,131 R | −0,146 R |
+| 1h | trend_pullback | 4666 | −0,030 R | −1,6 | 0,126 R | −0,157 R |
+| 1h | mean_reversion | 3679 | −0,008 R | −0,3 | 0,150 R | −0,157 R |
+
+- **1h i `mean_reversion`: nie ma czego ratować.** Wynik jest zerowy lub ujemny jeszcze przed kosztami, więc nawet zerowy spread nic nie da.
+- **1d, strategie podążające za trendem: jest mała przewaga przed kosztami**, ale koszty (na CFD głównie swap, który znamy dokładnie
+  z tabeli XTB) są od niej większe. Do tego przewaga słabnie w czasie: do 2016 r. `donchian_breakout` +0,106 R (t = 3,5),
+  po 2016 r. +0,064 R (t = 1,6); `trend_pullback` odpowiednio +0,096 R i +0,015 R.
+- **Akcje na 1d (bez swapu), `donchian_breakout`:** przed kosztami +0,107 R na 1631 transakcjach (t = 2,3). Spread, przy którym wynik spada
+  do zera, to ok. 0,5%. Przy spreadzie 0,10% wychodzi +0,087 R (t = 1,8), ale w nowszej połowie danych tylko +0,03 R.
+  To najlepszy trop w całym projekcie i jednocześnie za słaby, żeby na nim polegać.
+
+**Zastrzeżenie.** To przeliczenie istniejących transakcji, a nie nowy walk-forward: przy innych kosztach dobór parametrów mógłby wyjść nieco inaczej.
+
+**Uwaga o skali cen.** Mnożnik odnosi się do kwotowań XTB. Część darmowych źródeł kwotuje ten sam towar w innej jednostce
+(np. miedź: Yahoo w USD za funt, XTB w USD za tonę), więc do `cfd size` trzeba wpisywać ceny z xStation, a nie z ekranu.
+

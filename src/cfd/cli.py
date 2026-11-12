@@ -452,6 +452,13 @@ def cmd_now(args) -> None:
         picked.setdefault("VIX", instruments["VIX"])
     snap = build_snapshot(picked, _service(args), _conn(args), args.intervals, args.strategies or STRATS,
                           load_stats(args.reports), load_confirmed_filters(args.reports), refresh=not args.offline)
+    from .sizing import load_contracts
+
+    contracts = load_contracts(_cfg(args, "contracts.yaml"))
+    for sig in snap["signals"]:
+        spec = contracts.get(sig["symbol"])
+        sig["contract"] = None if spec is None else {"lot_multiplier": spec.lot_multiplier, "currency": spec.currency,
+                                                      "min_lot": spec.min_lot, "lot_step": spec.lot_step}
     snap["stocks"] = [r for r in _stock_rows(args, _conn(args)) if r["assessment"]]
     path = write(snap, args.out)
     top = [s for s in snap["signals"] if s["filters"] or s["assessment"] == "good"]
@@ -533,7 +540,8 @@ def cmd_size(args) -> None:
         print(f"WOLUMEN: 0 (minimalny lot {spec.min_lot:g} dalby strate "
               f"{spec.min_lot * r.loss_per_lot:,.2f} {acc}, wiecej niz zadane ryzyko)")
         return
-    print(f"WOLUMEN: {r.volume:.2f} lota  (dokladnie {r.raw_volume:.4f}, zaokraglone w dol)")
+    decimals = max(2, len(f"{spec.lot_step:.10f}".rstrip("0").split(".")[1]))
+    print(f"WOLUMEN: {r.volume:.{decimals}f} lota  (dokladnie {r.raw_volume:.4f}, zaokraglone w dol do kroku {spec.lot_step:g})")
     print(f"Strata na SL: {r.loss_at_sl:,.2f} {acc} = {r.risk_pct_actual:.2f}% kapitalu")
     print(f"Wartosc nominalna: {r.notional:,.2f} {acc}")
     print("Bez spreadu, swapu i poslizgu. Porownaj z kalkulatorem w xStation przed zleceniem.")

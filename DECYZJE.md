@@ -135,4 +135,6 @@ Klucze i tokeny wpisuj tylko do `.env`, sekretów GitHub i sekretów Supabase. N
 - **Kolejność prac:** najpierw zbieranie newsów i makro w przód, potem fundamenty spółek. Oba zrobione.
 - **Nadal otwarte:** repozytorium publiczne czy prywatne, sposób udostępnienia ekranu na telefonie, ticker `SPL.PL`,
   spready i wartość lota z xStation, oraz co zrobić z pozostałością po v0.3 (`supabase/migrations/`, `src/cfd/sync.py`, `web/`, `vercel.json`).
+- **Specyfikacja XTB (PDF z 2026-11-12).** Mnożniki lota wpisane; spready są zmienne i nie ma ich w dokumencie.
+  Wniosek z analizy przed kosztami: brak spreadów nie zmienia oceny strategii (`WYNIKI.md`). Pytanie o spready z listy powyżej jest zamknięte.
 
