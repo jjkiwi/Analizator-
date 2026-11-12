@@ -26,6 +26,8 @@ jobs:
           restore-keys: stan-
       - name: Bias fundamentalny   # dziala tez bez klucza FRED (publiczny CSV), EIA i CFTC nie wymagaja kluczy
         run: cfd -v run --once --jobs fundamentals
+      - name: Fundamenty spolek (lista kontrolna, daty raportow)
+        run: cfd stocks update || true
       - name: Raport walidacji
         run: |
           if [ "$(date -u +%u)" = "1" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ]; then

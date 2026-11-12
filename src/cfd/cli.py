@@ -335,6 +335,68 @@ def cmd_journal(args) -> None:
         print(f"  {r['time'][:16]} {r['symbol']:<10} {'LONG' if r['side'] > 0 else 'SHORT':<5} {r['strategy']:<18} {r['status']:<7} {res}")
 
 
+def _stock_rows(args, conn) -> list[dict]:
+    """Spolki z zapisanymi fundamentami i ocena; trend kursu liczony z cache swiec dziennych."""
+    from .features.indicators import sma
+    from .fundamentals import stocks
+
+    svc = _service(args)
+    data = stocks.read_all(conn)
+    rows = []
+    for inst in _instruments(args).values():
+        if inst.category != "stocks":
+            continue
+        snap = data.get(inst.symbol)
+        if snap is None:
+            rows.append({"symbol": inst.symbol, "name": inst.name, "snapshot": None, "assessment": None})
+            continue
+        above = None
+        try:
+            closed = svc.get(inst, "1d")["close"].iloc[:-1]
+            avg = sma(closed, 200).iloc[-1]
+            above = None if pd.isna(avg) else bool(closed.iloc[-1] > avg)
+        except Exception:
+            pass
+        rows.append({"symbol": inst.symbol, "name": inst.name, "snapshot": snap, "assessment": stocks.assess(snap, above)})
+    return rows
+
+
+def cmd_stocks(args) -> None:
+    """Fundamenty spolek: update (pobierz z Yahoo) | show (lista kontrolna i ocena)."""
+    from .fundamentals import stocks
+
+    conn = _conn(args)
+    if args.action == "update":
+        ok = bad = 0
+        for inst in _pick(_instruments(args), args.symbols, "stocks"):
+            src = inst.sources.get("yahoo")
+            if not src:
+                continue
+            try:
+                stocks.save(conn, inst.symbol, stocks.fetch_snapshot(src))
+                ok += 1
+                print(f"{inst.symbol:<9} OK")
+            except DataSourceError as exc:
+                bad += 1
+                print(f"{inst.symbol:<9} BLAD  {str(exc)[:100]}")
+        print(f"\nZapisano: {ok}, bledow: {bad}")
+        return
+    order = {"bad": 0, "good": 1, "neutral": 2, "unknown": 3}
+    rows = _stock_rows(args, conn)
+    for r in sorted(rows, key=lambda r: (r["assessment"] is None, order.get((r["assessment"] or {}).get("class"), 9), r["symbol"])):
+        a = r["assessment"]
+        if a is None:
+            print(f"{r['symbol']:<9} brak danych: uruchom `cfd stocks update`")
+            continue
+        soon = f"  RAPORT ZA {a['earnings_in_days']} DNI" if a["report_soon"] else ""
+        print(f"{r['symbol']:<9} {a['total']:+d} z {a['known']}  {a['verdict']}{soon}")
+        if args.details:
+            for pl in a["pillars"]:
+                mark = {1: "+", -1: "-", 0: "o", None: "?"}[pl["score"]]
+                print(f"    [{mark}] {pl['name']}: {pl['text']}")
+    print("\nLista kontrolna z jawnymi progami, nie prognoza: progi nie byly walidowane na historii.")
+
+
 def cmd_journal_context(args) -> None:
     """Skutecznosc rozliczonych sygnalow wedlug kontekstu (newsy, makro, technika) zapisanego przy sygnale."""
     from .live_context import journal_frame, journal_report
@@ -390,6 +452,7 @@ def cmd_now(args) -> None:
         picked.setdefault("VIX", instruments["VIX"])
     snap = build_snapshot(picked, _service(args), _conn(args), args.intervals, args.strategies or STRATS,
                           load_stats(args.reports), load_confirmed_filters(args.reports), refresh=not args.offline)
+    snap["stocks"] = [r for r in _stock_rows(args, _conn(args)) if r["assessment"]]
     path = write(snap, args.out)
     top = [s for s in snap["signals"] if s["filters"] or s["assessment"] == "good"]
     print(f"Sygnalow: {len(snap['signals'])}, w tym z dodatnim wynikiem w walidacji: {len(top)}. Bledow zrodel: {len(snap['errors'])}.")
@@ -581,6 +644,9 @@ def main(argv: list[str] | None = None) -> None:
 
     sp = add("journal", cmd_journal, "dziennik sygnalow i skutecznosc na zywo", symbols=False, interval=False)
     sp.add_argument("--limit", type=int, default=20)
+    sp = add("stocks", cmd_stocks, "fundamenty spolek: update | show", interval=False)
+    sp.add_argument("action", choices=["update", "show"])
+    sp.add_argument("--details", action="store_true", help="pokaz filary oceny")
     add("journal-context", cmd_journal_context, "skutecznosc sygnalow z dziennika wedlug kontekstu (newsy, makro)",
         symbols=False, interval=False)
     add("health", cmd_health, "stan zrodel danych", symbols=False, interval=False)

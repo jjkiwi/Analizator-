@@ -1,0 +1,61 @@
+{
+ "symbol": "CDR.WA",
+ "fetched": "2026-11-12",
+ "info": {
+  "currency": "PLN",
+  "marketCap": 27425435648,
+  "currentPrice": 274.5,
+  "trailingPE": 44.92635,
+  "forwardPE": 172.64151,
+  "priceToBook": 7.6901526,
+  "priceToSalesTrailing12Months": 28.951895,
+  "enterpriseToEbitda": 46.842,
+  "revenueGrowth": 0.396,
+  "earningsGrowth": 1.086,
+  "profitMargins": 0.69997,
+  "operatingMargins": 0.57908,
+  "returnOnEquity": 0.18275999,
+  "debtToEquity": 1.006,
+  "freeCashflow": -411702752,
+  "dividendYield": 0.0,
+  "targetMeanPrice": 251.46667,
+  "numberOfAnalystOpinions": 15,
+  "recommendationMean": 2.73333,
+  "fiftyTwoWeekHigh": 297.0,
+  "fiftyTwoWeekLow": 211.3,
+  "sector": "Communication Services",
+  "industry": "Electronic Gaming & Multimedia",
+  "trailingEps": 6.11,
+  "forwardEps": 1.59
+ },
+ "calendar": {
+  "Ex-Dividend Date": "2025-06-27",
+  "Earnings Date": [
+   "2026-11-24"
+  ],
+  "Earnings High": 1.23,
+  "Earnings Low": 1.23,
+  "Earnings Average": 1.23,
+  "Revenue High": 249182000,
+  "Revenue Low": 198000000,
+  "Revenue Average": 217636400
+ },
+ "quarterly": {
+  "Total Revenue": {
+   "2026-06-30": 244201000.0,
+   "2026-03-31": 191107000.0,
+   "2025-12-31": 74877000.0,
+   "2025-09-30": 349072000.0,
+   "2025-06-30": 216734000.0,
+   "2025-03-31": null
+  },
+  "Net Income": {
+   "2026-06-30": 142907000.0,
+   "2026-03-31": 106200000.0,
+   "2025-12-31": 246278000.0,
+   "2025-09-30": 193492000.0,
+   "2025-06-30": 68953000.0,
+   "2025-03-31": null
+  }
+ }
+}

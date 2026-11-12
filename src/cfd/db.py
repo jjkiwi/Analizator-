@@ -37,6 +37,9 @@ CREATE TABLE IF NOT EXISTS fundamental_bias (
 CREATE TABLE IF NOT EXISTS outbox (
     id INTEGER PRIMARY KEY, created TEXT NOT NULL DEFAULT (datetime('now')), text TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS stock_fundamentals (
+    symbol TEXT PRIMARY KEY, data TEXT NOT NULL, updated TEXT NOT NULL    -- data: JSON z fundamentals/stocks.py
+);
 CREATE TABLE IF NOT EXISTS source_health (
     source TEXT PRIMARY KEY, last_ok TEXT, last_error TEXT, last_error_time TEXT, fail_streak INTEGER NOT NULL DEFAULT 0
 );

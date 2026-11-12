@@ -220,6 +220,30 @@ def _card(s: dict) -> str:
 <div class="small mut">{_e(s['rationale'])}</div><div class="chips">{''.join(chips)}</div></div>"""
 
 
+def _stocks_section(rows: list[dict]) -> str:
+    """Karty spolek: lista kontrolna fundamentow z ocena opisowa i data najblizszego raportu."""
+    if not rows:
+        return ""
+    order = {"bad": 0, "good": 1, "neutral": 2, "unknown": 3}
+    cards = []
+    for r in sorted(rows, key=lambda r: (order.get(r["assessment"]["class"], 9), r["symbol"])):
+        a = r["assessment"]
+        cls = {"good": "up", "bad": "down"}.get(a["class"], "")
+        chips = "".join(
+            f"<span class='chip{' ok' if p['score'] == 1 else ' bad' if p['score'] == -1 else ''}'>{_e(p['name'])}: {_e(p['text'])}</span>"
+            for p in a["pillars"] if p["score"] is not None)
+        days = a["earnings_in_days"]
+        rep = "" if days is None or days < 0 else (
+            f"<div class='warn small'><b>Raport kwartalny za {days} dni</b></div>" if a["report_soon"]
+            else f"<div class='mut small'>Raport kwartalny za {days} dni</div>")
+        cards.append(f"<div class='card'><div class='head'><span class='sym'>{_e(r['symbol'])} <span class='mut small'>{_e(r['name'])}</span></span>"
+                     f"<span class='mut small'>{a['total']:+d} z {a['known']}</span></div>"
+                     f"<div class='{cls}'><b>{_e(a['verdict'].capitalize())}</b></div>{rep}<div class='chips'>{chips}</div></div>")
+    return ("<h2>Twoje spółki: fundamenty</h2><p class='mut small'>Lista kontrolna z jawnymi progami (wzrost, zyskowność, wycena, "
+            "zadłużenie, konsensus, trend kursu). Porządkuje fakty z Yahoo; progi nie były walidowane na historii, więc to nie jest prognoza. "
+            f"Dane Yahoo bywają błędne, zwłaszcza prognozowane C/Z.</p><div class='grid'>{''.join(cards)}</div>")
+
+
 def render_html(snap: dict) -> str:
     gen = datetime.fromisoformat(snap["generated"])
     sigs = snap["signals"]
@@ -250,6 +274,7 @@ def render_html(snap: dict) -> str:
 więc poziomy SL i TP przenieś do xStation jako odległość od bieżącej ceny, nie jako cenę. Liczby przy sygnale to wynik testów na danych historycznych,
 których strategia nie widziała przy doborze parametrów. Nie są gwarancją wyniku.</div>
 {lead}{mid_html}{rest_html}{errors}
+{_stocks_section(snap.get('stocks') or [])}
 <h2>Kalendarz makro: najbliższe 48 godzin</h2>{macro}
 <h2>Ostatnie newsy (tło)</h2>{news}
 </main></body></html>"""

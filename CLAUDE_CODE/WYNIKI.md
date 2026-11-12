@@ -841,3 +841,58 @@ Potwierdzone filtry kontekstowe byłyby wyróżniane automatycznie (czyta `repor
 - Statystyki czyta z `reports/**/walidacja_*.json`: po zmianie danych lub kosztów trzeba ponownie uruchomić `cfd report`.
 - Plik trzeba wygenerować poleceniem; nie jest jeszcze podłączony do panelu PWA ani do GitHub Actions.
 
+## Zbieranie w przód: newsy i makro przy sygnałach (2026-11-12)
+
+**Po co.** Newsów i kalendarza makro nie da się przetestować wstecz (brak darmowego archiwum). Jedyna droga to zapisywać
+kontekst przy każdym sygnale i ocenić go po rozliczeniu.
+
+**Co zrobione.**
+- `src/cfd/live_context.py`: przy zapisie sygnału do dziennika dochodzi pełny kontekst z tej chwili: liczba i najwyższa waga
+  istotnych newsów dla instrumentu z ostatnich 12 godzin, zgodność ich kierunku z sygnałem, odległość do najbliższej i od
+  ostatniej publikacji makro najwyższej wagi (próg 6 godzin), a także etykiety techniczne i bias (te same co w teście kontekstowym).
+- `cfd journal-context`: skuteczność rozliczonych sygnałów w podziale na kontekst, z liczbą przypadków, średnim R i statystyką t.
+  Grupy poniżej 30 sygnałów są oznaczane „za mało danych” i nie są interpretowane.
+- GitHub Actions (`.github/workflows/scan.yml`): skan pobiera teraz także kalendarz makro i newsy (`--jobs macro news scan`),
+  generuje ekran i zapisuje go razem z bazą jako artefakt `stan-na-teraz` (14 dni). Podsumowanie dziennika trafia do
+  podsumowania przebiegu. Statystyki walidacji dla ekranu są w repozytorium w katalogu `walidacja/`.
+- `.github/workflows/pages.yml`: opcjonalna publikacja ekranu jako strony GitHub Pages. Domyślnie wyłączona
+  (wymaga włączenia Pages i zmiennej `PUBLIKUJ_STRONE=tak`), bo strona byłaby publiczna.
+
+**Co wyszło.** Jeszcze nic do oceny: w dzienniku jest kilkanaście otwartych sygnałów i żadnego rozliczonego z nowym kontekstem.
+Pierwsze sensowne liczby pojawią się po kilku tygodniach (interwał 1h), dla newsów raczej po kilku miesiącach.
+
+**Ustalenia o środowisku.**
+- Repozytorium jest **publiczne**, a gałąź robocza jest gałęzią domyślną, więc harmonogram `skan` już działa w GitHub Actions
+  (bez limitu minut w repozytorium publicznym). Lista spółek z wyciągu jest przez to publicznie widoczna: to decyzja 17, nadal bez odpowiedzi.
+- Harmonogram GitHuba jest zawodny: w pierwszych 6 godzinach wykonał się 1 przebieg z 12 zaplanowanych.
+- Bez kluczy modeli newsy klasyfikują same reguły; bez Supabase stan żyje w cache Actions i w artefaktach.
+
+**Co nie działa.** Kontekst newsowy opiera się na kierunku z reguł, który jest słaby (reguły rzadko podają kierunek).
+Odległość do publikacji makro nie rozróżnia walut. Publikacja na Pages i przebieg w Actions po tej zmianie: patrz niżej.
+
+## E3. Akcje: fundamenty spółek (2026-11-12)
+
+**Co zrobione.** `src/cfd/fundamentals/stocks.py`, polecenia `cfd stocks update` i `cfd stocks show [--details]`, sekcja
+„Twoje spółki” na ekranie `cfd now`, krok w dziennym przebiegu Actions. Dla każdej spółki z Yahoo: wycena, wzrost przychodów
+(ostatni kwartał rok do roku, gdy są dane kwartalne), marże, ROE, zadłużenie, konsensus analityków, data najbliższego raportu.
+Test na zapisanej próbce prawdziwej odpowiedzi (`tests/fixtures/yahoo_stock_CDR.WA.json`).
+
+Ocena to lista kontrolna sześciu filarów (każdy −1, 0 albo +1) z jawnymi progami:
+wzrost przychodów (> 10% / < 0), zyskowność (marża netto > 10% i ROE > 10% / strata), wycena (C/Z < 15 / > 40 lub strata),
+zadłużenie (dług do kapitału < 50% / > 150%), konsensus (cena docelowa > +15% / < −5% od kursu, min. 3 analityków),
+trend kursu (powyżej / poniżej średniej z 200 sesji). Suma ≥ +3: „trzymać, można rozważyć dokupienie”; ≤ −3: „rozważyć redukcję”;
+inaczej „trzymać i obserwować”. Zgodnie z decyzją 19 słaby obraz to ostrzeżenie dla posiadanej spółki, nie zachęta do krótkiej sprzedaży.
+
+**Co wyszło (2026-11-12).** Dane dla 30 z 31 spółek (bez `SPL.PL`: brak symbolu w Yahoo).
+Słaby obraz: DAT.PL (przychody −32% r/r, strata, kurs pod średnią) i OXB.UK (strata, dług do kapitału 273%).
+Raport kwartalny w ciągu 14 dni jest oznaczany na ekranie i w `cfd stocks show`.
+
+**Co nie działa / zastrzeżenia.**
+- **Progi nie były walidowane.** Darmowych historycznych fundamentów nie ma, więc nie da się sprawdzić, czy „mocny obraz” dawał
+  lepsze stopy zwrotu. Ocena porządkuje fakty, nie mierzy szansy zysku.
+- Dane Yahoo bywają błędne, np. prognozowane C/Z dla DNP.PL wychodzi 2 (najpewniej nieskorygowany zysk na akcję po splicie),
+  co zawyża jej ocenę. Takie wartości trzeba weryfikować w raporcie spółki.
+- Banki nie mają pola zadłużenia; dla części spółek z GPW brak konsensusu (poniżej 3 analityków).
+- Nie zrobione z zadania E3: SEC EDGAR dla spółek z USA, komunikaty ESPI dla GPW (host niedozwolony w środowisku testowym),
+  alert przed raportem jako powiadomienie (powiadomienia są wstrzymane decyzją użytkownika; data jest na ekranie).
+
