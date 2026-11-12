@@ -9,7 +9,7 @@ from __future__ import annotations
 import html
 import json
 import sqlite3
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pandas as pd
@@ -142,8 +142,8 @@ def build_snapshot(instruments: dict, data_service, conn: sqlite3.Connection, in
     signals.sort(key=lambda s: (not s["filters"], order[s["assessment"]], s["already_hit"] is not None, s["symbol"]))
     macro = [dict(r) for r in conn.execute(
         "SELECT time, country, name, importance, forecast, previous FROM macro_events "
-        "WHERE time >= ? AND time <= datetime(?, '+2 days') AND importance >= 2 ORDER BY time LIMIT 15",
-        (now.strftime("%Y-%m-%d %H:%M:%S"), now.strftime("%Y-%m-%d %H:%M:%S")))]
+        "WHERE time >= ? AND time <= ? AND importance >= 2 ORDER BY time LIMIT 15",
+        (now.isoformat(), (now + timedelta(days=2)).isoformat()))]
     news = [dict(r) for r in conn.execute(
         "SELECT fetched, title, symbols, importance, url FROM news WHERE importance >= 2 ORDER BY fetched DESC LIMIT 12")]
     return {"generated": now.isoformat(), "intervals": intervals, "scanned": scanned, "signals": signals,
@@ -234,7 +234,7 @@ def render_html(snap: dict) -> str:
     mid_html = f"<details><summary>Niepewne: słaby wynik albo za mało danych ({len(mid)})</summary><div class='grid'>{''.join(_card(s) for s in mid)}</div></details>" if mid else ""
     rest_html = f"<details><summary>Bez przewagi po kosztach ({len(rest)})</summary><div class='grid'>{''.join(_card(s) for s in rest)}</div></details>" if rest else ""
     macro_rows = "".join(
-        f"<tr><td>{_e(m['time'][5:16])}</td><td>{_e(m['country'])}</td><td>{_e(m['name'])}</td><td>{_e(m['forecast'] or '–')}</td><td>{_e(m['previous'] or '–')}</td></tr>"
+        f"<tr><td>{_e(m['time'][5:16].replace('T', ' '))}</td><td>{_e(m['country'])}</td><td>{_e(m['name'])}</td><td>{_e(m['forecast'] or '–')}</td><td>{_e(m['previous'] or '–')}</td></tr>"
         for m in snap["macro"])
     macro = f"<div class='scroll'><table><thead><tr><th>Czas (UTC)</th><th>Kraj</th><th>Wydarzenie</th><th>Prognoza</th><th>Poprzednio</th></tr></thead><tbody>{macro_rows}</tbody></table></div>" if macro_rows else "<p class='mut'>Brak danych. Uruchom <code>cfd macro refresh</code>.</p>"
     news_rows = "".join(

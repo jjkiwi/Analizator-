@@ -24,8 +24,7 @@ jobs:
           path: data
           key: stan-${{ github.run_id }}
           restore-keys: stan-
-      - name: Bias fundamentalny
-        if: env.FRED_API_KEY != ''
+      - name: Bias fundamentalny   # dziala tez bez klucza FRED (publiczny CSV), EIA i CFTC nie wymagaja kluczy
         run: cfd -v run --once --jobs fundamentals
       - name: Raport walidacji
         run: |

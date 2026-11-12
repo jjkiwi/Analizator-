@@ -1,0 +1,38 @@
+# Publikacja ekranu "stan na teraz" jako strony GitHub Pages (adres: https://<uzytkownik>.github.io/<repo>/).
+# Domyslnie WYLACZONE. Zeby wlaczyc, w ustawieniach repozytorium:
+#   1. Settings -> Pages -> Source: "GitHub Actions",
+#   2. Settings -> Secrets and variables -> Actions -> Variables -> nowa zmienna PUBLIKUJ_STRONE o wartosci "tak".
+# Strona jest PUBLICZNA (jak samo repozytorium): pokazuje sygnaly i liste instrumentow, bez kwot i kluczy.
+# Uruchamia sie po kazdym udanym skanie i bierze jego artefakt, wiec nie pobiera danych drugi raz.
+name: strona
+on:
+  workflow_run:
+    workflows: [skan]
+    types: [completed]
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+  actions: read
+concurrency:
+  group: strona
+  cancel-in-progress: true
+jobs:
+  deploy:
+    if: vars.PUBLIKUJ_STRONE == 'tak' && github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: stan-na-teraz
+          path: pobrane
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: pobrane/public
+      - id: deploy
+        uses: actions/deploy-pages@v4

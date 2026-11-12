@@ -39,8 +39,25 @@ jobs:
       - name: Pobierz otwarte sygnaly i swieze newsy z Supabase
         if: env.SUPABASE_URL != ''
         run: cfd sync pull
-      - name: Skan
-        run: cfd -v run --once --jobs scan --intervals ${{ github.event.inputs.intervals || 'auto' }}
+      # Newsy i kalendarz makro zbierane razem ze skanem: kazdy sygnal dostaje w dzienniku kontekst z tej chwili
+      # (cfd journal-context ocenia go po rozliczeniu). Bez kluczy modeli newsy klasyfikuja same reguly.
+      - name: Makro, newsy, skan
+        run: cfd -v run --once --jobs macro news scan --intervals ${{ github.event.inputs.intervals || 'auto' }}
+      - name: Ekran "stan na teraz" i podsumowanie dziennika
+        if: always()
+        run: |
+          cfd now --offline --reports walidacja --out public/index.html || true
+          { echo '### Dziennik'; echo '```'; cfd journal | head -20; echo '```'; echo '### Kontekst'; cfd journal-context; } >> "$GITHUB_STEP_SUMMARY" || true
+      - name: Kopia ekranu i dziennika (artefakt)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stan-na-teraz
+          path: |
+            public/
+            data/cfd.sqlite
+          retention-days: 14
+          overwrite: true
       - name: Wyslij wyniki do Supabase
         if: env.SUPABASE_URL != '' && always()
         run: cfd sync push

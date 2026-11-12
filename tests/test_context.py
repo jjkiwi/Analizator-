@@ -107,3 +107,45 @@ def test_now_snapshot_and_html(tmp_path, monkeypatch):
     assert "Stan na teraz" in page and "brak przewagi po kosztach" in page.lower() and "KUP (LONG)" in page
     assert assess({"folds": 3, "trades": 10})[0] == "unknown"
     assert assess({"folds": 3, "trades": 50, "expectancy_r": 0.2, "verdict": "pass"})[0] == "good"
+
+
+def test_signal_context_is_journaled_and_reported(tmp_path, monkeypatch):
+    import json
+    from datetime import datetime, timedelta, timezone
+
+    from cfd import runner
+    from cfd.db import connect
+    from cfd.live_context import journal_frame, journal_report, macro_context, news_context
+
+    conn = connect(":memory:")
+    now = datetime(2026, 11, 12, 12, 0, tzinfo=timezone.utc)
+    ts = lambda h: (now - timedelta(hours=h)).strftime("%Y-%m-%d %H:%M:%S")
+    conn.executemany("INSERT INTO news (id, title, fetched, symbols, importance, direction, classifier) VALUES (?,?,?,?,?,?,?)", [
+        ("a", "Gold jumps", ts(2), "GOLD,SILVER", 3, json.dumps({"GOLD": 1}), "rules"),
+        ("b", "Gold old", ts(30), "GOLD", 3, json.dumps({"GOLD": -1}), "rules"),   # poza oknem 12 h
+        ("c", "Gold later", (now + timedelta(hours=1)).strftime("%Y-%m-%d %H:%M:%S"), "GOLD", 3, json.dumps({"GOLD": -1}), "rules"),  # przyszlosc
+        ("d", "Golden retriever", ts(1), "MARIGOLD", 3, None, "rules"),          # inny symbol
+    ])
+    assert news_context(conn, "GOLD", 1, now)["news"] == "zgodny"
+    assert news_context(conn, "GOLD", -1, now) | {"news": "przeciwny"} == news_context(conn, "GOLD", -1, now)
+    assert news_context(conn, "GOLD", 1, now)["news_n"] == 1
+    assert news_context(conn, "US500", 1, now)["news"] == "brak"
+    assert macro_context(conn, now)["macro"] == "brak"
+    conn.execute("INSERT INTO macro_events (id, time, country, name, importance) VALUES ('m', ?, 'USD', 'CPI', 3)",
+                 ((now + timedelta(hours=3)).isoformat(),))
+    assert macro_context(conn, now)["macro"] == "przed_publikacja"
+    assert macro_context(conn, now + timedelta(hours=5))["macro"] == "po_publikacji"
+    assert macro_context(conn, now + timedelta(hours=20))["macro"] == "daleko"
+
+    # skan zapisuje pelny kontekst w dzienniku
+    from test_runner import Always, make_ctx
+
+    monkeypatch.setitem(runner.REGISTRY, "always", Always)
+    ctx = make_ctx(tmp_path)
+    assert runner.job_scan(ctx) == 1
+    saved = json.loads(ctx.conn.execute("SELECT context FROM signals").fetchone()[0])
+    assert {"news", "macro", "regime", "d1_trend", "news_n", "confluence"} <= set(saved)
+    assert "Brak rozliczonych" in journal_report(journal_frame(ctx.conn), 1)
+    ctx.conn.execute("UPDATE signals SET status='tp', r_result=2.0")
+    report = journal_report(journal_frame(ctx.conn))
+    assert "Rozliczonych sygnalow z kontekstem: 1" in report and "za mało danych" in report

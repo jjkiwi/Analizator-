@@ -11,6 +11,7 @@ from . import journal
 from .data import DataService, DataSourceError
 from .fundamentals import compute_bias, read_bias, save_bias
 from .fusion import confluence
+from .live_context import signal_context
 from .macro import MacroRules, surprise_effects, upcoming, upsert_events
 from .models import Instrument
 from .news import fetch_feed, process_items
@@ -71,6 +72,12 @@ def job_scan(ctx: Context, intervals: list[str] | None = None) -> int:
     strategies = [REGISTRY[name]() for name in cfg["strategies"] if name in REGISTRY]
     new = 0
     broken: list[str] = []
+    vix = None
+    if "VIX" in ctx.instruments:
+        try:
+            vix = ctx.data.get(ctx.instruments["VIX"], "1d")["close"]
+        except Exception:  # brak VIX nie moze zatrzymac skanu
+            vix = None
     for inst in ctx.instruments.values():
         if not inst.sources:
             continue
@@ -89,7 +96,13 @@ def job_scan(ctx: Context, intervals: list[str] | None = None) -> int:
                 if sig is None:
                     continue
                 conf = confluence(sig.side, read_bias(ctx.conn, inst.symbol), recent_news_direction(ctx.conn, inst.symbol))
-                if journal.record(ctx.conn, sig, interval, conf.score, {"confluence": conf.text, "label": conf.label}):
+                context = {"confluence": conf.text, "label": conf.label}
+                try:  # pelny kontekst (technika, newsy, makro) do pozniejszej oceny; jego brak nie blokuje zapisu
+                    daily = df if interval == "1d" else ctx.data.get(inst, "1d")
+                    context.update(signal_context(ctx.conn, inst, sig.side, df, daily, interval, vix))
+                except Exception as exc:
+                    log.warning("kontekst sygnalu %s %s niedostepny: %s", inst.symbol, interval, exc)
+                if journal.record(ctx.conn, sig, interval, conf.score, context):
                     new += 1
                     if strategy.name in cfg["alert_strategies"]:
                         ctx.notifier.send(format_signal(sig, interval, conf))

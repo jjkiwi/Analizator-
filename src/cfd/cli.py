@@ -335,6 +335,15 @@ def cmd_journal(args) -> None:
         print(f"  {r['time'][:16]} {r['symbol']:<10} {'LONG' if r['side'] > 0 else 'SHORT':<5} {r['strategy']:<18} {r['status']:<7} {res}")
 
 
+def cmd_journal_context(args) -> None:
+    """Skutecznosc rozliczonych sygnalow wedlug kontekstu (newsy, makro, technika) zapisanego przy sygnale."""
+    from .live_context import journal_frame, journal_report
+
+    conn = _conn(args)
+    open_n = conn.execute("SELECT COUNT(*) FROM signals WHERE status = 'open'").fetchone()[0]
+    print(journal_report(journal_frame(conn), open_n))
+
+
 def cmd_health(args) -> None:
     for r in _conn(args).execute("SELECT * FROM source_health ORDER BY fail_streak DESC, source"):
         state = "OK  " if r["fail_streak"] == 0 else f"BLAD x{r['fail_streak']}"
@@ -572,6 +581,8 @@ def main(argv: list[str] | None = None) -> None:
 
     sp = add("journal", cmd_journal, "dziennik sygnalow i skutecznosc na zywo", symbols=False, interval=False)
     sp.add_argument("--limit", type=int, default=20)
+    add("journal-context", cmd_journal_context, "skutecznosc sygnalow z dziennika wedlug kontekstu (newsy, makro)",
+        symbols=False, interval=False)
     add("health", cmd_health, "stan zrodel danych", symbols=False, interval=False)
     sp = add("run", cmd_run, "praca ciagla (albo --once: jeden przebieg)", symbols=False, interval=False)
     sp.add_argument("--once", action="store_true")
