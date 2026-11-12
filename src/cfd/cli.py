@@ -371,6 +371,37 @@ def cmd_sync(args) -> None:
         print(f"push: {sync.push(conn, sb)}")
 
 
+def cmd_context_test(args) -> None:
+    """Czy sygnaly trafiaja czesciej w sprzyjajacym kontekscie (proba odkrywcza i potwierdzajaca)."""
+    from .fundamentals import SeriesRouter, bias_history_for
+    from .validation.context import collect_trades, evaluate, render_markdown
+
+    out = Path(args.out)
+    out.mkdir(parents=True, exist_ok=True)
+    cache = out / "kontekst_transakcje.parquet"
+    if cache.exists() and not args.refresh:
+        trades = pd.read_parquet(cache)
+    else:
+        instruments = _instruments(args)
+        insts = [i for i in _pick(instruments, args.symbols, args.category) if i.sources]
+        svc = _service(args)
+        vix = svc.get(instruments["VIX"], "1d")["close"] if "VIX" in instruments else None
+        bias_for = None if args.no_bias else bias_history_for(_cfg(args, "fundamentals.yaml"), SeriesRouter().series)
+        frames = []
+        for interval in args.intervals:
+            print(f"== {interval}", flush=True)
+            frames.append(collect_trades(insts, svc, interval, args.strategies or STRATS, args.train, args.test, vix, bias_for,
+                                         progress=lambda s: print(s, end=" ", flush=True)))
+            print(flush=True)
+        trades = pd.concat(frames, ignore_index=True)
+        trades.to_parquet(cache)
+    cells, baseline = evaluate(trades)
+    text = render_markdown(cells, baseline)
+    (out / "kontekst.md").write_text(text + "\n", encoding="utf-8")
+    print(text)
+    print(f"\nTransakcji: {len(trades)}. Wynik: {out / 'kontekst.md'}, dane: {cache}")
+
+
 def cmd_export_config(args) -> None:
     """Zapisuje konfiguracje toru szybkiego jako JSON dla funkcji Supabase (jedno zrodlo prawdy: pliki YAML)."""
     import json
@@ -529,6 +560,14 @@ def main(argv: list[str] | None = None) -> None:
     sp.add_argument("--intervals", nargs="*", help="np. 1h 4h albo 'auto' = te, na ktorych wlasnie zamknela sie swieca")
     sp = add("sync", cmd_sync, "synchronizacja z Supabase: push | pull | both", symbols=False, interval=False)
     sp.add_argument("action", choices=["push", "pull", "both"])
+    sp = add("context-test", cmd_context_test, "test filtra kontekstowego na transakcjach walk-forward", interval=False)
+    sp.add_argument("--intervals", nargs="*", default=["1d", "4h", "1h"], choices=["1h", "4h", "1d"])
+    sp.add_argument("--strategies", nargs="*", choices=STRATS)
+    sp.add_argument("--train", type=int, default=750)
+    sp.add_argument("--test", type=int, default=250)
+    sp.add_argument("--out", default="reports")
+    sp.add_argument("--no-bias", action="store_true", help="pomin bias fundamentalny (bez sieci)")
+    sp.add_argument("--refresh", action="store_true", help="przelicz transakcje zamiast czytac z pliku")
     sp = add("export-config", cmd_export_config, "konfiguracja dla funkcji Supabase (JSON)", symbols=False, interval=False)
     sp.add_argument("--out", default="supabase/functions/_shared/config.json")
     sp = add("dashboard", cmd_dashboard, "wygeneruj statyczny panel HTML", symbols=False, interval=False)

@@ -39,7 +39,7 @@ co nie działa). Pytania i blokady dopisuj do `DECYZJE.md` w sekcji "Nowe pytani
 7. **Nie poluzowuj walidacji, żeby strategia "przeszła".** Progi i siatki parametrów zmieniaj tylko
    z uzasadnieniem zapisanym w `WYNIKI.md`. "Żadna strategia nie przechodzi" to poprawny wynik.
 8. **Nie dopisuj strategii do `alert_strategies`.** To decyzja użytkownika po obejrzeniu raportu.
-9. **Testy muszą przechodzić** po każdej zmianie: `pytest` (149) i `deno test supabase/tests/` (12).
+9. **Testy muszą przechodzić** po każdej zmianie: `pytest` (152) i `deno test supabase/tests/` (12).
    Do każdej poprawki adaptera dopisz test na zapisanej próbce prawdziwej odpowiedzi (`tests/fixtures/`).
 10. Wskaźniki i strategie nie mogą zaglądać w przyszłość. Testów `*_causal` i `*_look_ahead` nie usuwaj.
 11. **RLS zostaje włączone** na wszystkich tabelach. Rejestracja nowych użytkowników w Supabase Auth ma być wyłączona.
@@ -48,7 +48,7 @@ co nie działa). Pytania i blokady dopisuj do `DECYZJE.md` w sekcji "Nowe pytani
 
 ```bash
 python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
-pip install -e ".[dev]" && pytest                   # oczekiwane: 149 passed
+pip install -e ".[dev]" && pytest                   # oczekiwane: 152 passed
 deno test supabase/tests/                           # oczekiwane: 12 passed
 git init && git add -A && git commit -m "v0.3 z czatu"
 cp .env.example .env                                # klucze uzupełnia użytkownik

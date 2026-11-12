@@ -143,3 +143,27 @@ def positioning_percentile(net_positions: pd.Series, window: int = 156) -> float
     if len(s) < 20:
         return None
     return float((s <= s.iloc[-1]).mean() * 100)
+
+
+def bias_history_for(config_path: Path | str, get_series):
+    """Zwraca funkcje (instrument, od, do) -> historia biasu liczona przyczynowo; serie pobierane raz i dzielone."""
+    from ..validation.context import bias_history
+
+    components = load_components(config_path)
+    shared: dict[str, pd.Series | Exception] = {}
+
+    def cached(series_id: str) -> pd.Series:
+        if series_id not in shared:
+            try:
+                shared[series_id] = get_series(series_id)
+            except Exception as exc:  # brak jednej serii nie moze zatrzymac testu
+                shared[series_id] = exc
+        if isinstance(shared[series_id], Exception):
+            raise shared[series_id]
+        return shared[series_id]
+
+    def for_instrument(inst, start, end):
+        comps = components.get(inst.symbol)
+        return bias_history(comps, cached, pd.Timestamp(start), pd.Timestamp(end)) if comps else None
+
+    return for_instrument
