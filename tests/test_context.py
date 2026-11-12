@@ -69,3 +69,41 @@ def test_evaluate_confirms_real_effect_and_rejects_noise():
     assert not by[("wszystkie", "regime", "pod_trend")].candidate
     assert not by[("wszystkie", "d1_trend", "zgodny")].confirmed  # cecha losowa
     assert abs(baseline[("1h", "s")]["discovery"][1]) < 0.1
+
+
+def test_now_snapshot_and_html(tmp_path, monkeypatch):
+    import json
+
+    from cfd import runner
+    from cfd.db import connect
+    from cfd.models import Instrument
+    from cfd.now import assess, build_snapshot, load_stats, render_html
+
+    class Always:
+        name = "always"
+
+        def generate(self, df):
+            return pd.DataFrame({"side": 1, "sl_dist": 1.0, "tp_dist": 2.0, "rationale": "test"}, index=df.index)
+
+    class Data:
+        def get(self, inst, interval, refresh=False):
+            return make_candles(400, seed=2)
+
+    monkeypatch.setitem(runner.REGISTRY, "always", Always)
+    (tmp_path / "walidacja_1d.json").write_text(json.dumps([
+        {"symbol": "GOLD", "strategy": "always", "interval": "1d", "folds": 4, "trades": 80, "win_rate": 0.4,
+         "expectancy_r": -0.1, "profit_factor": 0.9, "verdict": "fail"}]), encoding="utf-8")
+    (tmp_path / "walidacja_1d_koszty_x2.json").write_text("[]", encoding="utf-8")
+    stats = load_stats(tmp_path)
+    assert list(stats) == [("GOLD", "always", "1d")]
+    insts = {"GOLD": Instrument("GOLD", "Zloto", "metals", {"fake": "g"}), "X": Instrument("X", "x", "indices", {"fake": "x"})}
+    filters = [{"interval": "1d", "strategy": "always", "scope": "indices", "feature": "session", "value": "dzienny", "n": 150, "mean_r": 0.2}]
+    snap = build_snapshot(insts, Data(), connect(":memory:"), ["1d"], ["always"], stats, filters, refresh=False)
+    by = {s["symbol"]: s for s in snap["signals"]}
+    assert by["GOLD"]["assessment"] == "none" and not by["GOLD"]["filters"]
+    assert by["X"]["assessment"] == "unknown" and by["X"]["filters"]  # filtr dla kategorii indices
+    assert snap["signals"][0]["symbol"] == "X"  # potwierdzony kontekst na gorze
+    page = render_html(snap)
+    assert "Stan na teraz" in page and "brak przewagi po kosztach" in page.lower() and "KUP (LONG)" in page
+    assert assess({"folds": 3, "trades": 10})[0] == "unknown"
+    assert assess({"folds": 3, "trades": 50, "expectancy_r": 0.2, "verdict": "pass"})[0] == "good"

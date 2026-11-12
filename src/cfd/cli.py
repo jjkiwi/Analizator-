@@ -371,6 +371,25 @@ def cmd_sync(args) -> None:
         print(f"push: {sync.push(conn, sb)}")
 
 
+def cmd_now(args) -> None:
+    """Ekran "stan na teraz": biezace sygnaly ze zmierzona skutecznoscia (HTML na telefon i komputer)."""
+    from .now import build_snapshot, load_confirmed_filters, load_stats, write
+
+    instruments = _instruments(args)
+    picked = {i.symbol: i for i in _pick(instruments, args.symbols, args.category)}
+    if "VIX" in instruments:
+        picked.setdefault("VIX", instruments["VIX"])
+    snap = build_snapshot(picked, _service(args), _conn(args), args.intervals, args.strategies or STRATS,
+                          load_stats(args.reports), load_confirmed_filters(args.reports), refresh=not args.offline)
+    path = write(snap, args.out)
+    top = [s for s in snap["signals"] if s["filters"] or s["assessment"] == "good"]
+    print(f"Sygnalow: {len(snap['signals'])}, w tym z dodatnim wynikiem w walidacji: {len(top)}. Bledow zrodel: {len(snap['errors'])}.")
+    for s in top:
+        print(f"  {s['symbol']:<10} {s['interval']:<3} {'LONG' if s['side'] > 0 else 'SHORT':<5} {s['strategy']:<18} "
+              f"SL {s['stop_loss']:.5g}  TP {s['take_profit']:.5g}  | {s['assessment_text']}")
+    print(f"Ekran: {path}")
+
+
 def cmd_context_test(args) -> None:
     """Czy sygnaly trafiaja czesciej w sprzyjajacym kontekscie (proba odkrywcza i potwierdzajaca)."""
     from .fundamentals import SeriesRouter, bias_history_for
@@ -560,6 +579,12 @@ def main(argv: list[str] | None = None) -> None:
     sp.add_argument("--intervals", nargs="*", help="np. 1h 4h albo 'auto' = te, na ktorych wlasnie zamknela sie swieca")
     sp = add("sync", cmd_sync, "synchronizacja z Supabase: push | pull | both", symbols=False, interval=False)
     sp.add_argument("action", choices=["push", "pull", "both"])
+    sp = add("now", cmd_now, "ekran 'stan na teraz': sygnaly ze zmierzona skutecznoscia (HTML)", interval=False)
+    sp.add_argument("--intervals", nargs="*", default=["1h", "4h", "1d"], choices=["30m", "1h", "4h", "1d"])
+    sp.add_argument("--strategies", nargs="*", choices=STRATS)
+    sp.add_argument("--offline", action="store_true", help="tylko dane z cache, bez pobierania")
+    sp.add_argument("--reports", default="reports", help="katalog z raportami walidacji i testem kontekstu")
+    sp.add_argument("--out", default="reports/teraz.html")
     sp = add("context-test", cmd_context_test, "test filtra kontekstowego na transakcjach walk-forward", interval=False)
     sp.add_argument("--intervals", nargs="*", default=["1d", "4h", "1h"], choices=["1h", "4h", "1d"])
     sp.add_argument("--strategies", nargs="*", choices=STRATS)
