@@ -777,3 +777,67 @@ Wnioski:
   Cała „przewaga” mieści się w niepewności co do spreadu.
 - Na 4h dla akcji historia jest za krótka: prawie wszystkie kombinacje padają na liczbie transakcji.
 - Nadal żadna strategia nie przechodzi walidacji.
+
+## Test filtra kontekstowego (2026-11-12)
+
+**Pytanie.** Czy sygnały trzech strategii trafiają częściej, gdy zgadza się z nimi kontekst, który program już liczy?
+
+**Co zrobione.** Polecenie `cfd context-test` (`src/cfd/validation/context.py`, testy w `tests/test_context.py`):
+- 31 011 transakcji z okien testowych walk-forward (71 instrumentów, 3 strategie, interwały 1d, 4h, 1h), z kosztami i wykluczonymi rolowaniami.
+- Każda transakcja ma etykiety kontekstu znane przed wejściem: reżim rynku na interwale sygnału, trend dzienny z poprzedniej sesji
+  (cena względem SMA200), zmienność (percentyl ATR), sesja (Azja / Europa / USA), poziom VIX względem rocznej mediany,
+  bias fundamentalny liczony tak, jak byłby znany danego dnia (serie FRED, EIA i COT ucięte o 7 dni opóźnienia publikacji).
+- Transakcje podzielone w czasie: starsze 60% to próba odkrywcza, nowsze 40% to próba potwierdzająca. Filtr jest kandydatem,
+  gdy na próbie odkrywczej ma co najmniej 200 transakcji, dodatni średni wynik i t ≥ 2; potwierdzonym, gdy na próbie
+  niewidzianej ma co najmniej 100 transakcji, dodatni wynik i t ≥ 1,65. Filtry liczone łącznie i osobno dla każdej kategorii instrumentów.
+- Jest test, że etykiety nie zaglądają w przyszłość (zmiana danych od świecy wejścia nie zmienia etykiety).
+
+**Co wyszło.**
+
+### Punkt odniesienia (wszystkie sygnaly, bez filtra)
+
+| Interwał | Strategia | Odkrywcza: n | Odkrywcza: śr. R | Potwierdzająca: n | Potwierdzająca: śr. R | Granica prób |
+|---|---|---|---|---|---|---|
+| 1d | donchian_breakout | 3268 | -0.033 | 1929 | -0.088 | 2016-10-09 |
+| 1d | mean_reversion | 1402 | -0.109 | 1270 | -0.134 | 2016-10-09 |
+| 1d | trend_pullback | 2250 | -0.012 | 1415 | -0.079 | 2016-10-09 |
+| 1h | donchian_breakout | 4790 | -0.118 | 2741 | -0.195 | 2025-11-11 |
+| 1h | mean_reversion | 2029 | -0.214 | 1650 | -0.088 | 2025-11-11 |
+| 1h | trend_pullback | 2706 | -0.174 | 1960 | -0.133 | 2025-11-11 |
+| 4h | donchian_breakout | 1111 | +0.003 | 581 | -0.135 | 2026-01-15 |
+| 4h | mean_reversion | 425 | -0.197 | 413 | -0.108 | 2026-01-15 |
+| 4h | trend_pullback | 624 | +0.009 | 447 | -0.194 | 2026-01-15 |
+
+Filtrów z wystarczającą próbą: 276. Kandydatów na próbie odkrywczej: 3 (z samego przypadku spodziewane ok. 7). Potwierdzonych na próbie niewidzianej: 0 (z samego przypadku spodziewane ok. 0.2).
+
+### Kandydaci i ich wynik na próbie potwierdzającej
+
+| Int. | Strategia | Zakres | Cecha = wartość | Odkr.: n | Odkr.: śr. R | Odkr.: t | Potw.: n | Potw.: śr. R | Potw.: t | Wynik |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 1d | donchian_breakout | stocks | vol = niska | 277 | +0.326 | 2.5 | 289 | +0.144 | 1.1 | nie utrzymał się |
+| 4h | donchian_breakout | crypto | vol = niska | 262 | +0.277 | 2.7 | 24 | -0.613 | -2.2 | za mała próba |
+| 4h | trend_pullback | wszystkie | session = usa | 226 | +0.193 | 2.2 | 169 | -0.204 | -2.2 | nie utrzymał się |
+
+**Wniosek: żaden filtr kontekstowy nie daje przewagi.** Na 276 sprawdzonych filtrów kandydatów było 3, czyli mniej, niż dałby
+sam przypadek (ok. 7), i żaden nie utrzymał się na danych niewidzianych. Dwa z trzech odwróciły znak. Zgodność z trendem dziennym,
+reżim rynku, bias fundamentalny i poziom VIX nie odróżniają sygnałów dobrych od złych w stopniu pokrywającym koszty.
+
+**Czego test nie obejmuje.** Newsów i kalendarza makro (brak darmowego archiwum: da się je ocenić tylko w przód, z dziennika),
+kombinacji dwóch cech naraz (celowo, żeby nie mnożyć hipotez), prawdziwych spreadów XTB (nadal założenia) oraz historii
+biasu sprzed dostępności serii. Bias istnieje tylko dla 30 instrumentów.
+
+## Ekran „stan na teraz” (2026-11-12)
+
+**Co zrobione.** `cfd now [--intervals 1h 4h 1d] [--offline]` → `reports/teraz.html` i `reports/teraz.json` (`src/cfd/now.py`).
+Samodzielny plik HTML na telefon i komputer (jasny i ciemny motyw). Dla każdego sygnału z ostatniej zamkniętej świecy:
+kierunek, cena sygnału, SL, TP, stosunek zysku do ryzyka, zmierzona skuteczność z walidacji (liczba transakcji, odsetek
+zyskownych, średni wynik po kosztach), etykiety kontekstu oraz ostrzeżenie, gdy cena dotknęła już SL lub TP.
+Sygnały są w trzech grupach: z dodatnim wynikiem w walidacji, niepewne, bez przewagi po kosztach. Na dole kalendarz makro i newsy jako tło.
+Potwierdzone filtry kontekstowe byłyby wyróżniane automatycznie (czyta `reports/kontekst_transakcje.parquet`); dziś nie ma żadnego.
+
+**Co nie działa / ograniczenia.**
+- Ekran nie liczy wielkości pozycji: brak wartości lota z XTB (`config/contracts.yaml` pusty).
+- Sygnał na żywo używa domyślnych parametrów strategii, a statystyka pochodzi z walidacji z parametrami dobieranymi okresowo.
+- Statystyki czyta z `reports/**/walidacja_*.json`: po zmianie danych lub kosztów trzeba ponownie uruchomić `cfd report`.
+- Plik trzeba wygenerować poleceniem; nie jest jeszcze podłączony do panelu PWA ani do GitHub Actions.
+
