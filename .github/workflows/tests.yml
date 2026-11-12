@@ -11,9 +11,3 @@ jobs:
         with: {python-version: "3.12", cache: pip}
       - run: pip install -e ".[dev]"
       - run: pytest -q
-  deno:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: denoland/setup-deno@v2
-      - run: deno test supabase/tests/

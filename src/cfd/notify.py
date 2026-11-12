@@ -1,13 +1,10 @@
 from __future__ import annotations
 
 import logging
-import os
 import sqlite3
 from datetime import datetime, timezone
 from typing import Protocol
 from zoneinfo import ZoneInfo
-
-import httpx
 
 from .fusion import Confluence
 from .macro.calendar import MacroEvent
@@ -24,24 +21,6 @@ class ConsoleNotifier:
     def send(self, text: str) -> bool:
         print("\n" + text + "\n", flush=True)
         return True
-
-
-class TelegramNotifier:
-    def __init__(self, token: str, chat_id: str, timeout: float = 15.0):
-        self.token, self.chat_id, self.timeout = token, chat_id, timeout
-
-    def send(self, text: str) -> bool:
-        try:
-            resp = httpx.post(
-                f"https://api.telegram.org/bot{self.token}/sendMessage",
-                json={"chat_id": self.chat_id, "text": text[:4000], "disable_web_page_preview": True},
-                timeout=self.timeout,
-            )
-            resp.raise_for_status()
-            return True
-        except httpx.HTTPError as exc:
-            log.error("Telegram: nie udalo sie wyslac: %s", type(exc).__name__)
-            return False
 
 
 def in_quiet_hours(now: datetime, start: int, end: int, tz: str) -> bool:
@@ -90,8 +69,8 @@ class QuietNotifier:
 
 
 def notifier_from_env() -> Notifier:
-    token, chat = os.environ.get("TELEGRAM_BOT_TOKEN"), os.environ.get("TELEGRAM_CHAT_ID")
-    return TelegramNotifier(token, chat) if token and chat else ConsoleNotifier()
+    """Powiadomienia trafiaja do logu. Wysylka na Telegram zostala usunieta razem z torem szybkim (decyzja z 2026-11-12)."""
+    return ConsoleNotifier()
 
 
 def _fmt(x: float) -> str:

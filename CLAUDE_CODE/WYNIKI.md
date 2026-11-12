@@ -900,3 +900,15 @@ Raport kwartalny w ciągu 14 dni jest oznaczany na ekranie i w `cfd stocks show`
 - Nie zrobione z zadania E3: SEC EDGAR dla spółek z USA, komunikaty ESPI dla GPW (host niedozwolony w środowisku testowym),
   alert przed raportem jako powiadomienie (powiadomienia są wstrzymane decyzją użytkownika; data jest na ekranie).
 
+## Usunięcie toru szybkiego (2026-11-12)
+
+**Co zrobione (decyzja użytkownika).** Usunięte: `supabase/functions/` (news-poll, macro-poll, wspólny kod TypeScript),
+`supabase/tests/`, `supabase/cron.sql.template`, klasa wysyłki na Telegram, polecenie `cfd export-config`, zadanie Deno
+w `.github/workflows/tests.yml`, sekrety Telegrama w przebiegach, wpisy w `.env.example`. `CLAUDE.md` i `README.md` opisują nową architekturę.
+
+**Co zostało.** Powiadomienia trafiają do logu (`ConsoleNotifier`); mechanizm ciszy nocnej i formatowanie wiadomości zostały
+w kodzie, bo korzysta z nich `cfd run`. Zostały też `supabase/migrations/`, `supabase/config.toml`, `src/cfd/sync.py`, `web/`
+i `vercel.json`: to panel z logowaniem i baza, a nie tor szybki. Bez konta Supabase są nieużywane (pytanie w `DECYZJE.md`).
+
+**Skutek.** Jedna wersja logiki newsów i makro (Python) zamiast dwóch. Testy: `pytest` 158.
+

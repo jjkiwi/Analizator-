@@ -3,34 +3,27 @@
 Analiza rynku i sygnały dla CFD i akcji w XTB: technika, fundamenty, newsy, kalendarz makro.
 Nie składa zleceń. Decyzja i transakcja są po stronie użytkownika.
 
-## Stan: v0.3
+## Stan: v0.4 (bez bota)
 
-Testy: 65 w Pythonie, 10 w TypeScripcie. **Żaden element sieciowy nie był uruchomiony na prawdziwych danych**
-(środowisko budowania nie miało dostępu do tych serwisów), a panel nie był otwierany w przeglądarce.
-Weryfikacja i wdrożenie to zadania w `CLAUDE_CODE/ZADANIA.md`.
+Adaptery sieciowe są sprawdzone na żywych danych; wyniki i ograniczenia: `CLAUDE_CODE/WYNIKI.md`, otwarte pytania: `DECYZJE.md`.
+**Walidacja nie wykazała przewagi żadnej z trzech strategii ani żadnego filtra kontekstowego**, dlatego program niczego
+nie rekomenduje: pokazuje sygnały razem ze zmierzoną skutecznością i zbiera dane do dalszej oceny.
 
 ## Architektura (bez własnego serwera)
 
 ```
-                       ┌──────────────── Supabase ────────────────┐
-RSS (5 języków) ──────▶│ funkcja news-poll  (co minutę, pg_cron)  │──▶ Telegram
-kalendarz makro ──────▶│ funkcja macro-poll (co minutę, pg_cron)  │──▶ Telegram
-darmowe modele LLM ◀──▶│                                          │
-                       │ Postgres: signals, news, macro_events,   │◀── panel PWA (Vercel)
-                       │           fundamental_bias, source_health│
-                       └──────────────────▲───────────────────────┘
-                                          │ sync (push / pull)
-Yahoo / Stooq / Binance ──▶ GitHub Actions: Python co 30 min ──────▶ Telegram
-FRED ─────────────────────▶ (świece → wskaźniki → strategie → fuzja → dziennik)
+Yahoo / Binance ───────────┐
+RSS (5 języków) ───────────┤   GitHub Actions: Python co 30 min
+kalendarz makro ───────────┼─▶ makro → newsy → skan → dziennik (z kontekstem) ─▶ ekran „stan na teraz”
+FRED / EIA / CFTC ─────────┘   raz dziennie: bias fundamentalny, fundamenty spółek   (artefakt lub GitHub Pages)
 ```
 
-- **Tor szybki**: `supabase/functions/` (TypeScript, bez zależności). Reguły są bramką: do modelu trafiają tylko
-  newsy z wagą ≥ 2. Łańcuch modeli z `config/llm.yaml`, na końcu zawsze reguły.
-- **Tor wolny**: `src/cfd/` (Python). Skan tylko na interwałach, na których właśnie zamknęła się świeca.
-- **Cisza nocna** 23–8 czasu polskiego: powiadomienia czekają w tabeli `outbox`, rano jedno podsumowanie.
-- **Bezpiecznik**: strategie zapisują sygnały do dziennika (forward test), ale alerty wysyłają tylko te wpisane
-  ręcznie do `scan.alert_strategies`. Domyślnie żadna.
-- **Konfiguracja**: `config/*.yaml` to jedyne źródło prawdy. `cfd export-config` generuje JSON dla funkcji.
+- **Bez alertów.** Tor szybki (funkcje Supabase, TypeScript, Telegram) został usunięty decyzją z 2026-11-12.
+- **Ekran** (`cfd now`): sygnały z ostatnich zamkniętych świec, przy każdym zmierzona skuteczność z walidacji,
+  kontekst, fundamenty posiadanych spółek, kalendarz makro i newsy jako tło.
+- **Dziennik**: każdy sygnał zapisany z kontekstem (technika, newsy, makro) i rozliczany po fakcie (`cfd journal-context`).
+- **Bezpiecznik**: `scan.alert_strategies` jest puste; program nie składa zleceń.
+- **Konfiguracja**: `config/*.yaml` to jedyne źródło prawdy.
 
 ## Zakres
 
@@ -42,7 +35,6 @@ Interwały: D1, H4, H1, M30. Strategie: `trend_pullback`, `donchian_breakout`, `
 ```bash
 python -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]" && pytest
-deno test supabase/tests/
 cp .env.example .env
 ```
 
@@ -62,8 +54,10 @@ cfd bias check | update | show
 cfd run --once --jobs scan --intervals auto   # to samo, co robi GitHub Actions
 cfd run                                       # praca ciągła na własnej maszynie (wszystkie tory w Pythonie)
 cfd sync pull | push | both                   # wymiana z Supabase
-cfd export-config                             # JSON dla funkcji Supabase
-cfd journal | health | dashboard | notify-test
+cfd now                                       # ekran „stan na teraz” (reports/teraz.html)
+cfd stocks update | show --details            # fundamenty spółek
+cfd context-test                              # test filtra kontekstowego
+cfd journal | journal-context | health | dashboard
 ```
 
 ## Struktura
@@ -72,10 +66,8 @@ cfd journal | health | dashboard | notify-test
 config/                 instruments, settings, feeds, keywords, macro_rules, fundamentals, llm
 src/cfd/                data, features, strategies, backtest, validation, news, macro, fundamentals,
                         fusion, journal, scanner, runner, notify, sync, report, dashboard, db, cli
-supabase/migrations/    schemat Postgres z RLS
-supabase/functions/     news-poll, macro-poll, _shared (rss, mapper, classify, macro, notify, pipeline, db)
-supabase/tests/         testy toru szybkiego (Deno)
-supabase/cron.sql.template   harmonogram pg_cron (zawiera sekrety, wykonywany ręcznie)
+supabase/migrations/    schemat Postgres z RLS (pozostałość po v0.3: używany tylko z kontem Supabase i panelem web/)
+walidacja/              wyniki walk-forward czytane przez ekran „stan na teraz”
 .github/workflows/      testy, skan (co 30 min), dzienne (bias, raport walidacji)
 web/                    panel PWA (tryb demo, dopóki web/config.js jest pusty)
 CLAUDE.md, CLAUDE_CODE/ instrukcja i zadania do wykonania na komputerze

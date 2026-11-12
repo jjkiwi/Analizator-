@@ -493,38 +493,6 @@ def cmd_context_test(args) -> None:
     print(f"\nTransakcji: {len(trades)}. Wynik: {out / 'kontekst.md'}, dane: {cache}")
 
 
-def cmd_export_config(args) -> None:
-    """Zapisuje konfiguracje toru szybkiego jako JSON dla funkcji Supabase (jedno zrodlo prawdy: pliki YAML)."""
-    import json
-
-    import yaml
-
-    from .news import load_feeds
-
-    instruments = _instruments(args)
-    kw = yaml.safe_load(_cfg(args, "keywords.yaml").read_text(encoding="utf-8"))
-    known = set(instruments)
-    settings = load_settings(_cfg(args, "settings.yaml"))
-    out = {
-        "symbols": sorted(known),
-        "feeds": [vars(f) for f in load_feeds(_cfg(args, "feeds.yaml"))],
-        "keywords": {
-            "instruments": {s: w for s, w in kw.get("instruments", {}).items() if s in known and w},
-            "topics": {n: {"keywords": t["keywords"], "symbols": [s for s in t["symbols"] if s in known]} for n, t in kw.get("topics", {}).items()},
-            "high_impact": kw.get("high_impact", []),
-            "high_impact_moves": kw.get("high_impact_moves", []),
-            "exclude": {s: w for s, w in (kw.get("exclude") or {}).items() if s in known and w},
-        },
-        "macro_rules": yaml.safe_load(_cfg(args, "macro_rules.yaml").read_text(encoding="utf-8"))["rules"],
-        "llm": yaml.safe_load(_cfg(args, "llm.yaml").read_text(encoding="utf-8")),
-        "news": settings["news"], "macro": settings["macro"], "quiet_hours": settings["quiet_hours"],
-    }
-    path = Path(args.out)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8")
-    print(f"Zapisano {path} ({len(out['feeds'])} feedow, {len(out['symbols'])} symboli)")
-
-
 def cmd_dashboard(args) -> None:
     from .dashboard import write
 
@@ -670,8 +638,6 @@ def main(argv: list[str] | None = None) -> None:
     sp.add_argument("--out", default="reports")
     sp.add_argument("--no-bias", action="store_true", help="pomin bias fundamentalny (bez sieci)")
     sp.add_argument("--refresh", action="store_true", help="przelicz transakcje zamiast czytac z pliku")
-    sp = add("export-config", cmd_export_config, "konfiguracja dla funkcji Supabase (JSON)", symbols=False, interval=False)
-    sp.add_argument("--out", default="supabase/functions/_shared/config.json")
     sp = add("dashboard", cmd_dashboard, "wygeneruj statyczny panel HTML", symbols=False, interval=False)
     sp.add_argument("--out", default="reports/panel.html")
     sp = add("size", cmd_size, "kalkulator wielkosci pozycji (loty dla zadanego ryzyka)", symbols=False, interval=False)

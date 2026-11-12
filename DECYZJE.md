@@ -127,3 +127,12 @@ Klucze i tokeny wpisuj tylko do `.env`, sekretów GitHub i sekretów Supabase. N
 5. **Progi listy kontrolnej spółek** są podręcznikowe i niewalidowane. Chcesz inne progi albo inne filary (np. dywidenda, przepływy pieniężne)?
 6. **Spready i wartość lota z xStation**: nadal brak; od nich zależy, czy wyniki „blisko zera” (wybicia na akcjach 1d) są dodatnie.
 
+### Odpowiedzi użytkownika z 2026-11-12
+
+- **Bez bota.** Program ma pokazywać stan po otwarciu, bez alertów. **Tor szybki usunięty** (pytanie 3 powyżej: „usuń”):
+  `supabase/functions/`, `supabase/tests/`, `supabase/cron.sql.template`, wysyłka na Telegram, `cfd export-config`,
+  testy Deno w Actions. Decyzje 3, 10 i 11 z tabeli (Telegram, próg alertów, cisza nocna) są przez to bezprzedmiotowe.
+- **Kolejność prac:** najpierw zbieranie newsów i makro w przód, potem fundamenty spółek. Oba zrobione.
+- **Nadal otwarte:** repozytorium publiczne czy prywatne, sposób udostępnienia ekranu na telefonie, ticker `SPL.PL`,
+  spready i wartość lota z xStation, oraz co zrobić z pozostałością po v0.3 (`supabase/migrations/`, `src/cfd/sync.py`, `web/`, `vercel.json`).
+

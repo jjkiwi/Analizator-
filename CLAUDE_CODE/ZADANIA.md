@@ -1,5 +1,9 @@
 # Zadania dla Claude Code (v0.3)
 
+> **Zmiana zakresu (2026-11-12).** Użytkownik zrezygnował z funkcji bota: tor szybki (funkcje Supabase, TypeScript,
+> harmonogram `pg_cron`, Telegram) został usunięty. Zadania F1 i F4 oraz części zadań C1, D1, D2 dotyczące TypeScriptu
+> i Supabase są nieaktualne. Aktualny stan i kierunek: `README.md` oraz `CLAUDE_CODE/WYNIKI.md`.
+
 Kolejność ma znaczenie. Oznaczenia: **[SIEĆ]** wymaga internetu, **[KLUCZ]** wymaga klucza (gdy go nie ma, pomiń
 i odnotuj), **[KONTO]** wymaga konta założonego przez użytkownika, **[DECYZJA]** wymaga odpowiedzi w `DECYZJE.md`.
 
