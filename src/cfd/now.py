@@ -45,6 +45,9 @@ def load_stats(reports_dir: Path | str = "reports") -> dict[tuple[str, str, str]
 
 def load_confirmed_filters(reports_dir: Path | str = "reports") -> list[dict]:
     """Filtry kontekstowe potwierdzone na probie niewidzianej (wynik `cfd context-test`). Brak pliku = brak filtrow."""
+    listed = Path(reports_dir) / "kontekst_filtry.json"   # maly plik trzymany w repozytorium (cotygodniowe przeliczenie)
+    if listed.exists():
+        return json.loads(listed.read_text(encoding="utf-8"))
     path = Path(reports_dir) / "kontekst_transakcje.parquet"
     if not path.exists():
         return []
@@ -272,7 +275,7 @@ def render_html(snap: dict) -> str:
     return f"""<!doctype html><html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Analizator CFD: stan na teraz</title><style>{CSS}</style></head><body><main>
 <h1>Stan na teraz</h1>
-<p class="mut small">Wygenerowano {gen:%Y-%m-%d %H:%M} UTC · interwały: {_e(', '.join(snap['intervals']))} · sprawdzonych serii: {snap['scanned']} · sygnałów: {len(sigs)}</p>
+<p class="mut small">Wygenerowano {gen:%Y-%m-%d %H:%M} UTC · interwały: {_e(', '.join(snap['intervals']))} · sprawdzonych serii: {snap['scanned']} · sygnałów: {len(sigs)}{(' · statystyki walidacji z ' + _e(snap['stats_date'])) if snap.get('stats_date') else ''}</p>
 <div class="note small">Program nie składa zleceń i nie zna kwotowań XTB. Ceny pochodzą z opóźnionych, darmowych źródeł (kontrakty futures lub indeksy),
 więc poziomy SL i TP przenieś do xStation jako odległość od bieżącej ceny, nie jako cenę. Liczby przy sygnale to wynik testów na danych historycznych,
 których strategia nie widziała przy doborze parametrów. Nie są gwarancją wyniku.</div>

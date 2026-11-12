@@ -8,8 +8,8 @@ Opis modułów i architektury: `README.md`. Odpowiedzi użytkownika na pytania: 
 Decyzja z 2026-11-12: program nie wysyła alertów. Użytkownik otwiera ekran „stan na teraz”, gdy ma czas.
 Tor szybki (funkcje Supabase w TypeScripcie, harmonogram `pg_cron`, Telegram) został usunięty.
 
-- **Jeden tor**: Python (`src/cfd/`) uruchamiany przez GitHub Actions (`.github/workflows/`): kalendarz makro, newsy,
-  skan techniczny, raz dziennie fundamenty. Stan roboczy w SQLite i Parquet (cache Actions i artefakt przebiegu).
+- **Jeden tor**: Python (`src/cfd/`) uruchamiany przez GitHub Actions (`.github/workflows/`): co godzinę kalendarz makro, newsy
+  i skan techniczny (łańcuch przebiegów w `scan.yml`), raz dziennie fundamenty, raz w tygodniu przeliczenie walidacji do `walidacja/`. Stan roboczy w SQLite i Parquet (cache Actions i artefakt przebiegu).
 - **Ekran**: `cfd now` generuje samodzielny plik HTML (`reports/teraz.html`); Actions zapisuje go jako artefakt,
   a opcjonalnie publikuje przez GitHub Pages (`.github/workflows/pages.yml`, domyślnie wyłączone).
 - **Dziennik**: każdy sygnał jest zapisywany z kontekstem (technika, newsy, makro) i rozliczany po fakcie.

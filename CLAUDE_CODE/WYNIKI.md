@@ -948,3 +948,24 @@ jako wynik przed wszystkimi kosztami (spread i swap):
 **Uwaga o skali cen.** Mnożnik odnosi się do kwotowań XTB. Część darmowych źródeł kwotuje ten sam towar w innej jednostce
 (np. miedź: Yahoo w USD za funt, XTB w USD za tonę), więc do `cfd size` trzeba wpisywać ceny z xStation, a nie z ekranu.
 
+## Rytm skanów i cotygodniowe przeliczanie (2026-11-12)
+
+**Problem.** Harmonogram GitHuba (`schedule` co 30 minut) wykonał w pierwszej dobie 3 przebiegi z 48 (01:50, 09:29, 17:42 UTC).
+Przy takim rytmie sygnały z 1h przepadają.
+
+**Co zrobione: łańcuch przebiegów** (`.github/workflows/scan.yml`). Każdy przebieg robi skan, zapisuje stan, a w ostatnim kroku
+czeka do 2 minut po następnej pełnej godzinie i sam uruchamia następcę (`gh workflow run`, uprawnienie `actions: write`).
+`schedule` (co 6 godzin) został jako strażnik, który wznawia łańcuch po zerwaniu. Grupa `concurrency` gwarantuje jeden przebieg naraz.
+Wyłącznik: zmienna repozytorium `LANCUCH` = `nie`. Interwał 30m usunięty ze skanu (nie da się go zwalidować, a rytm jest godzinny).
+
+**Koszt i ryzyko.** Maszyna GitHuba jest zajęta całą dobę, z czego większość czasu czeka. W repozytorium publicznym Actions są
+bezpłatne; w prywatnym łańcuch zużyłby darmową pulę minut w kilka dni. GitHub może ograniczać takie użycie Actions:
+gdyby łańcuch był przerywany, pewniejszą drogą jest zewnętrzny cron wywołujący przebieg przez API albo własna maszyna.
+
+**Co zrobione: cotygodniowe przeliczenie** (`.github/workflows/recalc.yml`, sobota). Uzupełnia historię, liczy walk-forward dla 1d, 4h i 1h
+oraz test kontekstowy, a wyniki (małe pliki JSON, `kontekst.md`, lista potwierdzonych filtrów, data) commituje do `walidacja/`.
+Ekran pokazuje datę statystyk. Parametry strategii i progi walidacji się nie zmieniają: odświeżane są tylko zmierzone liczby.
+
+**Co nie działa / niesprawdzone.** Przeliczenie nie było jeszcze uruchomione w Actions (szacowany czas 2–4 godziny na maszynie GitHuba).
+Łańcuch: patrz wynik pierwszego uruchomienia poniżej, gdy będzie znany.
+

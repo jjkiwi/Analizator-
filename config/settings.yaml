@@ -4,7 +4,7 @@ scan:
   every_minutes: 15
   # 30m: Yahoo daje tylko ~60 dni historii, wiec strategii na 30m nie da sie zwalidowac walk-forward.
   # Sygnaly 30m sa zbierane w dzienniku (forward test), ale traktuj je jako eksperyment.
-  intervals: ["1d", "4h", "1h", "30m"]
+  intervals: ["1d", "4h", "1h"]   # 30m wylaczone: 59 dni historii nie da sie zwalidowac, a skan chodzi co godzine
   # Wszystkie strategie z tej listy trafiaja do dziennika (forward test)...
   strategies: [trend_pullback, donchian_breakout, mean_reversion]
   # ...ale alert dostajesz tylko z tych, ktore przeszly walidacje. Domyslnie zadna.

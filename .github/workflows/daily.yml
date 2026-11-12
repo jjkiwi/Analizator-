@@ -26,17 +26,6 @@ jobs:
         run: cfd -v run --once --jobs fundamentals
       - name: Fundamenty spolek (lista kontrolna, daty raportow)
         run: cfd stocks update || true
-      - name: Raport walidacji
-        run: |
-          if [ "$(date -u +%u)" = "1" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            cfd fetch --interval 1d
-            cfd report --interval 1d
-          fi
-      - uses: actions/upload-artifact@v4
-        if: hashFiles('reports/**') != ''
-        with:
-          name: raport-walidacji
-          path: reports/
       - name: Wyslij do Supabase
         if: env.SUPABASE_URL != '' && always()
         run: cfd sync push

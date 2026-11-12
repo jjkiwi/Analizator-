@@ -452,6 +452,8 @@ def cmd_now(args) -> None:
         picked.setdefault("VIX", instruments["VIX"])
     snap = build_snapshot(picked, _service(args), _conn(args), args.intervals, args.strategies or STRATS,
                           load_stats(args.reports), load_confirmed_filters(args.reports), refresh=not args.offline)
+    stamp = Path(args.reports) / "DATA"
+    snap["stats_date"] = stamp.read_text(encoding="utf-8").strip() if stamp.exists() else None
     from .sizing import load_contracts
 
     contracts = load_contracts(_cfg(args, "contracts.yaml"))
@@ -496,6 +498,11 @@ def cmd_context_test(args) -> None:
     cells, baseline = evaluate(trades)
     text = render_markdown(cells, baseline)
     (out / "kontekst.md").write_text(text + "\n", encoding="utf-8")
+    confirmed = [{"interval": c.interval, "strategy": c.strategy, "scope": c.scope, "feature": c.feature, "value": c.value,
+                  "n": c.n_c, "mean_r": c.mean_c} for c in cells if c.confirmed]
+    import json
+
+    (out / "kontekst_filtry.json").write_text(json.dumps(confirmed, ensure_ascii=False, indent=1), encoding="utf-8")
     print(text)
     print(f"\nTransakcji: {len(trades)}. Wynik: {out / 'kontekst.md'}, dane: {cache}")
 

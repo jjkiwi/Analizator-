@@ -1,25 +1,30 @@
-# Tor wolny: skan techniczny po zamknieciu swiecy. Stan roboczy (swiece, dziennik SQLite) wedruje miedzy
-# przebiegami w cache Actions; zrodlem prawdy dla sygnalow jest Supabase (pull na starcie, push na koncu).
+# Skan co godzine: kalendarz makro, newsy, skan techniczny, dziennik, ekran "stan na teraz".
+# Stan roboczy (swiece, dziennik SQLite) wedruje miedzy przebiegami w cache Actions i w artefakcie.
 #
-# UWAGA o limitach: przebieg co 30 minut to ok. 1440 uruchomien miesiecznie. W repozytorium PRYWATNYM
-# przekroczy to darmowa pule minut; w PUBLICZNYM Actions sa bezplatne. Patrz DECYZJE.md, punkt 17.
-# Harmonogram GitHuba bywa opozniony o kilka-kilkanascie minut: dla H1 i wyzej to bez znaczenia, dla M30 juz nie.
+# RYTM. Harmonogram GitHuba (`schedule`) okazal sie zawodny: w pierwszej dobie wykonal 3 przebiegi z 48 zaplanowanych.
+# Dlatego przebiegi tworza LANCUCH: kazdy po skanie czeka do nastepnej pelnej godziny i sam uruchamia nastepce
+# (workflow_dispatch). `schedule` zostaje tylko jako straznik, ktory wznawia lancuch, gdyby sie zerwal.
+# Koszt: maszyna GitHuba jest zajeta cala dobe (wiekszosc czasu czeka). W repozytorium publicznym Actions sa bezplatne;
+# w prywatnym taki lancuch zuzylby darmowa pule minut w kilka dni. Wylaczenie lancucha: zmienna repozytorium LANCUCH = "nie".
 name: skan
 on:
   schedule:
-    - cron: "2,32 * * * *"
+    - cron: "47 */6 * * *"   # straznik lancucha
   workflow_dispatch:
     inputs:
       intervals:
         description: "Interwaly (np. '1d 4h') albo 'auto'"
         default: "auto"
-concurrency:
+permissions:
+  contents: read
+  actions: write        # uruchomienie nastepcy w lancuchu
+concurrency:              # jeden przebieg naraz; nastepca czeka w kolejce, az poprzednik skonczy
   group: skan
   cancel-in-progress: false
 jobs:
   scan:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 90
     env:
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
@@ -65,3 +70,16 @@ jobs:
         with:
           path: data
           key: stan-${{ github.run_id }}
+      # Ostatni krok: czekaj do 2 minut po nastepnej pelnej godzinie i uruchom nastepny przebieg.
+      # Stan jest juz zapisany, wiec przerwanie w trakcie czekania niczego nie traci.
+      - name: Lancuch - czekaj do pelnej godziny i uruchom nastepce
+        if: always() && vars.LANCUCH != 'nie'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          now=$(date +%s)
+          next=$(( (now / 3600 + 1) * 3600 + 120 ))
+          wait=$(( next - now ))
+          echo "Nastepny skan za $(( wait / 60 )) min"
+          sleep "$wait"
+          gh workflow run scan.yml --repo "$GITHUB_REPOSITORY" --ref "$GITHUB_REF_NAME" -f intervals=auto
