@@ -2,22 +2,23 @@
 
 | Interwał | Strategia | Odkrywcza: n | Odkrywcza: śr. R | Potwierdzająca: n | Potwierdzająca: śr. R | Granica prób |
 |---|---|---|---|---|---|---|
-| 1d | donchian_breakout | 3268 | -0.033 | 1929 | -0.088 | 2016-10-09 |
-| 1d | mean_reversion | 1402 | -0.109 | 1270 | -0.134 | 2016-10-09 |
-| 1d | trend_pullback | 2250 | -0.012 | 1415 | -0.079 | 2016-10-09 |
-| 1h | donchian_breakout | 4790 | -0.118 | 2741 | -0.195 | 2025-11-11 |
-| 1h | mean_reversion | 2029 | -0.214 | 1650 | -0.088 | 2025-11-11 |
-| 1h | trend_pullback | 2706 | -0.174 | 1960 | -0.133 | 2025-11-11 |
-| 4h | donchian_breakout | 1111 | +0.003 | 581 | -0.135 | 2026-01-15 |
-| 4h | mean_reversion | 425 | -0.197 | 413 | -0.108 | 2026-01-15 |
-| 4h | trend_pullback | 624 | +0.009 | 447 | -0.194 | 2026-01-15 |
+| 1d | donchian_breakout | 3268 | -0.033 | 1932 | -0.090 | 2016-10-14 |
+| 1d | mean_reversion | 1404 | -0.108 | 1268 | -0.135 | 2016-10-14 |
+| 1d | trend_pullback | 2252 | -0.010 | 1418 | -0.083 | 2016-10-14 |
+| 1h | donchian_breakout | 4830 | -0.108 | 2771 | -0.202 | 2025-11-12 |
+| 1h | mean_reversion | 2032 | -0.214 | 1690 | -0.093 | 2025-11-12 |
+| 1h | trend_pullback | 2728 | -0.173 | 1935 | -0.148 | 2025-11-12 |
+| 4h | donchian_breakout | 1118 | +0.001 | 588 | -0.140 | 2026-01-19 |
+| 4h | mean_reversion | 424 | -0.203 | 402 | -0.102 | 2026-01-19 |
+| 4h | trend_pullback | 626 | +0.026 | 455 | -0.202 | 2026-01-19 |
 
-Filtrów z wystarczającą próbą: 276. Kandydatów na próbie odkrywczej: 3 (z samego przypadku spodziewane ok. 7). Potwierdzonych na próbie niewidzianej: 0 (z samego przypadku spodziewane ok. 0.2).
+Filtrów z wystarczającą próbą: 276. Kandydatów na próbie odkrywczej: 4 (z samego przypadku spodziewane ok. 7). Potwierdzonych na próbie niewidzianej: 0 (z samego przypadku spodziewane ok. 0.2).
 
 ### Kandydaci i ich wynik na próbie potwierdzającej
 
 | Int. | Strategia | Zakres | Cecha = wartość | Odkr.: n | Odkr.: śr. R | Odkr.: t | Potw.: n | Potw.: śr. R | Potw.: t | Wynik |
 |---|---|---|---|---|---|---|---|---|---|---|
-| 1d | donchian_breakout | stocks | vol = niska | 277 | +0.326 | 2.5 | 289 | +0.144 | 1.1 | nie utrzymał się |
+| 1d | donchian_breakout | stocks | vol = niska | 277 | +0.326 | 2.5 | 290 | +0.140 | 1.0 | nie utrzymał się |
+| 4h | donchian_breakout | wszystkie | vol = niska | 345 | +0.185 | 2.1 | 143 | -0.116 | -0.9 | nie utrzymał się |
 | 4h | donchian_breakout | crypto | vol = niska | 262 | +0.277 | 2.7 | 24 | -0.613 | -2.2 | za mała próba |
-| 4h | trend_pullback | wszystkie | session = usa | 226 | +0.193 | 2.2 | 169 | -0.204 | -2.2 | nie utrzymał się |
+| 4h | trend_pullback | wszystkie | session = usa | 225 | +0.190 | 2.1 | 172 | -0.212 | -2.3 | nie utrzymał się |
