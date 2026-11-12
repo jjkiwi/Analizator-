@@ -868,7 +868,11 @@ Pierwsze sensowne liczby pojawią się po kilku tygodniach (interwał 1h), dla n
 - Bez kluczy modeli newsy klasyfikują same reguły; bez Supabase stan żyje w cache Actions i w artefaktach.
 
 **Co nie działa.** Kontekst newsowy opiera się na kierunku z reguł, który jest słaby (reguły rzadko podają kierunek).
-Odległość do publikacji makro nie rozróżnia walut. Publikacja na Pages i przebieg w Actions po tej zmianie: patrz niżej.
+Odległość do publikacji makro nie rozróżnia walut.
+
+**Sprawdzenie w Actions.** Ręcznie uruchomiony `skan` z interwałami 1h, 4h i 1d (2026-11-12 07:44 UTC) zakończył się
+powodzeniem po ok. 10 minutach: kalendarz, newsy i skan wykonane, artefakt `stan-na-teraz` (ekran i baza) zapisany, cache stanu zapisany.
+Limit czasu przebiegu podniesiony z 15 do 25 minut. Publikacja na Pages nie była sprawdzana (jest wyłączona).
 
 ## E3. Akcje: fundamenty spółek (2026-11-12)
 

@@ -114,3 +114,16 @@ Klucze i tokeny wpisuj tylko do `.env`, sekretów GitHub i sekretów Supabase. N
   Strona specyfikacji XTB odrzuca automat (403), więc potrzebny jest dokument, zrzuty ekranu albo wklejony tekst tabeli.
 - **Telegram i alerty: poczekać.** Nic nie zmieniane; `alert_strategies` puste.
 - **Nowe pytanie:** symbol AUS200 w konfiguracji a `AU200.cash` w XTB: zmienić nazwę w `instruments.yaml`?
+
+### Nowe pytania (2026-11-12: kierunek „bez bota”, zbieranie w przód, spółki)
+
+1. **Repozytorium jest publiczne** i zawiera listę Twoich spółek (decyzja 17 nadal otwarta). Zostawić publiczne
+   (Actions bez limitu minut), czy zmienić na prywatne (wtedy skan co 30 minut przekroczy darmową pulę i trzeba go rozrzedzić)?
+2. **Ekran na telefonie.** Najprostsza droga to GitHub Pages: Settings → Pages → Source „GitHub Actions” oraz zmienna
+   `PUBLIKUJ_STRONE=tak`. Strona będzie publiczna. Alternatywa: pobierać artefakt `stan-na-teraz` z przebiegu albo wrócić do panelu
+   z logowaniem (Supabase + Vercel). Którą drogę wybierasz?
+3. **Tor szybki (funkcje Supabase, kod TypeScript, Telegram).** Po rezygnacji z bota jest zbędny. Usunąć z repozytorium, czy zostawić?
+4. **`SPL.PL`**: Yahoo nie ma symbolu `SPL.WA` (spółka to dziś Erste Bank Polska). Jaki ma ticker w XTB i na GPW?
+5. **Progi listy kontrolnej spółek** są podręcznikowe i niewalidowane. Chcesz inne progi albo inne filary (np. dywidenda, przepływy pieniężne)?
+6. **Spready i wartość lota z xStation**: nadal brak; od nich zależy, czy wyniki „blisko zera” (wybicia na akcjach 1d) są dodatnie.
+
