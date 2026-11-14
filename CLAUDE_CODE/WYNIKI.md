@@ -966,6 +966,15 @@ gdyby łańcuch był przerywany, pewniejszą drogą jest zewnętrzny cron wywoł
 oraz test kontekstowy, a wyniki (małe pliki JSON, `kontekst.md`, lista potwierdzonych filtrów, data) commituje do `walidacja/`.
 Ekran pokazuje datę statystyk. Parametry strategii i progi walidacji się nie zmieniają: odświeżane są tylko zmierzone liczby.
 
-**Co nie działa / niesprawdzone.** Przeliczenie nie było jeszcze uruchomione w Actions (szacowany czas 2–4 godziny na maszynie GitHuba).
-Łańcuch: patrz wynik pierwszego uruchomienia poniżej, gdy będzie znany.
+**Sprawdzenie po dwóch dobach (2026-11-14, 22:30 UTC).**
+- Łańcuch działa: od uruchomienia 12.11 o 17:47 UTC wykonało się 59 przebiegów skanu w 53 godziny, czyli jeden na godzinę,
+  każdy startuje ok. 2 minuty po pełnej godzinie. Żaden nie zakończył się błędem. 5 przebiegów ma status „anulowany”: to przebiegi
+  strażnika z harmonogramu, które czekały w kolejce i zostały zastąpione przez następcę z łańcucha (zgodnie z projektem).
+- Przeliczenie działa: uruchomione ręcznie 12.11 i z harmonogramu 14.11, oba zakończone powodzeniem w ok. 48 minut
+  (szybciej niż szacowane 2–4 godziny) i zacommitowane do `walidacja/`.
+- Wynik przeliczenia z 14.11 (213 kombinacji na interwał): 1d PASS 9 / WEAK 35 / FAIL 169; 4h PASS 1 / WEAK 8 / FAIL 204;
+  1h PASS 4 / WEAK 19 / FAIL 190. Test kontekstowy: 4 kandydatów na 276 filtrów (z przypadku ok. 7), potwierdzonych 0. Wnioski bez zmian.
+
+**Co nie działa.** Anulowane przebiegi strażnika zaśmiecają listę przebiegów (5 na 2 doby). Nie sprawdzano, jak łańcuch zachowa się
+po dłuższej awarii GitHuba ani czy GitHub nie zacznie go ograniczać.
 
