@@ -11,7 +11,7 @@ Tor szybki (funkcje Supabase w TypeScripcie, harmonogram `pg_cron`, Telegram) zo
 - **Jeden tor**: Python (`src/cfd/`) uruchamiany przez GitHub Actions (`.github/workflows/`): co godzinę kalendarz makro, newsy
   i skan techniczny (łańcuch przebiegów w `scan.yml`), raz dziennie fundamenty, raz w tygodniu przeliczenie walidacji do `walidacja/`. Stan roboczy w SQLite i Parquet (cache Actions i artefakt przebiegu).
 - **Ekran**: `cfd now` generuje samodzielny plik HTML (`reports/teraz.html`); Actions zapisuje go jako artefakt,
-  a opcjonalnie publikuje przez GitHub Pages (`.github/workflows/pages.yml`, domyślnie wyłączone).
+  a po włączeniu GitHub Pages w ustawieniach repozytorium publikuje go jako publiczną stronę (`.github/workflows/pages.yml`).
 - **Dziennik**: każdy sygnał jest zapisywany z kontekstem (technika, newsy, makro) i rozliczany po fakcie.
 - **Konfiguracja**: jedno źródło prawdy w `config/*.yaml`.
 - Pozostałość po v0.3, nieużywana bez konta Supabase: `supabase/migrations/`, `src/cfd/sync.py`, panel `web/`, `vercel.json`.
@@ -23,6 +23,11 @@ i nigdy nie rozmawiał z prawdziwym serwisem. Zakładaj, że adaptery zawierają
 
 Wyniki zapisuj w `CLAUDE_CODE/WYNIKI.md` (jedna sekcja na zadanie: co zrobione, co wyszło, co zmienione,
 co nie działa). Pytania i blokady dopisuj do `DECYZJE.md` w sekcji "Nowe pytania" i przechodź do następnego zadania.
+
+## „Sesja nauki”
+
+Gdy użytkownik napisze „sesja nauki”, wykonaj procedurę z `CLAUDE_CODE/HIPOTEZY.md` (rejestr hipotez i reguły).
+Nie ustawiaj sesji cyklicznych: użytkownik uruchamia je ręcznie.
 
 ## Zasady, których nie wolno łamać
 
