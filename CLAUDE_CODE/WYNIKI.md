@@ -1001,3 +1001,17 @@ zależał od minuty startu („1h tylko w pierwszej połowie godziny”), więc 
 Poprawka: `scanner.due_since` wybiera interwały, na których od ostatniego skanu minęła granica świecy (stan w `data/last_scan.json`,
 przenoszony w cache Actions), niezależnie od minuty startu. Test: `test_due_since_survives_late_start`.
 
+## Sesja nauki 2 (2026-11-16): trend miesięczny i siła względna
+
+Pełny zapis: `CLAUDE_CODE/HIPOTEZY.md`. Hipotezy zapisane i zacommitowane przed testem. Nowe polecenie: `cfd monthly-test [--since RRRR-MM]`.
+Zakres: 54 instrumenty (indeksy bez VIX, akcje, metale szlachetne, krypto); surowce wyłączone z powodu rolowań. Koszt: pełny spread od każdej zmiany wagi, bez swapu.
+
+| Hipoteza | Próba odkrywcza | Próba potwierdzająca | Kontrola bez akcji | Wynik |
+|---|---|---|---|---|
+| H3: trend miesięczny (2 z 3 stóp 3/6/12 mies. dodatnie, inaczej gotówka) | +0,51%/mies., t = 3,61 | +0,99%/mies., t = 6,29, Sharpe 1,28 (kup i trzymaj: 0,96) | +0,57%/mies., t = 4,02, Sharpe 0,82 (0,65) | przeszła historię, czeka na ocenę w przód |
+| H4: siła względna (górna 1/3 wg stopy z 6 mies.) minus średnia | +0,57%/mies., t = 2,64 | +0,42%/mies., t = 1,58 | +0,21%/mies., t = 0,90 | odrzucona |
+
+**Co H3 daje, a czego nie.** Nie podnosi stopy zwrotu: w próbie potwierdzającej portfel trendowy zarabiał mniej niż „kup i trzymaj”
+(0,99% wobec 1,36% miesięcznie; bez akcji 0,57% wobec 0,75%). Zmniejsza ryzyko: największe obsunięcie −13% wobec −52%. To filtr chroniący przed
+długimi spadkami, a nie sposób na wyższy zysk. Do silnika i na ekran nie trafia przed oceną w przód (12 miesięcy od grudnia 2026).
+

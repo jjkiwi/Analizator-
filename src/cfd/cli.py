@@ -503,6 +503,36 @@ def cmd_now(args) -> None:
     print(f"Ekran: {path}")
 
 
+def cmd_monthly_test(args) -> None:
+    """Trend miesieczny i sila wzgledna (hipotezy H3 i H4) na zamknieciach miesiaca z cache swiec dziennych."""
+    from .validation import monthly
+
+    insts = [i for i in _instruments(args).values() if i.category in monthly.UNIVERSE and i.symbol not in monthly.EXCLUDED and i.sources]
+    svc = _service(args)
+    daily, spread = {}, {}
+    for inst in insts:
+        try:
+            daily[inst.symbol] = svc.get(inst, "1d")["close"]
+            spread[inst.symbol] = inst.costs.spread_pct
+        except DataSourceError:
+            continue
+    prices = monthly.monthly_closes(daily)
+    cats = {i.symbol: i.category for i in insts}
+    for label, cols in (("caly zakres", list(prices.columns)), ("bez akcji", [c for c in prices.columns if cats[c] != "stocks"])):
+        series = monthly.run(prices[cols], pd.Series(spread))
+        if args.since:   # ocena w przod: tylko miesiace od podanego (np. od zapisania hipotezy)
+            series = {k: v[v.index >= pd.Period(args.since, freq="M")] for k, v in series.items()}
+            for name in ("trend", "kup_i_trzymaj", "sila_roznica"):
+                st = monthly.Series(name, series[name]).stats()
+                print(f"{label:<12} {name:<14} od {args.since}: n={st['n']} sr={100 * st['mean']:+.2f}% t={st['t']:+.2f} Sharpe={st['sharpe']:+.2f}")
+            continue
+        print(f"\n== {label}: {len(cols)} instrumentow, sredni udzial w trendzie {series['udzial_w_trendzie'].mean():.0%}")
+        for r in monthly.summarize(series):
+            d, c = r["discovery"], r["confirmation"]
+            print(f"{r['name']:<14} od {r['od']} | odkr. n={d['n']:<4} sr={100 * d['mean']:+.2f}% t={d['t']:+.2f} Sharpe={d['sharpe']:+.2f}"
+                  f" | potw. (od {r['granica']}) n={c['n']:<4} sr={100 * c['mean']:+.2f}% t={c['t']:+.2f} Sharpe={c['sharpe']:+.2f}")
+
+
 def cmd_context_test(args) -> None:
     """Czy sygnaly trafiaja czesciej w sprzyjajacym kontekscie (proba odkrywcza i potwierdzajaca)."""
     from .fundamentals import SeriesRouter, bias_history_for
@@ -679,6 +709,9 @@ def main(argv: list[str] | None = None) -> None:
     sp.add_argument("--offline", action="store_true", help="tylko dane z cache, bez pobierania")
     sp.add_argument("--reports", default="reports", help="katalog z raportami walidacji i testem kontekstu")
     sp.add_argument("--out", default="reports/teraz.html")
+    sp = add("monthly-test", cmd_monthly_test, "trend miesieczny i sila wzgledna (H3, H4) na zamknieciach miesiaca",
+             symbols=False, interval=False)
+    sp.add_argument("--since", help="tylko miesiace od RRRR-MM (ocena w przod po zapisaniu hipotezy)")
     sp = add("context-test", cmd_context_test, "test filtra kontekstowego na transakcjach walk-forward", interval=False)
     sp.add_argument("--intervals", nargs="*", default=["1d", "4h", "1h"], choices=["1h", "4h", "1d"])
     sp.add_argument("--strategies", nargs="*", choices=STRATS)
