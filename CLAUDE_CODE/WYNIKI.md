@@ -990,3 +990,14 @@ Procedura i pełny zapis: `CLAUDE_CODE/HIPOTEZY.md`. Dwie hipotezy zapisane i za
 Silnik bez zmian. 75% zysku w H1 pochodzi z trzech spółek z listy dobranej po fakcie; bez nich +0,05 R.
 Dziennika nie dało się pobrać ze środowiska Claude Code (zablokowany host artefaktów), ale po 4 dniach zbierania nie było jeszcze czego oceniać.
 
+## Eksport dziennika i odporność na opóźnione przebiegi (2026-11-16)
+
+**Eksport dziennika (zgoda użytkownika).** Każdy skan nadpisuje gałąź `dane` jednym commitem: `sygnaly.csv` (wszystkie sygnały
+z kontekstem i wynikiem) i `stan.txt`. Sprawdzone po pierwszym przebiegu: gałąź powstała, 283 sygnały, 128 rozliczonych
+(47 TP, 79 SL, 2 wygasłe), średnio −0,108 R, czyli zgodnie z walidacją. 279 sygnałów ma zapisany kontekst newsów i makro.
+
+**Opóźniony przebieg.** Przebieg zaplanowany na 14:02 UTC czekał w kolejce GitHuba 46 minut i ruszył o 14:48. Dobór interwałów
+zależał od minuty startu („1h tylko w pierwszej połowie godziny”), więc ten przebieg nie zeskanował niczego.
+Poprawka: `scanner.due_since` wybiera interwały, na których od ostatniego skanu minęła granica świecy (stan w `data/last_scan.json`,
+przenoszony w cache Actions), niezależnie od minuty startu. Test: `test_due_since_survives_late_start`.
+

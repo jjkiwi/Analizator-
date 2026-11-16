@@ -444,9 +444,20 @@ def cmd_run(args) -> None:
     if not args.once:
         return run_forever(ctx)
     intervals = None
+    state = Path(args.data_dir) / "last_scan.json"
     if args.intervals == ["auto"]:
-        intervals = due_intervals(datetime.now(timezone.utc), ctx.settings["scan"]["intervals"])
+        import json
+
+        from .scanner import due_since
+
+        now = datetime.now(timezone.utc)
+        last = json.loads(state.read_text(encoding="utf-8")) if state.exists() else {}
+        intervals = due_since(last, now, ctx.settings["scan"]["intervals"])
         print(f"interwaly w tym przebiegu: {intervals}")
+        if "scan" in (args.jobs or ["scan"]):
+            last.update({i: now.timestamp() for i in intervals})
+            state.parent.mkdir(parents=True, exist_ok=True)
+            state.write_text(json.dumps(last), encoding="utf-8")
     elif args.intervals:
         intervals = args.intervals
     for name, result in run_once(ctx, args.jobs, intervals).items():

@@ -139,3 +139,15 @@ def test_sync_requires_credentials(monkeypatch):
     monkeypatch.delenv("SUPABASE_SERVICE_KEY", raising=False)
     with pytest.raises(RuntimeError):
         sync.SupabaseClient()
+
+
+def test_due_since_survives_late_start():
+    from cfd.scanner import due_since
+
+    cfg = ["1d", "4h", "1h"]
+    t = lambda s: utc(s).timestamp()
+    assert due_since({}, utc("2026-11-16T14:48"), cfg) == cfg                       # pierwszy skan: wszystko
+    last = {"1d": t("2026-11-16T12:02"), "4h": t("2026-11-16T12:02"), "1h": t("2026-11-16T13:02")}
+    assert due_since(last, utc("2026-11-16T14:48"), cfg) == ["1h"]                  # start opozniony o 46 minut
+    assert due_since(last, utc("2026-11-16T13:40"), cfg) == []                      # ta sama godzina: nic nowego
+    assert due_since(last, utc("2026-11-16T16:05"), cfg) == ["1d", "4h", "1h"]      # minela granica 16:00

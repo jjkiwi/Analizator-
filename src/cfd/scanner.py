@@ -23,6 +23,19 @@ def due_intervals(now: datetime, configured: list[str]) -> list[str]:
     return [i for i in configured if i in due]
 
 
+_PERIOD_SECONDS = {"30m": 1800, "1h": 3600, "4h": 14400, "1d": 14400}  # 1d sprawdzamy 6 razy na dobe, jak 4h
+
+
+def due_since(last: dict[str, float], now: datetime, configured: list[str]) -> list[str]:
+    """Interwaly, na ktorych od ostatniego skanu minela granica swiecy. `last`: interwal -> czas ostatniego skanu (epoch).
+
+    W odroznieniu od `due_intervals` nie zalezy od minuty startu: przebieg opozniony o 45 minut (kolejka GitHuba)
+    nadal przeskanuje swiece, ktora zamknela sie w miedzyczasie. Interwal nigdy nieskanowany jest zawsze zalegly.
+    """
+    ts = now.timestamp()
+    return [i for i in configured if i in _PERIOD_SECONDS and (i not in last or ts // _PERIOD_SECONDS[i] > last[i] // _PERIOD_SECONDS[i])]
+
+
 def latest_signal(inst: Instrument, strategy, df: pd.DataFrame) -> Signal | None:
     """Sygnal z ostatniej ZAMKNIETEJ swiecy (ostatni wiersz df moze byc niedomkniety)."""
     if len(df) < 3:
