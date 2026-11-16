@@ -109,8 +109,12 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if gh api "repos/$GITHUB_REPOSITORY/pages" --silent 2>/dev/null; then echo "on=tak" >> "$GITHUB_OUTPUT"
-          else echo "on=nie" >> "$GITHUB_OUTPUT"; echo "GitHub Pages nie jest wlaczone: pomijam publikacje." >> "$GITHUB_STEP_SUMMARY"; fi
+          typ=$(gh api "repos/$GITHUB_REPOSITORY/pages" --jq .build_type 2>/dev/null || echo brak)
+          if [ "$typ" = "workflow" ]; then echo "on=tak" >> "$GITHUB_OUTPUT"
+          else
+            echo "on=nie" >> "$GITHUB_OUTPUT"
+            echo "Pomijam publikacje: zrodlo GitHub Pages to '$typ', a musi byc 'GitHub Actions' (Settings -> Pages -> Source)." >> "$GITHUB_STEP_SUMMARY"
+          fi
       - id: deploy
         if: steps.pages.outputs.on == 'tak'
         uses: actions/deploy-pages@v4
