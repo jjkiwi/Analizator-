@@ -1019,3 +1019,23 @@ długimi spadkami, a nie sposób na wyższy zysk. Do silnika i na ekran nie traf
 (indeksy, metale szlachetne, krypto, akcje), z opisem, że to hipoteza w trakcie potwierdzania. Stan na koniec października 2026:
 w trendzie 15 z 17 indeksów, 0 z 4 metali, 2 z 3 krypto, 12 z 28 akcji.
 
+## Ekran jako instalowalna aplikacja (PWA) (2026-11-16)
+
+**Co zrobione.**
+- Katalog `pwa/`: manifest, service worker, ikony (192, 512, maskowalna, apple-touch). `cfd now` kopiuje je obok ekranu i dodaje do HTML
+  odwołania, rejestrację service workera, wiek danych liczony w przeglądarce i baner „brak połączenia”.
+- Service worker: sieć najpierw, a bez połączenia ostatnia zapisana kopia (aplikacja otwiera się offline).
+- Publikacja przeniesiona do `scan.yml` jako osobne zadanie `strona`; łańcuch jako osobne zadanie `lancuch`. Plik `pages.yml` usunięty.
+  Powód: przebiegi łańcucha są uruchamiane tokenem Actions, a takie przebiegi nie wyzwalają innych przepływów (`workflow_run`),
+  więc poprzednia wersja publikowałaby stronę tylko po rzadkich przebiegach z harmonogramu. Znalezione w historii przebiegów: `strona` uruchamiała się co 12 godzin.
+
+**Sprawdzone lokalnie** (serwer HTTP i przeglądarka): service worker aktywny, manifest i ikony się ładują, po odcięciu sieci ekran otwiera się
+z kopii i pokazuje baner, brak błędów w konsoli.
+
+**Niesprawdzone.** Publikacja w GitHub Pages i instalacja na telefonie: wymaga włączenia Pages przez użytkownika
+(Settings → Pages → Source: „GitHub Actions”); stanu tego ustawienia nie da się odczytać ze środowiska Claude Code.
+Nowy układ zadań w `scan.yml` (skan → strona, łańcuch) zadziała od najbliższego przebiegu.
+
+**Czym to nie jest.** To ten sam ekran generowany co godzinę, instalowalny i dostępny offline. Bez logowania, bez wykresów, bez interakcji
+(filtrowania, kalkulatora pozycji w przeglądarce). Panel `web/` z v0.3 pozostaje nieużywany.
+

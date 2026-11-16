@@ -299,9 +299,14 @@ def render_html(snap: dict) -> str:
     news = f"<div class='scroll'><table><thead><tr><th>Pobrano</th><th>Tytuł</th><th>Instrumenty</th></tr></thead><tbody>{news_rows}</tbody></table></div>" if news_rows else "<p class='mut'>Brak danych. Uruchom <code>cfd news poll</code>.</p>"
     errors = f"<details><summary class='warn'>Źródła danych, które zawiodły ({len(snap['errors'])})</summary><p class='small mut'>{'<br>'.join(_e(x) for x in snap['errors'])}</p></details>" if snap["errors"] else ""
     return f"""<!doctype html><html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Analizator CFD: stan na teraz</title><style>{CSS}</style></head><body><main>
+<title>Analizator CFD: stan na teraz</title>
+<link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Analizator"><meta name="theme-color" content="#0e1116">
+<style>{CSS}</style></head><body><main>
+<div id="offline" class="note small" hidden>Brak połączenia: to ostatnia zapisana kopia ekranu.</div>
 <h1>Stan na teraz</h1>
-<p class="mut small">Wygenerowano {gen:%Y-%m-%d %H:%M} UTC · interwały: {_e(', '.join(snap['intervals']))} · sprawdzonych serii: {snap['scanned']} · sygnałów: {len(sigs)}{(' · statystyki walidacji z ' + _e(snap['stats_date'])) if snap.get('stats_date') else ''}</p>
+<p class="mut small">Wygenerowano {gen:%Y-%m-%d %H:%M} UTC<span id="age"></span> · interwały: {_e(', '.join(snap['intervals']))} · sprawdzonych serii: {snap['scanned']} · sygnałów: {len(sigs)}{(' · statystyki walidacji z ' + _e(snap['stats_date'])) if snap.get('stats_date') else ''}</p>
 <div class="note small">Program nie składa zleceń i nie zna kwotowań XTB. Ceny pochodzą z opóźnionych, darmowych źródeł (kontrakty futures lub indeksy),
 więc poziomy SL i TP przenieś do xStation jako odległość od bieżącej ceny, nie jako cenę. Liczby przy sygnale to wynik testów na danych historycznych,
 których strategia nie widziała przy doborze parametrów. Nie są gwarancją wyniku.</div>
@@ -310,12 +315,26 @@ których strategia nie widziała przy doborze parametrów. Nie są gwarancją wy
 {_stocks_section(snap.get('stocks') or [])}
 <h2>Kalendarz makro: najbliższe 48 godzin</h2>{macro}
 <h2>Ostatnie newsy (tło)</h2>{news}
-</main></body></html>"""
+</main>
+<script>
+// Aplikacja instalowalna (PWA): rejestracja service workera tylko, gdy strona jest serwowana przez http(s).
+if ("serviceWorker" in navigator && location.protocol.startsWith("http")) navigator.serviceWorker.register("sw.js");
+const off = document.getElementById("offline"), sync = () => {{ off.hidden = navigator.onLine; }};
+addEventListener("online", sync); addEventListener("offline", sync); sync();
+// Wiek danych liczony w przegladarce, zeby stara kopia nie udawala swiezej.
+const gen = new Date("{gen.isoformat()}"), age = Math.round((Date.now() - gen) / 60000), el = document.getElementById("age");
+if (el) el.textContent = age < 90 ? ` · ${{age}} min temu` : age < 2880 ? ` · ${{Math.round(age / 60)}} h temu` : ` · ${{Math.round(age / 1440)}} dni temu`;
+</script></body></html>"""
 
 
-def write(snap: dict, path: Path | str = "reports/teraz.html") -> Path:
+def write(snap: dict, path: Path | str = "reports/teraz.html", pwa_dir: Path | str = "pwa") -> Path:
+    """Zapisuje ekran i jego dane. Pliki aplikacji (manifest, service worker, ikony) sa kopiowane obok z `pwa_dir`."""
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
+    if Path(pwa_dir).is_dir():
+        for asset in Path(pwa_dir).iterdir():
+            if asset.is_file():
+                (path.parent / asset.name).write_bytes(asset.read_bytes())
     path.write_text(render_html(snap), encoding="utf-8")
     path.with_suffix(".json").write_text(json.dumps(snap, ensure_ascii=False, indent=1, default=str), encoding="utf-8")
     return path

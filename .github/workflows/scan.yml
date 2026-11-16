@@ -18,13 +18,15 @@ on:
 permissions:
   contents: write       # eksport dziennika na galaz `dane`
   actions: write        # uruchomienie nastepcy w lancuchu
+  pages: write          # publikacja ekranu (GitHub Pages)
+  id-token: write
 concurrency:              # jeden przebieg naraz; nastepca czeka w kolejce, az poprzednik skonczy
   group: skan
   cancel-in-progress: false
 jobs:
   scan:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 30
     env:
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
@@ -61,6 +63,11 @@ jobs:
             data/cfd.sqlite
           retention-days: 14
           overwrite: true
+      - name: Ekran jako paczka dla GitHub Pages
+        if: always() && hashFiles('public/index.html') != ''
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
       - name: Wyslij wyniki do Supabase
         if: env.SUPABASE_URL != '' && always()
         run: cfd sync push
@@ -84,10 +91,39 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A && git commit -qm "Dziennik $(date -u +%FT%H:%MZ)"
           git push -q -f "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" dane || true
-      # Ostatni krok: czekaj do 2 minut po nastepnej pelnej godzinie i uruchom nastepny przebieg.
-      # Stan jest juz zapisany, wiec przerwanie w trakcie czekania niczego nie traci.
-      - name: Lancuch - czekaj do pelnej godziny i uruchom nastepce
-        if: always() && vars.LANCUCH != 'nie'
+
+  # Publikacja ekranu jako instalowalnej aplikacji (PWA) pod adresem https://<uzytkownik>.github.io/<repo>/.
+  # Wymaga jednorazowego wlaczenia: Settings -> Pages -> Source: "GitHub Actions". Dopoki nie jest wlaczone, zadanie
+  # samo to wykrywa i konczy sie bez bledu. Strona jest publiczna, jak repozytorium.
+  strona:
+    needs: scan
+    if: always() && needs.scan.result != 'cancelled'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - name: Czy Pages jest wlaczone
+        id: pages
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh api "repos/$GITHUB_REPOSITORY/pages" --silent 2>/dev/null; then echo "on=tak" >> "$GITHUB_OUTPUT"
+          else echo "on=nie" >> "$GITHUB_OUTPUT"; echo "GitHub Pages nie jest wlaczone: pomijam publikacje." >> "$GITHUB_STEP_SUMMARY"; fi
+      - id: deploy
+        if: steps.pages.outputs.on == 'tak'
+        uses: actions/deploy-pages@v4
+
+  # Lancuch: czekaj do 2 minut po nastepnej pelnej godzinie i uruchom nastepny przebieg. Osobne zadanie, zeby
+  # publikacja strony nie czekala na koniec godziny. Stan jest juz zapisany, wiec przerwanie niczego nie traci.
+  lancuch:
+    needs: scan
+    if: always() && vars.LANCUCH != 'nie'
+    runs-on: ubuntu-latest
+    timeout-minutes: 70
+    steps:
+      - name: Czekaj do pelnej godziny i uruchom nastepce
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
