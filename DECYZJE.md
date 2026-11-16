@@ -145,4 +145,5 @@ Klucze i tokeny wpisuj tylko do `.env`, sekretów GitHub i sekretów Supabase. N
   jednorazowo: Settings → Pages → Source: „GitHub Actions”. Vercel dałby to samo, ale wymaga konta i tokenu w sekretach repozytorium.
 - **Otwarte:** czy usunąć pozostałość po panelu z logowaniem (`web/`, `vercel.json`, `supabase/`, `src/cfd/sync.py`).
 - **2026-11-16: dziennik publikowany na gałęzi `dane`** (zgoda użytkownika), żeby sesje nauki miały do niego dostęp. Panel z logowaniem zostaje w repozytorium.
+- **2026-11-16: trend miesięczny (H3) na ekranie od razu**, z oznaczeniem „hipoteza w trakcie potwierdzania”, bez czekania na roczną ocenę w przód.
 

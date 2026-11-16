@@ -43,3 +43,18 @@ def test_trend_signal_rule_and_costs():
     assert np.isclose(free["trend"].dropna().iloc[0] - paid["trend"].dropna().iloc[0], 0.5 * 0.01)   # koszt wejscia raz
     assert np.isclose(free["trend"].dropna().iloc[1], paid["trend"].dropna().iloc[1])                 # potem bez obrotu
     assert (free["kup_i_trzymaj"].dropna() < free["trend"].dropna()).all()
+
+
+def test_current_state_and_screen_section():
+    from cfd.now import _monthly_section
+
+    idx = pd.period_range("2025-01", periods=16, freq="M")
+    prices = pd.DataFrame({"UP": np.linspace(100, 200, 16), "DOWN": np.linspace(200, 100, 16), "NEW": [np.nan] * 10 + [1, 2, 3, 4, 5, 6]}, index=idx)
+    state = monthly.current_state(prices)
+    by = {r["symbol"]: r for r in state["rows"]}
+    assert state["month"] == "2026-04" and by["UP"]["in_trend"] and not by["DOWN"]["in_trend"] and "NEW" not in by
+    assert by["UP"]["returns"][12] > 0 > by["DOWN"]["returns"][12]
+    for r in state["rows"]:
+        r.update(name=r["symbol"], category="indices")
+    html = _monthly_section(state)
+    assert "nie rekomendacja" in html and "w trendzie 1 z 2" in html and _monthly_section({"month": None, "rows": []}) == ""

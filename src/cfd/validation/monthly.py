@@ -97,3 +97,17 @@ def summarize(series: dict[str, pd.Series]) -> list[dict]:
         rows.append({"name": name, "od": str(series[name].dropna().index.min()), "granica": str(c.index.min()) if len(c) else None,
                      "discovery": Series(name, d).stats(), "confirmation": Series(name, c).stats()})
     return rows
+
+
+def current_state(prices: pd.DataFrame) -> dict:
+    """Stan reguly trendu miesiecznego na koniec ostatniego pelnego miesiaca: per instrument stopy 3/6/12 mies. i werdykt."""
+    if prices.empty:
+        return {"month": None, "rows": []}
+    sig = trend_signal(prices).iloc[-1]
+    rows = []
+    for sym in prices.columns:
+        if pd.isna(sig[sym]) or pd.isna(prices[sym].iloc[-1]):
+            continue
+        rets = {w: float(prices[sym].iloc[-1] / prices[sym].iloc[-1 - w] - 1) for w in TREND_WINDOWS}
+        rows.append({"symbol": sym, "in_trend": bool(sig[sym]), "returns": rets})
+    return {"month": str(prices.index[-1]), "rows": rows}

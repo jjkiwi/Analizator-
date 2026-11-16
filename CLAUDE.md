@@ -43,7 +43,7 @@ Nie ustawiaj sesji cyklicznych: użytkownik uruchamia je ręcznie.
 7. **Nie poluzowuj walidacji, żeby strategia "przeszła".** Progi i siatki parametrów zmieniaj tylko
    z uzasadnieniem zapisanym w `WYNIKI.md`. "Żadna strategia nie przechodzi" to poprawny wynik.
 8. **Nie dopisuj strategii do `alert_strategies`.** To decyzja użytkownika po obejrzeniu raportu.
-9. **Testy muszą przechodzić** po każdej zmianie: `pytest` (162).
+9. **Testy muszą przechodzić** po każdej zmianie: `pytest` (163).
    Do każdej poprawki adaptera dopisz test na zapisanej próbce prawdziwej odpowiedzi (`tests/fixtures/`).
 10. Wskaźniki i strategie nie mogą zaglądać w przyszłość. Testów `*_causal` i `*_look_ahead` nie usuwaj.
 11. **RLS zostaje włączone** na wszystkich tabelach. Rejestracja nowych użytkowników w Supabase Auth ma być wyłączona.
@@ -52,7 +52,7 @@ Nie ustawiaj sesji cyklicznych: użytkownik uruchamia je ręcznie.
 
 ```bash
 python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
-pip install -e ".[dev]" && pytest                   # oczekiwane: 162 passed
+pip install -e ".[dev]" && pytest                   # oczekiwane: 163 passed
 git init && git add -A && git commit -m "v0.3 z czatu"
 cp .env.example .env                                # klucze uzupełnia użytkownik
 ```

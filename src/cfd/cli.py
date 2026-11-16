@@ -484,6 +484,20 @@ def cmd_now(args) -> None:
         picked.setdefault("VIX", instruments["VIX"])
     snap = build_snapshot(picked, _service(args), _conn(args), args.intervals, args.strategies or STRATS,
                           load_stats(args.reports), load_confirmed_filters(args.reports), refresh=not args.offline)
+    from .validation import monthly
+
+    svc_m, daily_m, meta = _service(args), {}, {}
+    for inst in instruments.values():
+        if inst.category in monthly.UNIVERSE and inst.symbol not in monthly.EXCLUDED and inst.sources:
+            try:
+                daily_m[inst.symbol] = svc_m.get(inst, "1d")["close"]
+                meta[inst.symbol] = {"name": inst.name, "category": inst.category}
+            except Exception:  # brak danych jednego instrumentu nie blokuje ekranu
+                continue
+    state = monthly.current_state(monthly.monthly_closes(daily_m))
+    for row in state["rows"]:
+        row.update(meta[row["symbol"]])
+    snap["monthly_trend"] = state
     stamp = Path(args.reports) / "DATA"
     snap["stats_date"] = stamp.read_text(encoding="utf-8").strip() if stamp.exists() else None
     from .sizing import load_contracts

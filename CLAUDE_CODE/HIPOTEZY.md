@@ -83,4 +83,7 @@ Liczba hipotez przetestowanych do tej pory: **4** (nie licząc 276 filtrów z te
   (+0,25% wobec +0,71% miesięcznie), co mieści się w normalnej zmienności, ale pokazuje, że filtr kosztuje w rynku wzrostowym.
 - **Stan reguły na koniec października 2026 (informacyjnie, nie rekomendacja):** w trendzie 15 z 17 indeksów, 0 z 4 metali, 2 z 3 krypto, 12 z 28 akcji.
 - **Obserwacja z sesji 1** („wybicia bez strony SHORT”) nadal czeka na zapisanie jako hipoteza: w tej sesji limit dwóch hipotez został wykorzystany.
+- **Wyjątek od reguły 5 (decyzja użytkownika, 2026-11-16):** stan reguły H3 jest pokazywany na ekranie już teraz, jako sekcja „Trend miesięczny”
+  z oznaczeniem „hipoteza w trakcie potwierdzania, nie rekomendacja”. Status H3 się nie zmienia (czeka na ocenę w przód), a sygnały
+  trzech strategii technicznych nie są przez nią wyróżniane ani filtrowane.
 

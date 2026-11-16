@@ -250,6 +250,32 @@ def _stocks_section(rows: list[dict]) -> str:
             f"Dane Yahoo bywają błędne, zwłaszcza prognozowane C/Z.</p><div class='grid'>{''.join(cards)}</div>")
 
 
+CATEGORY_NAMES = {"indices": "Indeksy", "metals": "Metale szlachetne", "crypto": "Krypto", "stocks": "Akcje"}
+
+
+def _monthly_section(state: dict | None) -> str:
+    """Trend miesieczny (hipoteza H3): stan reguly per instrument. Informacja, nie rekomendacja."""
+    if not state or not state.get("rows"):
+        return ""
+    blocks = []
+    for cat, title in CATEGORY_NAMES.items():
+        rows = sorted((r for r in state["rows"] if r["category"] == cat), key=lambda r: (not r["in_trend"], r["symbol"]))
+        if not rows:
+            continue
+        on = sum(r["in_trend"] for r in rows)
+        chips = "".join(
+            f"<span class='chip {'ok' if r['in_trend'] else 'bad'}' title='{_e(r['name'])}: 3 mies. {r['returns'][3]:+.0%}, "
+            f"6 mies. {r['returns'][6]:+.0%}, 12 mies. {r['returns'][12]:+.0%}'>{_e(r['symbol'])}</span>" for r in rows)
+        blocks.append(f"<div class='card'><div class='head'><span class='sym'>{title}</span>"
+                      f"<span class='mut small'>w trendzie {on} z {len(rows)}</span></div><div class='chips'>{chips}</div></div>")
+    return (f"<h2>Trend miesięczny <span class='mut small'>(stan na koniec {_e(state['month'])})</span></h2>"
+            "<div class='note small'><b>Hipoteza w trakcie potwierdzania (H3), nie rekomendacja.</b> Zielony: co najmniej dwie z trzech stóp zwrotu "
+            "(3, 6, 12 miesięcy) są dodatnie; czerwony: nie. W testach na historii trzymanie tylko instrumentów w trendzie dawało niższy zysk "
+            "niż trzymanie wszystkiego, ale znacznie mniejsze spadki (największe obsunięcie −13% wobec −52%). Reguła zmienia się raz w miesiącu. "
+            "Ocena na nowych danych potrwa do końca 2027 r.</div>"
+            f"<div class='grid'>{''.join(blocks)}</div>")
+
+
 def render_html(snap: dict) -> str:
     gen = datetime.fromisoformat(snap["generated"])
     sigs = snap["signals"]
@@ -280,6 +306,7 @@ def render_html(snap: dict) -> str:
 więc poziomy SL i TP przenieś do xStation jako odległość od bieżącej ceny, nie jako cenę. Liczby przy sygnale to wynik testów na danych historycznych,
 których strategia nie widziała przy doborze parametrów. Nie są gwarancją wyniku.</div>
 {lead}{mid_html}{rest_html}{errors}
+{_monthly_section(snap.get('monthly_trend'))}
 {_stocks_section(snap.get('stocks') or [])}
 <h2>Kalendarz makro: najbliższe 48 godzin</h2>{macro}
 <h2>Ostatnie newsy (tło)</h2>{news}

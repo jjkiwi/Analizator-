@@ -1015,3 +1015,7 @@ Zakres: 54 instrumenty (indeksy bez VIX, akcje, metale szlachetne, krypto); suro
 (0,99% wobec 1,36% miesięcznie; bez akcji 0,57% wobec 0,75%). Zmniejsza ryzyko: największe obsunięcie −13% wobec −52%. To filtr chroniący przed
 długimi spadkami, a nie sposób na wyższy zysk. Do silnika i na ekran nie trafia przed oceną w przód (12 miesięcy od grudnia 2026).
 
+**Ekran (decyzja użytkownika).** Sekcja „Trend miesięczny” pokazuje stan reguły H3 dla każdego instrumentu z zakresu, pogrupowany
+(indeksy, metale szlachetne, krypto, akcje), z opisem, że to hipoteza w trakcie potwierdzania. Stan na koniec października 2026:
+w trendzie 15 z 17 indeksów, 0 z 4 metali, 2 z 3 krypto, 12 z 28 akcji.
+
