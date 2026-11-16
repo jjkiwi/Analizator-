@@ -9,8 +9,8 @@ Wystarczy napisać: „sesja nauki”. Claude Code wykonuje wtedy procedurę pon
 
 ## Procedura sesji
 
-1. `git pull`, przeczytaj ten plik i `walidacja/` (ostatnie przeliczenie), pobierz dziennik z ostatniego artefaktu `stan-na-teraz`
-   (albo uruchom `cfd journal` i `cfd journal-context` na jego bazie).
+1. `git pull`, przeczytaj ten plik i `walidacja/` (ostatnie przeliczenie). Dziennik: `git fetch origin dane` i `git show origin/dane:sygnaly.csv`
+   (skan co godzinę nadpisuje tę gałąź eksportem dziennika; artefaktów Actions nie da się pobrać ze środowiska Claude Code).
 2. **Najpierw rozlicz stare hipotezy**: dla każdej w stanie „czeka na dziennik” sprawdź sygnały zebrane PO dacie jej zapisania.
 3. Postaw najwyżej **dwie** nowe hipotezy. Zapisz je w tabeli **przed** uruchomieniem testu, z uzasadnieniem i kryterium.
 4. Przetestuj na historii metodą zakrytej przyszłości (`cfd context-test`, `cfd report` albo osobny skrypt). Wpisz wynik, także negatywny.

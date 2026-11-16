@@ -397,6 +397,27 @@ def cmd_stocks(args) -> None:
     print("\nLista kontrolna z jawnymi progami, nie prognoza: progi nie byly walidowane na historii.")
 
 
+def cmd_journal_export(args) -> None:
+    """Eksport dziennika sygnalow do CSV (do oceny poza maszyna, na ktorej dziala skan)."""
+    import csv
+
+    conn = _conn(args)
+    out = Path(args.out)
+    out.mkdir(parents=True, exist_ok=True)
+    cols = ["symbol", "strategy", "interval", "time", "side", "ref_price", "stop_loss", "take_profit", "score",
+            "status", "resolved_time", "r_result", "created_at", "context"]
+    rows = conn.execute(f"SELECT {', '.join(cols)} FROM signals ORDER BY time").fetchall()
+    with (out / "sygnaly.csv").open("w", newline="", encoding="utf-8") as fh:
+        w = csv.writer(fh)
+        w.writerow(cols)
+        w.writerows([tuple(r) for r in rows])
+    news = conn.execute("SELECT COUNT(*), SUM(importance >= 2), MIN(fetched), MAX(fetched) FROM news").fetchone()
+    (out / "stan.txt").write_text(
+        f"sygnalow: {len(rows)}\nrozliczonych: {sum(1 for r in rows if r['status'] != 'open')}\n"
+        f"newsow: {news[0]} (istotnych: {news[1] or 0}), od {news[2]} do {news[3]}\n", encoding="utf-8")
+    print(f"Zapisano {len(rows)} sygnalow do {out / 'sygnaly.csv'}")
+
+
 def cmd_journal_context(args) -> None:
     """Skutecznosc rozliczonych sygnalow wedlug kontekstu (newsy, makro, technika) zapisanego przy sygnale."""
     from .live_context import journal_frame, journal_report
@@ -630,6 +651,8 @@ def main(argv: list[str] | None = None) -> None:
     sp = add("stocks", cmd_stocks, "fundamenty spolek: update | show", interval=False)
     sp.add_argument("action", choices=["update", "show"])
     sp.add_argument("--details", action="store_true", help="pokaz filary oceny")
+    sp = add("journal-export", cmd_journal_export, "eksport dziennika sygnalow do CSV", symbols=False, interval=False)
+    sp.add_argument("--out", default="eksport")
     add("journal-context", cmd_journal_context, "skutecznosc sygnalow z dziennika wedlug kontekstu (newsy, makro)",
         symbols=False, interval=False)
     add("health", cmd_health, "stan zrodel danych", symbols=False, interval=False)

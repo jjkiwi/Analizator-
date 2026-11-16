@@ -16,7 +16,7 @@ on:
         description: "Interwaly (np. '1d 4h') albo 'auto'"
         default: "auto"
 permissions:
-  contents: read
+  contents: write       # eksport dziennika na galaz `dane`
   actions: write        # uruchomienie nastepcy w lancuchu
 concurrency:              # jeden przebieg naraz; nastepca czeka w kolejce, az poprzednik skonczy
   group: skan
@@ -70,6 +70,20 @@ jobs:
         with:
           path: data
           key: stan-${{ github.run_id }}
+      # Dziennik jako CSV na osobnej galezi `dane` (jeden nadpisywany commit, bez historii): do sesji nauki.
+      # Zgoda uzytkownika z 2026-11-16; repozytorium jest publiczne, wiec ten plik tez.
+      - name: Eksport dziennika na galaz dane
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cfd journal-export --out eksport || exit 0
+          cd eksport
+          git init -q -b dane
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A && git commit -qm "Dziennik $(date -u +%FT%H:%MZ)"
+          git push -q -f "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" dane || true
       # Ostatni krok: czekaj do 2 minut po nastepnej pelnej godzinie i uruchom nastepny przebieg.
       # Stan jest juz zapisany, wiec przerwanie w trakcie czekania niczego nie traci.
       - name: Lancuch - czekaj do pelnej godziny i uruchom nastepce
