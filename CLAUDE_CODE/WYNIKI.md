@@ -978,3 +978,15 @@ Ekran pokazuje datę statystyk. Parametry strategii i progi walidacji się nie z
 **Co nie działa.** Anulowane przebiegi strażnika zaśmiecają listę przebiegów (5 na 2 doby). Nie sprawdzano, jak łańcuch zachowa się
 po dłuższej awarii GitHuba ani czy GitHub nie zacznie go ograniczać.
 
+## Sesja nauki 1 (2026-11-16)
+
+Procedura i pełny zapis: `CLAUDE_CODE/HIPOTEZY.md`. Dwie hipotezy zapisane i zacommitowane przed testem (commit „hipotezy H1 i H2 zapisane przed testem”).
+
+| Hipoteza | Próba odkrywcza | Próba potwierdzająca | Wynik |
+|---|---|---|---|
+| H1: wybicia na akcjach 1d tylko LONG | 589 transakcji, +0,183 R, t = 2,21 | 393 transakcje, +0,118 R, t = 1,10 | odrzucona (próg t ≥ 1,65) |
+| H2: H1 tylko gdy US500 powyżej średniej z 200 sesji | 471 transakcji, +0,056 R, t = 0,59 | 314 transakcji, +0,178 R, t = 1,88 | odrzucona (nie przeszła próby odkrywczej) |
+
+Silnik bez zmian. 75% zysku w H1 pochodzi z trzech spółek z listy dobranej po fakcie; bez nich +0,05 R.
+Dziennika nie dało się pobrać ze środowiska Claude Code (zablokowany host artefaktów), ale po 4 dniach zbierania nie było jeszcze czego oceniać.
+
