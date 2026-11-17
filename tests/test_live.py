@@ -20,7 +20,7 @@ def _frames(now):
     hi = pd.date_range(end=now.replace(minute=0, second=0, microsecond=0), periods=72, freq="h", tz="UTC")
     h = pd.DataFrame({"open": 100.0, "high": 101.0, "low": 99.0, "close": 100.0, "volume": 0}, index=hi)
     h.loc[h.index[-5:], ["open", "close"]] = 110.0
-    di = pd.date_range(end=now.normalize() - timedelta(days=1), periods=5, freq="D", tz="UTC")
+    di = pd.date_range(end=pd.Timestamp(now).normalize() - timedelta(days=1), periods=5, freq="D")
     d = pd.DataFrame({"open": 100.0, "high": 101.0, "low": 99.0, "close": 100.0, "volume": 0}, index=di)
     return h, d
 
