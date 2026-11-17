@@ -1039,3 +1039,8 @@ Nowy układ zadań w `scan.yml` (skan → strona, łańcuch) zadziała od najbli
 **Czym to nie jest.** To ten sam ekran generowany co godzinę, instalowalny i dostępny offline. Bez logowania, bez wykresów, bez interakcji
 (filtrowania, kalkulatora pozycji w przeglądarce). Panel `web/` z v0.3 pozostaje nieużywany.
 
+**Sprawdzenie publikacji (2026-11-17).** Źródło GitHub Pages ustawione jest na „Deploy from a branch”, gałąź `dane` (wbudowane przebiegi
+„pages build and deployment” budują `dane` co godzinę), więc zadanie `strona` poprawnie pomija publikację, a pod adresem strony nie było ekranu.
+Poprawka: eksport na gałąź `dane` kopiuje teraz także ekran (`index.html`, pliki PWA, `.nojekyll`). Strona działa przy obu ustawieniach:
+z gałęzi `dane` albo z „GitHub Actions” (zadanie `strona`). Łańcuch skanów działa bez przerw.
+

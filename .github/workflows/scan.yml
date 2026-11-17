@@ -78,6 +78,7 @@ jobs:
           path: data
           key: stan-${{ github.run_id }}
       # Dziennik jako CSV na osobnej galezi `dane` (jeden nadpisywany commit, bez historii): do sesji nauki.
+      # Ta sama galaz niesie ekran (index.html i pliki PWA), wiec strona dziala przy obu ustawieniach zrodla Pages.
       # Zgoda uzytkownika z 2026-11-16; repozytorium jest publiczne, wiec ten plik tez.
       - name: Eksport dziennika na galaz dane
         if: always()
@@ -85,6 +86,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           cfd journal-export --out eksport || exit 0
+          # Ekran tez na tej galezi: dziala, gdy GitHub Pages publikuje z galezi `dane` ("Deploy from a branch").
+          if [ -f public/index.html ]; then cp -r public/. eksport/; touch eksport/.nojekyll; fi
           cd eksport
           git init -q -b dane
           git config user.name "github-actions[bot]"
