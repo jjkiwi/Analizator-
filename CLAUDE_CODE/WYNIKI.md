@@ -1044,3 +1044,70 @@ Nowy układ zadań w `scan.yml` (skan → strona, łańcuch) zadziała od najbli
 Poprawka: eksport na gałąź `dane` kopiuje teraz także ekran (`index.html`, pliki PWA, `.nojekyll`). Strona działa przy obu ustawieniach:
 z gałęzi `dane` albo z „GitHub Actions” (zadanie `strona`). Łańcuch skanów działa bez przerw.
 
+## N4: model przewidywań (H5) (2026-11-17)
+
+**Co zrobione.** Pakiet `src/cfd/model/` (bez nowych zależności, regresja logistyczna w numpy):
+- `features.py`: cechy przyczynowe na zamknięciu dnia (stopy 5/20/60/120/250, zmienność 20/60, odległość od SMA50/200 w ATR, RSI14, ADX14,
+  głosy trendu 3/6/12 mies., stopa względem US500 z 20/60 sesji — US500 z poprzedniego dnia, pozycja w zakresie 252 sesji, kategoria one-hot);
+  cel `y_h` = cena w t+h > cena w t (h = 5 i 20), `end_h` = data t+h do oczyszczania. Zakres jak H3 (surowce wyłączone). Dzisiejsza świeca odrzucana.
+- `train.py`: regresja logistyczna L2 (Newton), standaryzacja i przycięcie ±5σ liczone tylko na treningu, baza = częstość wzrostów per instrument.
+- `evaluate.py`: podział chronologiczny 65/15/20 z zablokowanym testem, wybór C ∈ {0,01; 0,1; 1; 10} na walidacji, walk-forward 5 okien,
+  oczyszczanie (cel treningu kończy się przed oknem testowym) + embargo ⌈1,4h⌉+3 dni, Brier, log loss, AUC, trafność, BSS, kalibracja
+  w decylach, bootstrap ruchomych bloków (blok max(2h, 20) dni) dziennego przyrostu Brier i log loss, wynik per kategoria, stabilność
+  współczynników między oknami, test przecieku (przetasowane cele). Raport `walidacja/model.json` i `walidacja/model.md`.
+- `predict.py`: prognozy z ostatniej domkniętej świecy → `reports/prognozy.json`; dziennik `walidacja/prognozy_log.csv`
+  (date, symbol, h, p_up, price, base_rate; jeden wpis na datę/symbol/h); `score_log` = Brier w przód dla wpisów po upływie h sesji.
+- CLI: `cfd model train | evaluate | predict | score` (`--out`, `--predictions`, `--log`, `--no-log`).
+- Workflow: `recalc.yml` — krok `cfd model train --out nowe`, kopiowanie `model.json`, `model.md` i zachowanie `prognozy_log.csv`
+  (wcześniej `rm -rf walidacja` skasowałby dziennik prognoz); `daily.yml` — nowe zadanie `prognozy` (contents: write): `cfd fetch --interval 1d`,
+  `cfd model predict`, `cfd model score`, commit dziennika, artefakt `prognozy`.
+- Testy `tests/test_model.py` (8): przyczynowość cech, cel bez przesunięć, oczyszczanie/embargo w każdym podziale, brak skilla na losowym celu,
+  wykrycie wbudowanego sygnału (z testem przecieku ≈ 0), metryki, format prognoz, dziennik bez duplikatów, ocena w przód.
+
+**Co wyszło** (52 instrumenty, 2000–2026, test 2022-08 – 2026-10/11, ok. 53,5 tys. wierszy na horyzont):
+
+| h | Brier modelu | Brier bazy | BSS | log loss zysk | AUC (baza) | p bootstrap | WF BSS | przeciek | wynik |
+|---|---|---|---|---|---|---|---|---|---|
+| 5 | 0,2487 | 0,2496 | +0,0037 | +0,0021 | 0,534 (0,535) | 0,71 | +0,0009 | +0,0006 | nie przeszedł |
+| 20 | 0,2466 | 0,2479 | +0,0054 | +0,0028 | 0,533 (0,539) | 0,52 | −0,0083 | +0,0032 | nie przeszedł |
+
+H5 odrzucona na historii. Mały dodatni BSS na teście nie jest istotny i w dużej części powtarza go model uczony na przetasowanych celach,
+czyli bierze się z poziomu (wyraz wolny, kategoria), a nie z cech. AUC modelu nie przewyższa AUC samej bazy per instrument.
+Najstabilniejsze współczynniki (h = 5): RSI14 +, krótkoterminowe odwrócenie (ret_5 −, ret_60 −), trend 12 mies. +, zmienność 60 −,
+ale ich łączna siła nie daje użytecznej prognozy. Per kategoria na teście: metale i akcje lekko dodatnie, indeksy i krypto ujemne (bez istotności).
+
+**Zmiana po teście (zaostrzająca):** baza per instrument przy < 250 wierszach treningowych → częstość ogólna (wcześniej baza 0/1 dla
+krótko notowanych instrumentów zawyżała skill modelu w jednym oknie walk-forward). Test bez zmian; werdykt bez zmian.
+Etykieta „słaby” (ekran) wymaga wszystkich warunków poza istotnością i p < 0,10; teraz obie jakości = „brak”.
+
+**Format `reports/prognozy.json`:** `{"generated", "model_generated", "note", "items": [{"symbol", "horizon", "p_up", "base_rate",
+"skill": "brak"|"słaby"|"jest", "date", "price"}]}`.
+
+**Nie działa / niesprawdzone.** Nowe kroki w Actions nie były jeszcze uruchomione. Dziennik prognoz zaczyna się od pierwszego przebiegu
+`daily.yml` (lokalnie nie zapisywany, żeby nie mieszać prognoz z modelu znającego już te dni). Cache lokalny kończy się 2026-11-12.
+
+## Noc 2026-11-17/18: centrum dowodzenia (plan: `CLAUDE_CODE/PLAN_NOC.md`)
+
+**N2. Tor na żywo.** `src/cfd/live.py`, `cfd live-export`. Zadanie `lancuch` w `scan.yml` nie śpi już do pełnej godziny: co ok. 4 minuty
+pobiera newsy (wszystkie feedy RSS) i notowania z listy obserwowanych (świece 1h z Yahoo, także niedomknięta), zapisuje `live.json`
+i wypycha go na gałąź `live` (jeden nadpisywany commit). Na koniec zapisuje stan (z nowymi newsami) do cache i uruchamia następny skan o :02.
+Dashboard doczytuje `https://raw.githubusercontent.com/<repo>/live/live.json` co 2 minuty (CDN GitHuba buforuje plik do ok. 5 minut).
+Lista obserwowanych: `live.watchlist` w `config/settings.yaml`. W newsie: ruch ceny pierwszego instrumentu od publikacji. Test: `tests/test_live.py`.
+
+**N3. Formacje i wykresy** (subagent). `src/cfd/features/patterns.py`: punkty zwrotne (potwierdzane po 3 świecach), wsparcia i opory
+z klastrów punktów zwrotnych, trend (wyższe szczyty i dołki), kanał, podwójny szczyt i dno (z linią szyi, celem i unieważnieniem),
+trójkąty (symetryczny, wznoszący, zniżający, z wybiciem), konsolidacja i wybicie. `src/cfd/charts.py`: wykres świecowy SVG bez bibliotek
+z naniesionymi poziomami i liniami formacji, ok. 5–6 KB. 28 testów, w tym przyczynowość. Skuteczność formacji nie była walidowana:
+na ekranie są opisem wykresu, nie sygnałem.
+
+**N5. Dashboard „centrum dowodzenia”** (`src/cfd/command.py`, wywoływany przez `cfd now`): przyklejony nagłówek ze wskaźnikiem świeżości
+danych na żywo, przewijany pasek notowań z miniwykresami, przewijany pasek istotnych newsów, panel „Świat teraz” (newsy z 24 h,
+waga, instrumenty, źródło, ruch ceny od publikacji, tematy dnia), mapa rynku (zmiany 1, 5 i 20 sesji wszystkich instrumentów),
+wykresy z formacjami (lista obserwowanych na 1d i pięć instrumentów na 4h, przełączane zakładkami), prognozy modelu z ich jakością,
+trend miesięczny, sygnały strategii, fundamenty spółek (neutralne zwinięte), kalendarz makro. Jasny i ciemny motyw, układ na telefon
+i komputer, instalowalna aplikacja (PWA), bez zewnętrznych bibliotek. Sprawdzone lokalnie w przeglądarce: bez błędów JS, bez poziomego
+przewijania na telefonie.
+
+**Nie działa / niesprawdzone.** Publikacja i odświeżanie na żywo w Actions zadziałają od przebiegu o 00:02 UTC (patrz niżej).
+Notowania są opóźnione (Yahoo) i pochodzą z kontraktów futures lub indeksów, nie z XTB. Newsy klasyfikują same reguły (brak kluczy modeli).
+
