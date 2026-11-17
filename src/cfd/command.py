@@ -116,11 +116,14 @@ def _charts(charts: list[dict]) -> str:
 def _predictions(pred: dict | None) -> str:
     if not pred or not pred.get("items"):
         return "<p class='mut'>Model jeszcze nie opublikował prognoz.</p>"
-    q = pred.get("quality") or {}
-    skill = q.get("verdict") or "nieznana"
-    note = (f"<div class='note'><b>Jakość modelu na danych testowych: {_e(skill)}.</b> {_e(q.get('text', ''))} "
-            "Prawdopodobieństwo to wynik modelu; jeśli jakość jest „brak”, liczby nie są lepsze od częstości historycznej.</div>")
-    rows = sorted(pred["items"], key=lambda r: -abs((r.get("p_up") or 0.5) - (r.get("base_rate") or 0.5)))
+    skills = {r.get("skill") for r in pred["items"]}
+    skill = "jest" if skills == {"jest"} else "słaby" if "słaby" in skills or "jest" in skills else "brak" if skills == {"brak"} else "nieznana"
+    note = (f"<div class='note'><b>Jakość modelu na danych testowych: {_e(skill)}.</b> {_e(pred.get('note', ''))} "
+            + ("Model (H5) nie przeszedł testu: na danych, których nie widział przy uczeniu, przewidywał nie lepiej niż sama częstość "
+               "wzrostów. Liczby pokazujemy, żeby było widać, jak mało się różnią; nie traktuj ich jako sygnału. Model jest trenowany "
+               "ponownie co tydzień, a każda prognoza trafia do dziennika i jest oceniana po fakcie." if skill == "brak" else "")
+            + "</div>")
+    rows = sorted(pred["items"], key=lambda r: (r.get("horizon") or 0, -abs((r.get("p_up") or 0.5) - (r.get("base_rate") or 0.5))))
     body = "".join(
         f"<tr><td><b>{_e(r['symbol'])}</b></td><td class='n'>{_e(r.get('horizon'))} sesji</td>"
         f"<td class='n {'up' if (r.get('p_up') or 0) > (r.get('base_rate') or 0.5) else 'down'}'>{100 * (r.get('p_up') or 0):.0f}%</td>"

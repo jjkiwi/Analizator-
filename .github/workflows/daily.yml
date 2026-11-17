@@ -34,3 +34,38 @@ jobs:
         with:
           path: data
           key: stan-${{ github.run_id }}
+  prognozy:
+    # Model H5: prognozy na dzis (reports/prognozy.json jako artefakt) i dziennik prognoz do oceny w przod (commit).
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write          # commit walidacja/prognozy_log.csv
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12", cache: pip}
+      - run: pip install -e .
+      - uses: actions/cache/restore@v4
+        with:
+          path: data
+          key: stan-${{ github.run_id }}
+          restore-keys: stan-
+      - name: Uzupelnij swiece dzienne
+        run: cfd fetch --interval 1d || true
+      - name: Prognozy modelu i dziennik prognoz
+        run: |
+          cfd model predict
+          cfd model score || true
+      - name: Zapisz dziennik prognoz w repozytorium
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add walidacja/prognozy_log.csv
+          git diff --cached --quiet || git commit -m "Dziennik prognoz modelu $(date -u +%F)"
+          git pull --rebase --autostash origin "$GITHUB_REF_NAME" && git push origin "HEAD:$GITHUB_REF_NAME"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: prognozy
+          path: reports/prognozy.json
+          retention-days: 30
