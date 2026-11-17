@@ -164,7 +164,8 @@ def render(snap: dict, sections: dict[str, str], live_url: str | None) -> str:
 <div class="ticker" aria-label="Najnowsze newsy"><div class="row" id="ticker"></div></div>
 <main><div id="offline" class="note" hidden>Brak połączenia: to ostatnia zapisana kopia.</div>
 <div class="layout">
-<section class="panel w5"><h2>Świat teraz <small id="newscount"></small></h2><ul class="news" id="news">{_news_static(snap.get('news') or [])}</ul>
+<section class="panel w5"><h2>Świat teraz <small id="newscount"></small></h2>
+<div id="topics" class="chips" style="margin:0 0 8px"></div><ul class="news" id="news">{_news_static(snap.get('news') or [])}</ul>
 <p class="small mut">Kolor: czerwony pilne, żółty istotne. Po prawej ruch ceny pierwszego instrumentu od publikacji (notowania opóźnione).</p></section>
 <section class="panel w7"><h2>Mapa rynku <small>zmiana dzienna, najedź po 5 i 20 dni</small></h2>{_market(snap.get('market') or [])}</section>
 <section class="panel w7"><h2>Wykresy i formacje</h2>{_charts(snap.get('charts') or [])}</section>
@@ -214,6 +215,13 @@ function render(live) {{
         <span class="mv">${{mvs}}</span></li>`;
     }}).join("");
     $("newscount").textContent = `${{n.length}} z 24 h`;
+    // Tematy: ile istotnych newsow dotyczy instrumentu i jak ruszyla sie jego cena (od najstarszego newsa).
+    const agg = {{}};
+    n.filter((x) => x.importance >= 2).forEach((x) => (x.symbols || []).slice(0, 3).forEach((s) => {{
+      const a = agg[s] || (agg[s] = {{n: 0, mv: null}}); a.n += 1; if (x.moved && x.moved.symbol === s) a.mv = x.moved.pct;
+    }}));
+    $("topics").innerHTML = Object.entries(agg).sort((a, b) => b[1].n - a[1].n).slice(0, 10).map(([s, a]) =>
+      `<span class="chip" title="istotnych newsów: ${{a.n}}"><b>${{esc(s)}}</b> ×${{a.n}}${{a.mv == null ? "" : ` <span class="${{a.mv >= 0 ? "up" : "down"}}">${{a.mv >= 0 ? "+" : ""}}${{a.mv.toFixed(1)}}%</span>`}}</span>`).join("");
   }}
   const g = new Date(live.generated), fresh = Date.now() - g < 15 * 60000;
   $("dot").className = "dot" + (fresh ? " on" : "");
