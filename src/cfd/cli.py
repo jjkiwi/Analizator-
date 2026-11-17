@@ -498,6 +498,43 @@ def cmd_now(args) -> None:
     for row in state["rows"]:
         row.update(meta[row["symbol"]])
     snap["monthly_trend"] = state
+    # Mapa rynku: zmiany 1, 5 i 20 sesji z cache swiec dziennych; notowania startowe dla paska (potem doczytuje live.json).
+    from .live import DEFAULT_WATCHLIST, quotes
+
+    market = []
+    for inst in instruments.values():
+        try:
+            c = svc_m.get(inst, "1d")["close"].dropna()
+        except Exception:
+            continue
+        if len(c) < 22:
+            continue
+        ch = lambda k: float(100 * (c.iloc[-1] / c.iloc[-1 - k] - 1))
+        market.append({"symbol": inst.symbol, "name": inst.name, "category": inst.category, "d1": ch(1), "d5": ch(5), "d20": ch(20)})
+    snap["market"] = market
+    # Wykresy z formacjami: lista obserwowanych na 1d i najwazniejsze na 4h (na zamknietych swiecach).
+    from .charts import chart_panel
+
+    charts = []
+    watch_c = (load_settings(_cfg(args, "settings.yaml")).get("live") or {}).get("watchlist") or []
+    for sym, iv in [(x, "1d") for x in watch_c] + [(x, "4h") for x in ("US500", "DE40", "GOLD", "OIL", "BITCOIN")]:
+        inst = instruments.get(sym)
+        if inst is None or sym == "VIX":
+            continue
+        try:
+            df_c = svc_m.get(inst, iv).iloc[:-1]
+            if len(df_c) >= 60:
+                charts.append(chart_panel(inst, df_c, iv))
+        except Exception:  # wykres jednego instrumentu nie moze zatrzymac ekranu
+            continue
+    snap["charts"] = charts
+    watch = (load_settings(_cfg(args, "settings.yaml")).get("live") or {}).get("watchlist") or DEFAULT_WATCHLIST
+    snap["quotes"] = quotes(instruments, svc_m, watch, refresh=False)
+    pred_path = Path("reports/prognozy.json")
+    if pred_path.exists():
+        import json as _json
+
+        snap["predictions"] = _json.loads(pred_path.read_text(encoding="utf-8"))
     stamp = Path(args.reports) / "DATA"
     snap["stats_date"] = stamp.read_text(encoding="utf-8").strip() if stamp.exists() else None
     from .sizing import load_contracts
@@ -560,6 +597,41 @@ def cmd_live_export(args) -> None:
     out.mkdir(parents=True, exist_ok=True)
     (out / "live.json").write_text(json.dumps(snap, ensure_ascii=False, separators=(",", ":"), default=str), encoding="utf-8")
     print(f"live.json: {len(snap['quotes'])} notowan, {len(snap['news'])} newsow")
+
+
+def cmd_model(args) -> None:
+    """Model przewidywan H5: train (ewaluacja + model koncowy), evaluate (sama ewaluacja), predict, score (ocena w przod)."""
+    import json
+
+    from .model import evaluate as mev
+    from .model import predict as mpr
+    from .model.features import build_dataset, load_frames
+
+    frames, cats = load_frames(args.data_dir, _cfg(args, "instruments.yaml"))
+    if args.action == "score":
+        log_path = Path(args.log)
+        if not log_path.exists():
+            sys.exit(f"Brak dziennika prognoz {log_path}.")
+        res = mpr.score_log(pd.read_csv(log_path), {s: f["close"] for s, f in frames.items()})
+        print(json.dumps(res, ensure_ascii=False, indent=1))
+        return
+    ds = build_dataset(frames, cats)
+    if args.action in ("train", "evaluate"):
+        res = mev.run(ds, with_final=args.action == "train")
+        if args.action == "train" or args.out:
+            pj, pm = mev.write_reports(res, args.out or "walidacja")
+            print(f"Zapisano: {pj}, {pm}")
+        for h, r in res["horizons"].items():
+            t = r["test"]
+            print(f"h={h}: BSS test {t['bss']:+.4f}, p={r['bootstrap']['p_brier']:.3f}, AUC {t['auc']:.3f}, "
+                  f"WF BSS {r['walk_forward_mean_bss']:+.4f}, przeciek {r['leak_test']['bss']:+.4f} -> "
+                  f"{'PRZESZEDL' if r['passed'] else 'nie przeszedl'} (jakosc: {r['skill']})")
+        return
+    doc = mpr.load_model_doc(Path(args.out or "walidacja") / "model.json")
+    items = mpr.predict_latest(ds, doc)
+    print(f"Prognozy: {mpr.write_predictions(items, doc, args.predictions)} ({len(items)})")
+    if not args.no_log:
+        print(f"Dziennik prognoz {args.log}: +{mpr.append_log(items, args.log)} wpisow")
 
 
 def cmd_context_test(args) -> None:
@@ -741,6 +813,12 @@ def main(argv: list[str] | None = None) -> None:
     sp = add("monthly-test", cmd_monthly_test, "trend miesieczny i sila wzgledna (H3, H4) na zamknieciach miesiaca",
              symbols=False, interval=False)
     sp.add_argument("--since", help="tylko miesiace od RRRR-MM (ocena w przod po zapisaniu hipotezy)")
+    sp = add("model", cmd_model, "model przewidywan (H5): train | evaluate | predict | score", symbols=False, interval=False)
+    sp.add_argument("action", choices=["train", "evaluate", "predict", "score"])
+    sp.add_argument("--out", help="katalog z model.json/model.md (domyslnie walidacja)")
+    sp.add_argument("--predictions", default="reports/prognozy.json")
+    sp.add_argument("--log", default="walidacja/prognozy_log.csv", help="dziennik prognoz do oceny w przod")
+    sp.add_argument("--no-log", action="store_true", help="predict bez dopisywania do dziennika")
     sp = add("live-export", cmd_live_export, "newsy i notowania na zywo do live.json (dashboard)", symbols=False, interval=False)
     sp.add_argument("--out", default="live")
     sp.add_argument("--offline", action="store_true")

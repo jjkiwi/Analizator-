@@ -232,7 +232,8 @@ def _stocks_section(rows: list[dict]) -> str:
         return ""
     order = {"bad": 0, "good": 1, "neutral": 2, "unknown": 3}
     cards = []
-    for r in sorted(rows, key=lambda r: (order.get(r["assessment"]["class"], 9), r["symbol"])):
+    ordered = sorted(rows, key=lambda r: (order.get(r["assessment"]["class"], 9), r["symbol"]))
+    for r in ordered:
         a = r["assessment"]
         cls = {"good": "up", "bad": "down"}.get(a["class"], "")
         chips = "".join(
@@ -245,6 +246,10 @@ def _stocks_section(rows: list[dict]) -> str:
         cards.append(f"<div class='card'><div class='head'><span class='sym'>{_e(r['symbol'])} <span class='mut small'>{_e(r['name'])}</span></span>"
                      f"<span class='mut small'>{a['total']:+d} z {a['known']}</span></div>"
                      f"<div class='{cls}'><b>{_e(a['verdict'].capitalize())}</b></div>{rep}<div class='chips'>{chips}</div></div>")
+    top = [c for c, r in zip(cards, ordered) if r["assessment"]["class"] in ("bad", "good") or r["assessment"]["report_soon"]]
+    rest = [c for c, r in zip(cards, ordered) if c not in top]
+    cards = top + ([f"<details style='grid-column:1/-1'><summary>Pozostałe spółki ({len(rest)}): obraz mieszany lub za mało danych</summary>"
+                    f"<div class='grid'>{''.join(rest)}</div></details>"] if rest else [])
     return ("<h2>Twoje spółki: fundamenty</h2><p class='mut small'>Lista kontrolna z jawnymi progami (wzrost, zyskowność, wycena, "
             "zadłużenie, konsensus, trend kursu). Porządkuje fakty z Yahoo; progi nie były walidowane na historii, więc to nie jest prognoza. "
             f"Dane Yahoo bywają błędne, zwłaszcza prognozowane C/Z.</p><div class='grid'>{''.join(cards)}</div>")
@@ -283,9 +288,9 @@ def render_html(snap: dict) -> str:
     mid = [s for s in sigs if s not in top and s["assessment"] in ("weak", "unknown")]
     rest = [s for s in sigs if s["assessment"] == "none" and not s["filters"]]
     if top:
-        lead = f"<h2>Sygnały z dodatnim wynikiem w walidacji ({len(top)})</h2><div class='grid'>{''.join(_card(s) for s in top)}</div>"
+        lead = f"<h2 class=sub>Z dodatnim wynikiem w walidacji ({len(top)})</h2><div class='grid'>{''.join(_card(s) for s in top)}</div>"
     else:
-        lead = ("<h2>Sygnały z dodatnim wynikiem w walidacji</h2><p class='mut'>Teraz żadnego. To normalny stan: "
+        lead = ("<p class='mut'>Z dodatnim wynikiem w walidacji: teraz żadnego. To normalny stan: "
                 "program pokazuje tu tylko sygnały, które w testach na niewidzianych danych zarabiały po kosztach.</p>")
     mid_html = f"<details><summary>Niepewne: słaby wynik albo za mało danych ({len(mid)})</summary><div class='grid'>{''.join(_card(s) for s in mid)}</div></details>" if mid else ""
     rest_html = f"<details><summary>Bez przewagi po kosztach ({len(rest)})</summary><div class='grid'>{''.join(_card(s) for s in rest)}</div></details>" if rest else ""
@@ -298,33 +303,19 @@ def render_html(snap: dict) -> str:
         for n in snap["news"])
     news = f"<div class='scroll'><table><thead><tr><th>Pobrano</th><th>Tytuł</th><th>Instrumenty</th></tr></thead><tbody>{news_rows}</tbody></table></div>" if news_rows else "<p class='mut'>Brak danych. Uruchom <code>cfd news poll</code>.</p>"
     errors = f"<details><summary class='warn'>Źródła danych, które zawiodły ({len(snap['errors'])})</summary><p class='small mut'>{'<br>'.join(_e(x) for x in snap['errors'])}</p></details>" if snap["errors"] else ""
-    return f"""<!doctype html><html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Analizator CFD: stan na teraz</title>
-<link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Analizator"><meta name="theme-color" content="#0e1116">
-<style>{CSS}</style></head><body><main>
-<div id="offline" class="note small" hidden>Brak połączenia: to ostatnia zapisana kopia ekranu.</div>
-<h1>Stan na teraz</h1>
-<p class="mut small">Wygenerowano {gen:%Y-%m-%d %H:%M} UTC<span id="age"></span> · interwały: {_e(', '.join(snap['intervals']))} · sprawdzonych serii: {snap['scanned']} · sygnałów: {len(sigs)}{(' · statystyki walidacji z ' + _e(snap['stats_date'])) if snap.get('stats_date') else ''}</p>
-<div class="note small">Program nie składa zleceń i nie zna kwotowań XTB. Ceny pochodzą z opóźnionych, darmowych źródeł (kontrakty futures lub indeksy),
-więc poziomy SL i TP przenieś do xStation jako odległość od bieżącej ceny, nie jako cenę. Liczby przy sygnale to wynik testów na danych historycznych,
-których strategia nie widziała przy doborze parametrów. Nie są gwarancją wyniku.</div>
-{lead}{mid_html}{rest_html}{errors}
-{_monthly_section(snap.get('monthly_trend'))}
-{_stocks_section(snap.get('stocks') or [])}
-<h2>Kalendarz makro: najbliższe 48 godzin</h2>{macro}
-<h2>Ostatnie newsy (tło)</h2>{news}
-</main>
-<script>
-// Aplikacja instalowalna (PWA): rejestracja service workera tylko, gdy strona jest serwowana przez http(s).
-if ("serviceWorker" in navigator && location.protocol.startsWith("http")) navigator.serviceWorker.register("sw.js");
-const off = document.getElementById("offline"), sync = () => {{ off.hidden = navigator.onLine; }};
-addEventListener("online", sync); addEventListener("offline", sync); sync();
-// Wiek danych liczony w przegladarce, zeby stara kopia nie udawala swiezej.
-const gen = new Date("{gen.isoformat()}"), age = Math.round((Date.now() - gen) / 60000), el = document.getElementById("age");
-if (el) el.textContent = age < 90 ? ` · ${{age}} min temu` : age < 2880 ? ` · ${{Math.round(age / 60)}} h temu` : ` · ${{Math.round(age / 1440)}} dni temu`;
-</script></body></html>"""
+    sections = {
+        "signals": lead + mid_html + rest_html + errors,
+        "monthly": _monthly_section(snap.get("monthly_trend")),
+        "stocks": _stocks_section(snap.get("stocks") or []),
+        "macro": macro,
+    }
+    import os
+
+    from .command import render
+
+    repo = os.environ.get("GITHUB_REPOSITORY")
+    live_url = snap.get("live_url") or (f"https://raw.githubusercontent.com/{repo}/live/live.json" if repo else None)
+    return render(snap, sections, live_url)
 
 
 def write(snap: dict, path: Path | str = "reports/teraz.html", pwa_dir: Path | str = "pwa") -> Path:

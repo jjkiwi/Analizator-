@@ -104,7 +104,7 @@ def test_now_snapshot_and_html(tmp_path, monkeypatch):
     assert by["X"]["assessment"] == "unknown" and by["X"]["filters"]  # filtr dla kategorii indices
     assert snap["signals"][0]["symbol"] == "X"  # potwierdzony kontekst na gorze
     page = render_html(snap)
-    assert "Stan na teraz" in page and "brak przewagi po kosztach" in page.lower() and "KUP (LONG)" in page
+    assert "centrum dowodzenia" in page and "brak przewagi po kosztach" in page.lower() and "KUP (LONG)" in page
     assert assess({"folds": 3, "trades": 10})[0] == "unknown"
     assert assess({"folds": 3, "trades": 50, "expectancy_r": 0.2, "verdict": "pass"})[0] == "good"
 
