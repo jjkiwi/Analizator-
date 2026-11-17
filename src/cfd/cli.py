@@ -547,6 +547,21 @@ def cmd_monthly_test(args) -> None:
                   f" | potw. (od {r['granica']}) n={c['n']:<4} sr={100 * c['mean']:+.2f}% t={c['t']:+.2f} Sharpe={c['sharpe']:+.2f}")
 
 
+def cmd_live_export(args) -> None:
+    """Swieze newsy i notowania do live.json (tor "na zywo" dashboardu, co kilka minut)."""
+    import json
+
+    from .live import DEFAULT_WATCHLIST, build_live
+
+    settings = load_settings(_cfg(args, "settings.yaml"))
+    watch = (settings.get("live") or {}).get("watchlist") or DEFAULT_WATCHLIST
+    snap = build_live(_conn(args), _instruments(args), _service(args), watch, refresh=not args.offline)
+    out = Path(args.out)
+    out.mkdir(parents=True, exist_ok=True)
+    (out / "live.json").write_text(json.dumps(snap, ensure_ascii=False, separators=(",", ":"), default=str), encoding="utf-8")
+    print(f"live.json: {len(snap['quotes'])} notowan, {len(snap['news'])} newsow")
+
+
 def cmd_context_test(args) -> None:
     """Czy sygnaly trafiaja czesciej w sprzyjajacym kontekscie (proba odkrywcza i potwierdzajaca)."""
     from .fundamentals import SeriesRouter, bias_history_for
@@ -726,6 +741,9 @@ def main(argv: list[str] | None = None) -> None:
     sp = add("monthly-test", cmd_monthly_test, "trend miesieczny i sila wzgledna (H3, H4) na zamknieciach miesiaca",
              symbols=False, interval=False)
     sp.add_argument("--since", help="tylko miesiace od RRRR-MM (ocena w przod po zapisaniu hipotezy)")
+    sp = add("live-export", cmd_live_export, "newsy i notowania na zywo do live.json (dashboard)", symbols=False, interval=False)
+    sp.add_argument("--out", default="live")
+    sp.add_argument("--offline", action="store_true")
     sp = add("context-test", cmd_context_test, "test filtra kontekstowego na transakcjach walk-forward", interval=False)
     sp.add_argument("--intervals", nargs="*", default=["1d", "4h", "1h"], choices=["1h", "4h", "1d"])
     sp.add_argument("--strategies", nargs="*", choices=STRATS)

@@ -37,3 +37,9 @@ quiet_hours:               # w tym czasie powiadomienia sa odkladane i wysylane 
   start: 23
   end: 8
   tz: "Europe/Warsaw"
+
+live:
+  # Tor "na zywo" dashboardu: notowania (swiece 1h, opoznione) i newsy odswiezane co kilka minut.
+  watchlist: [US500, US100, DE40, W20, UK100, JP225, USDIDX, VIX, GOLD, SILVER, OIL, NATGAS, COPPER, BITCOIN, ETHEREUM]
+  every_seconds: 240
+

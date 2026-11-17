@@ -122,21 +122,53 @@ jobs:
         if: steps.pages.outputs.on == 'tak'
         uses: actions/deploy-pages@v4
 
-  # Lancuch: czekaj do 2 minut po nastepnej pelnej godzinie i uruchom nastepny przebieg. Osobne zadanie, zeby
-  # publikacja strony nie czekala na koniec godziny. Stan jest juz zapisany, wiec przerwanie niczego nie traci.
+  # Tor "na zywo" + lancuch. Do konca godziny co ~4 minuty: newsy (RSS) i notowania (swiece 1h) -> live.json na galezi `live`
+  # (dashboard doczytuje go sam, bez przebudowy strony). Potem zapis stanu i uruchomienie nastepnego skanu o :02.
   lancuch:
     needs: scan
     if: always() && vars.LANCUCH != 'nie'
     runs-on: ubuntu-latest
-    timeout-minutes: 70
+    timeout-minutes: 75
     steps:
-      - name: Czekaj do pelnej godziny i uruchom nastepce
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12", cache: pip}
+      - run: pip install -e .
+      - name: Przywroc stan roboczy
+        uses: actions/cache/restore@v4
+        with:
+          path: data
+          key: stan-${{ github.run_id }}-live
+          restore-keys: stan-
+      - name: Newsy i notowania na zywo do pelnej godziny
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          now=$(date +%s)
-          next=$(( (now / 3600 + 1) * 3600 + 120 ))
-          wait=$(( next - now ))
-          echo "Nastepny skan za $(( wait / 60 )) min"
-          sleep "$wait"
+          end=$(( ($(date +%s) / 3600 + 1) * 3600 - 180 ))   # konczymy ok. 3 min przed pelna godzina
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          while [ "$(date +%s)" -lt "$end" ]; do
+            start=$(date +%s)
+            cfd news poll >/dev/null 2>&1 || true
+            if cfd live-export --out live; then
+              ( cd live && rm -rf .git && git init -q -b live && git add live.json && git commit -qm "Na zywo $(date -u +%H:%MZ)" \
+                && git push -q -f "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" live ) || true
+            fi
+            left=$(( end - $(date +%s) )); pause=$(( 240 - ($(date +%s) - start) ))
+            [ "$left" -le 30 ] && break
+            [ "$pause" -gt "$left" ] && pause=$left
+            [ "$pause" -gt 0 ] && sleep "$pause"
+          done
+      - name: Zapisz stan roboczy (z nowymi newsami)
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: data
+          key: stan-${{ github.run_id }}-live
+      - name: Uruchom nastepny skan o pelnej godzinie
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          now=$(date +%s); next=$(( (now / 3600 + 1) * 3600 + 120 )); [ $(( next - now )) -gt 3600 ] && next=$(( now + 60 ))
+          sleep $(( next - now ))
           gh workflow run scan.yml --repo "$GITHUB_REPOSITORY" --ref "$GITHUB_REF_NAME" -f intervals=auto
