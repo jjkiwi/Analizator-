@@ -1155,3 +1155,11 @@ robots.txt finance.yahoo.com zabrania dostępu agentom AI.
 
 Szczegóły i wnioski: `CLAUDE_CODE/HIPOTEZY.md`. Silnik i ekran bez zmian.
 
+## Sesja nauki 6 (2026-11-18): H11 i H12
+
+- Zapisane przed testem (commit 9c0281f), dane Yahoo (`^VIX`, `^GSPC`, 30 spółek Dow Jones).
+- **H11, kupno po skoku VIX** (VIX > 90. percentyl z 252 sesji, trzymanie 20 sesji): 120 epizodów. Nadwyżka nad średnią 20-sesyjną: odkrywcza +0,26 pp (t 0,38), potwierdzająca +0,22 pp (t 0,29). Odrzucona.
+- **H12, reguła SMA200 na spółkach**: Sharpe 1,08 / 1,08 i 0,71 / 0,78 (reguła / kup i trzymaj), obsunięcie −24% / −50% i −26% / −46%, roczna stopa 11,3% / 18,2% i 6,3% / 13,7%. Bootstrap p = 0,57. Odrzucona (mniejsze ryzyko, nie lepszy stosunek zysku do ryzyka).
+- Nowy moduł `src/cfd/validation/risk.py` + `tests/test_risk.py` (3 testy, w tym 2 na przyczynowość).
+- Licznik hipotez: 12 przetestowanych, 1 przeszła historię (H3), 1 czeka na dziennik (H6), 1 wstrzymana (H7).
+
