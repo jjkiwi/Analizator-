@@ -45,6 +45,7 @@ instruments:
   SOLANA:    ["solana"]
   # --- akcje (nazwy spolek; unikamy skrotow, ktore sa zwyklymi slowami, np. "arm", "mp", "iag") ---
   ARM.US:    ["arm holdings"]
+  ANT.US:    ["anthropic"]
   CEG.US:    ["constellation energy"]
   MNST.US:   ["monster beverage"]
   MP.US:     ["mp materials"]

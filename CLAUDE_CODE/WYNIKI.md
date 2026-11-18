@@ -1171,3 +1171,9 @@ Szczegóły i wnioski: `CLAUDE_CODE/HIPOTEZY.md`. Silnik i ekran bez zmian.
 - Nowe: `src/cfd/validation/events.py`, `tests/test_events.py` (4 testy), próbki `tests/fixtures/fomc_*.html`.
 - Licznik: 14 przetestowanych; H3 przeszła historię i czeka na dziennik, H6 czeka na dziennik, H7 wstrzymana.
 
+
+## ANT.US (Anthropic) dodane do instrumentów (2026-11-18)
+
+- Na prośbę użytkownika: `ANT.US` w `config/instruments.yaml` (Yahoo `ANT`, koszty domyślne dla akcji) i słowo „anthropic” w `config/keywords.yaml`.
+- Debiut na Nasdaq planowany na 2026-11-19. Do pierwszej sesji Yahoo zwraca jawny błąd „brak danych”; skan i ekran pomijają instrument bez przerywania (sprawdzone `cfd scan --interval 1d ANT.US ARM.US`, wyjście 0).
+- Strategie potrzebują historii (wybicia 20 sesji, SMA200, trend miesięczny): sygnałów na ANT nie będzie przez pierwsze tygodnie. Dostępność ANT w XTB niesprawdzona (zasada 2).
