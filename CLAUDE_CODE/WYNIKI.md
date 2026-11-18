@@ -1108,6 +1108,8 @@ trend miesięczny, sygnały strategii, fundamenty spółek (neutralne zwinięte)
 i komputer, instalowalna aplikacja (PWA), bez zewnętrznych bibliotek. Sprawdzone lokalnie w przeglądarce: bez błędów JS, bez poziomego
 przewijania na telefonie.
 
-**Nie działa / niesprawdzone.** Publikacja i odświeżanie na żywo w Actions zadziałają od przebiegu o 00:02 UTC (patrz niżej).
+**Sprawdzone w Actions (2026-11-18 00:17 UTC).** Przebieg z 00:02: ekran z 20 wykresami, prognozami i trendem miesięcznym trafił na gałąź `dane`, wbudowana budowa GitHub Pages zakończyła się sukcesem (00:10). Gałąź `live` dostała pierwszy `live.json` o 00:15: 15 notowań, 80 newsów z 24 h.
+
+**Nie działa / niesprawdzone.** Strony nie da się otworzyć ze środowiska Claude Code (github.io zablokowane), więc wygląd na żywo potwierdza użytkownik.
 Notowania są opóźnione (Yahoo) i pochodzą z kontraktów futures lub indeksów, nie z XTB. Newsy klasyfikują same reguły (brak kluczy modeli).
 

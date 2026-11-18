@@ -6,12 +6,12 @@ Strona https://jjkiwi.github.io/Analizator-/ pokazuje 404 (Pages publikuje gał�
 
 | Nr | Zadanie | Kto | Stan |
 |---|---|---|---|
-| N1 | Strona bez 404: ekran na gałęzi `dane` (poprawka wypchnięta 23:26, działa od skanu 00:02 UTC) — sprawdzić | koordynator | czeka na przebieg 00:02 |
-| N2 | Tor „na żywo”: zadanie `lancuch` zamiast spać godzinę co ~4 min pobiera newsy i notowania, wypycha `live.json` na gałąź `live`; strona doczytuje go co 2 min (raw.githubusercontent.com, CORS) | koordynator | zrobione, do sprawdzenia w Actions |
+| N1 | Strona bez 404: ekran na gałęzi `dane` (poprawka wypchnięta 23:26, działa od skanu 00:02 UTC) — sprawdzić | koordynator | zrobione: ekran na `dane`, budowa Pages OK (00:10 UTC) |
+| N2 | Tor „na żywo”: zadanie `lancuch` zamiast spać godzinę co ~4 min pobiera newsy i notowania, wypycha `live.json` na gałąź `live`; strona doczytuje go co 2 min (raw.githubusercontent.com, CORS) | koordynator | zrobione, sprawdzone w Actions |
 | N3 | Formacje techniczne: wsparcia/opory, linie trendu, podwójny szczyt/dno, trójkąty, wybicia z konsolidacji (`features/patterns.py`) + wykresy SVG z naniesionymi formacjami (`charts.py`) + testy | subagent A | zrobione |
 | N4 | Model przewidywań: cechy, cel (kierunek za 5 i 20 sesji), regresja logistyczna, walidacja ze zbiorem treningowym/walidacyjnym/testowym, walk-forward z oczyszczaniem i embargiem, metryki (Brier, log loss, AUC, kalibracja), porównanie z poziomem bazowym, test permutacyjny; cotygodniowe ponowne trenowanie; dziennik prognoz oceniany w przód | subagent B | zrobione: H5 nie przeszła (brak przewagi nad częstością), prognozy na ekranie z jakością „brak” |
-| N5 | Dashboard „centrum dowodzenia”: pasek notowań, pasek newsów, mapa rynku (zmiany dzienne), newsy z wpływem na instrumenty, wykresy z formacjami, prognozy modelu z jakością, trend miesięczny, spółki, kalendarz, sygnały; auto-odświeżanie; telefon i komputer | koordynator | zrobione, do sprawdzenia w Actions |
-| N6 | Integracja, testy, zrzuty ekranu, dokumentacja (WYNIKI, HIPOTEZY), weryfikacja w Actions | koordynator | dokumentacja zrobiona; weryfikacja po 00:02 UTC |
+| N5 | Dashboard „centrum dowodzenia”: pasek notowań, pasek newsów, mapa rynku (zmiany dzienne), newsy z wpływem na instrumenty, wykresy z formacjami, prognozy modelu z jakością, trend miesięczny, spółki, kalendarz, sygnały; auto-odświeżanie; telefon i komputer | koordynator | zrobione, sprawdzone w Actions |
+| N6 | Integracja, testy, zrzuty ekranu, dokumentacja (WYNIKI, HIPOTEZY), weryfikacja w Actions | koordynator | zrobione |
 
 Zasady bez zmian (`CLAUDE.md`): bez zleceń, bez poluzowania walidacji, uczciwe prawdopodobieństwa (model pokazuje jakość obok prognozy).
 Po wyczerpaniu limitu praca wznawia się sama (rutyna co godzinę do rana).
