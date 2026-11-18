@@ -1177,3 +1177,13 @@ Szczegóły i wnioski: `CLAUDE_CODE/HIPOTEZY.md`. Silnik i ekran bez zmian.
 - Na prośbę użytkownika: `ANT.US` w `config/instruments.yaml` (Yahoo `ANT`, koszty domyślne dla akcji) i słowo „anthropic” w `config/keywords.yaml`.
 - Debiut na Nasdaq planowany na 2026-11-19. Do pierwszej sesji Yahoo zwraca jawny błąd „brak danych”; skan i ekran pomijają instrument bez przerywania (sprawdzone `cfd scan --interval 1d ANT.US ARM.US`, wyjście 0).
 - Strategie potrzebują historii (wybicia 20 sesji, SMA200, trend miesięczny): sygnałów na ANT nie będzie przez pierwsze tygodnie. Dostępność ANT w XTB niesprawdzona (zasada 2).
+
+## Sesja nauki 8 (2026-11-18): H15 i H16 (dziennik)
+
+- Zapisane przed testem (commit 981b1e8, 22:51 UTC). Etap 1 na 461 rozliczonych sygnałach dziennika, wynik R pomniejszony o średnią pary strategia × interwał, błąd po skupiskach (interwał + godzina świecy, CR1).
+- **H15, sygnał zgodny z newsami**: różnica +0,18 R, t = 0,98 (93 zgodne, 85 przeciwne). Odrzucona na etapie 1.
+- **H16, sygnał < 2 h przed publikacją makro**: różnica +0,19 R na korzyść pozostałych, t = 1,44 (75 przed). Odrzucona na etapie 1.
+- `mean_reversion` 1h po skupiskach: −0,55 R, t −4,34 (naiwnie −5,75). `donchian_breakout` 1h: +0,22 R, t 1,86 (obserwacja, nie test).
+- Nowe: `src/cfd/validation/journal_ctx.py`, `tests/test_journal_ctx.py` (3 testy, w tym poszerzenie błędu dla powielonych sygnałów).
+- Licznik: 16 przetestowanych.
+
