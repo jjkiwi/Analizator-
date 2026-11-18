@@ -148,4 +148,8 @@ Klucze i tokeny wpisuj tylko do `.env`, sekretów GitHub i sekretów Supabase. N
 - **2026-11-16: trend miesięczny (H3) na ekranie od razu**, z oznaczeniem „hipoteza w trakcie potwierdzania”, bez czekania na roczną ocenę w przód.
 - **2026-11-18: dodane spółki z WIG20** (prośba użytkownika). Do sprawdzenia przez użytkownika: aktualny skład indeksu i symbol CCC w XTB
   (Yahoo nie ma notowań `CCC.WA`), oraz czy `SPL.PL` w XTB to dziś Erste Bank Polska (`EBP`).
+- **2026-11-18: H7 (dryf po wynikach) — źródło danych.** robots.txt finance.yahoo.com zabrania dostępu agentom AI (w tym Claude), więc Claude Code
+  nie pobierze historii wyników. Możliwości: (a) użytkownik uruchamia u siebie skrypt pobierający historię przez yfinance (decyzja co do regulaminu Yahoo
+  po stronie użytkownika) i wgrywa plik CSV, (b) inne źródło, (c) H7 zostaje wstrzymana. Hosty finance.yahoo.com i legal.yahoo.com dopisane do środowiska
+  są nieużywane; można je usunąć w ustawieniach środowiska.
 
