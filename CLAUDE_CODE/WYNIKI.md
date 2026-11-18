@@ -1113,3 +1113,15 @@ przewijania na telefonie.
 **Nie działa / niesprawdzone.** Strony nie da się otworzyć ze środowiska Claude Code (github.io zablokowane), więc wygląd na żywo potwierdza użytkownik.
 Notowania są opóźnione (Yahoo) i pochodzą z kontraktów futures lub indeksów, nie z XTB. Newsy klasyfikują same reguły (brak kluczy modeli).
 
+## Dashboard: krótsze okresy, top wzrosty i spadki, wyszukiwarka (2026-11-18)
+
+- **Mapa rynku z wyborem okresu:** 1 h, 4 h, 1 dzień, 5 dni, 20 dni. Krótkie okresy liczone ze świec godzinowych (ostatnia może być
+  niedomknięta); skala kolorów dopasowana do okresu. Odświeżane co godzinę razem ze skanem.
+- **Top 5 wzrostów i top 5 spadków** dla wybranego okresu, z całej listy śledzonych instrumentów (72: indeksy, surowce, metale, krypto,
+  akcje), nie z całej giełdy: program nie ma darmowego źródła notowań wszystkich spółek.
+- **Wyszukiwarka:** po symbolu lub nazwie (bez polskich znaków, np. „zloto”, „cd projekt”). Karta instrumentu: wykres dzienny z formacjami,
+  zmiany we wszystkich okresach, trend miesięczny (H3), prognozy modelu z jakością, fundamenty spółki i data raportu.
+  Kliknięcie kafelka mapy albo pozycji z topów otwiera tę samą kartę.
+- Strona ma ok. 0,65 MB (wykresy wszystkich instrumentów są w pliku, żeby wyszukiwarka działała także offline).
+- Sprawdzone lokalnie w przeglądarce (komputer i telefon, ciemny motyw): bez błędów JS, bez poziomego przewijania.
+

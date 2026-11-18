@@ -62,6 +62,12 @@ th{color:var(--mut);font-weight:500;font-size:12px}td.n{text-align:right;font-va
 .verdict{border-radius:6px;padding:5px 7px;margin:6px 0;font-size:12.5px;background:var(--chip)}.verdict.good{background:var(--good)}.verdict.none{background:var(--none)}
 details summary{cursor:pointer;font-weight:600;padding:6px 0}h2.sub{font-size:13px;margin:14px 0 6px}
 @media(max-width:600px){.wide{display:none}header{flex-wrap:wrap}}
+.movers{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:6px}.movers ol{margin:0;padding-left:20px;font-size:13px}
+.movers li{display:flex;justify-content:space-between;gap:8px;padding:2px 0}.movers li span{font-variant-numeric:tabular-nums}
+#q{width:100%;padding:9px 12px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg);font:inherit;font-size:15px}
+.hit{cursor:pointer;border:1px solid var(--line)}.hit[aria-pressed=true]{background:var(--accent);color:#fff;border-color:var(--accent)}
+.det{display:grid;gap:12px;grid-template-columns:minmax(0,3fr) minmax(0,2fr)}@media(max-width:900px){.det{grid-template-columns:1fr}}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:3px 12px;font-size:13px}.kv dt{color:var(--mut)}.kv dd{margin:0;font-variant-numeric:tabular-nums}
 footer{color:var(--mut);font-size:12px;max-width:1500px;margin:0 auto;padding:0 16px 24px}
 """
 
@@ -81,19 +87,17 @@ def _heat_color(v: float | None) -> str:
     return f"hsl({140 if x >= 0 else 355} {35 + 40 * abs(x):.0f}% {38 - 8 * abs(x):.0f}%)"
 
 
-def _market(rows: list[dict]) -> str:
-    if not rows:
-        return "<p class='mut'>Brak danych.</p>"
-    parts = []
-    for cat, title in CATS.items():
-        tiles = [r for r in rows if r["category"] == cat]
-        if not tiles:
-            continue
-        tiles.sort(key=lambda r: -(r["d1"] if r["d1"] is not None else -99))
-        parts.append(f"<div class='cat'>{title}</div><div class='heat'>" + "".join(
-            f"<div class='tile' style='background:{_heat_color(r['d1'])}' title='{_e(r['name'])}: 1 d {_pct(r['d1'])}, 5 d {_pct(r['d5'])}, 20 d {_pct(r['d20'])}'>"
-            f"<b>{_e(r['symbol'])}</b><span>{_pct(r['d1'])}</span><br><span>5 d {_pct(r['d5'])}</span></div>" for r in tiles) + "</div>")
-    return "".join(parts)
+PERIODS = [("h1", "1 h"), ("h4", "4 h"), ("d1", "1 dzień"), ("d5", "5 dni"), ("d20", "20 dni")]
+
+
+def _market() -> str:
+    """Mapa rynku i top wzrosty/spadki: rysowane w przegladarce z danych MARKET dla wybranego okresu."""
+    buttons = "".join(f"<button type='button' data-p='{k}' aria-pressed='{str(k == 'd1').lower()}'>{label}</button>" for k, label in PERIODS)
+    return (f"<div class='tabs' id='periods' role='group' aria-label='Okres'>{buttons}</div>"
+            "<div class='movers'><div><div class='cat'>Top wzrosty</div><ol id='gainers'></ol></div>"
+            "<div><div class='cat'>Top spadki</div><ol id='losers'></ol></div></div><div id='heat'></div>"
+            "<p class='small mut'>1 h i 4 h liczone ze świec godzinowych (ostatnia może być niedomknięta). Rynki zamknięte pokazują "
+            "zmianę z ostatnich godzin handlu. Zakres: instrumenty śledzone przez program, nie cała giełda.</p>")
 
 
 def _charts(charts: list[dict]) -> str:
@@ -155,6 +159,20 @@ def render(snap: dict, sections: dict[str, str], live_url: str | None) -> str:
               "time": (n.get("fetched") or "").replace(" ", "T") + "Z" if n.get("fetched") else None,
               "symbols": [x for x in (n.get("symbols") or "").split(",") if x], "moved": None} for n in (snap.get("news") or [])]
     initial_live = {"generated": snap["generated"], "quotes": snap.get("quotes") or {}, "news": news0}
+    trend = {r["symbol"]: r for r in ((snap.get("monthly_trend") or {}).get("rows") or [])}
+    stocks = {r["symbol"]: r["assessment"] for r in (snap.get("stocks") or []) if r.get("assessment")}
+    preds = {}
+    for r in ((snap.get("predictions") or {}).get("items") or []):
+        preds.setdefault(r["symbol"], []).append({"h": r.get("horizon"), "p": r.get("p_up"), "b": r.get("base_rate"), "skill": r.get("skill")})
+    market = []
+    for r in snap.get("market") or []:
+        t = trend.get(r["symbol"])
+        st = stocks.get(r["symbol"])
+        market.append({**r, "trend": None if t is None else t["in_trend"],
+                       "stock": None if st is None else {"verdict": st["verdict"], "cls": st["class"], "report": st.get("earnings_in_days"),
+                                                        "pillars": [[x["name"], x["score"], x["text"]] for x in st["pillars"]]},
+                       "pred": preds.get(r["symbol"])})
+    page_data = json.dumps({"market": market, "charts": snap.get("search_charts") or {}}, ensure_ascii=False, default=str).replace("</", "<\\/")
     return f"""<!doctype html><html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Analizator: centrum dowodzenia</title>
 <link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon.svg" type="image/svg+xml">
@@ -170,8 +188,11 @@ def render(snap: dict, sections: dict[str, str], live_url: str | None) -> str:
 <section class="panel w5"><h2>Świat teraz <small id="newscount"></small></h2>
 <div id="topics" class="chips" style="margin:0 0 8px"></div><ul class="news" id="news">{_news_static(snap.get('news') or [])}</ul>
 <p class="small mut">Kolor: czerwony pilne, żółty istotne. Po prawej ruch ceny pierwszego instrumentu od publikacji (notowania opóźnione).</p></section>
-<section class="panel w7"><h2>Mapa rynku <small>zmiana dzienna, najedź po 5 i 20 dni</small></h2>{_market(snap.get('market') or [])}</section>
+<section class="panel w7"><h2>Mapa rynku <small>wybierz okres</small></h2>{_market()}</section>
 <section class="panel w7"><h2>Wykresy i formacje</h2>{_charts(snap.get('charts') or [])}</section>
+<section class="panel w12"><h2>Wyszukiwarka <small>{len(snap.get('market') or [])} instrumentów: akcje, indeksy, surowce, metale, krypto</small></h2>
+<input id="q" type="search" placeholder="Wpisz symbol lub nazwę, np. CDR, złoto, Nasdaq…" autocomplete="off" aria-label="Szukaj instrumentu">
+<div id="hits" class="chips" style="margin:8px 0"></div><div id="detail"></div></section>
 <section class="panel w5"><h2>Prognozy modelu</h2>{_predictions(snap.get('predictions'))}</section>
 <section class="panel w12">{sections.get('monthly', '')}</section>
 <section class="panel w12"><h2>Sygnały strategii <small>{len(snap.get('signals') or [])} z ostatnich świec</small></h2>{sections.get('signals', '')}</section>
@@ -239,4 +260,73 @@ async function poll() {{
   }} catch (e) {{ $("livestat").textContent = "na żywo: brak połączenia"; }}
 }}
 poll(); setInterval(poll, 120000);
-</script></body></html>"""
+</script>
+<script id="pagedata" type="application/json">{page_data}</script>
+<script>{MARKET_JS}</script></body></html>"""
+
+
+MARKET_JS = r"""
+const DATA = JSON.parse(document.getElementById("pagedata").textContent);
+const E = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c]);
+const CATS = {indices: "Indeksy", commodities: "Surowce", metals: "Metale", crypto: "Krypto", stocks: "Akcje"};
+const pct = (v) => v == null ? "–" : (v >= 0 ? "+" : "") + v.toFixed(2) + "%";
+const color = (v) => { if (v == null) return "#6b7480"; const x = Math.max(-3, Math.min(3, v)) / 3;
+  return `hsl(${x >= 0 ? 140 : 355} ${35 + 40 * Math.abs(x)}% ${38 - 8 * Math.abs(x)}%)`; };
+const SCALE = {h1: 0.4, h4: 0.8, d1: 1, d5: 2, d20: 4};   // skala koloru: krotszy okres = mniejsze ruchy
+let period = "d1";
+function drawMarket() {
+  const k = period, rows = DATA.market.filter((r) => r[k] != null), s = SCALE[k];
+  const sorted = [...rows].sort((a, b) => b[k] - a[k]);
+  const li = (r) => `<li><a href="#" data-s="${E(r.symbol)}">${E(r.symbol)}</a> <span class="${r[k] >= 0 ? "up" : "down"}">${pct(r[k])}</span></li>`;
+  document.getElementById("gainers").innerHTML = sorted.slice(0, 5).map(li).join("");
+  document.getElementById("losers").innerHTML = sorted.slice(-5).reverse().map(li).join("");
+  document.getElementById("heat").innerHTML = Object.entries(CATS).map(([c, title]) => {
+    const t = rows.filter((r) => r.category === c).sort((a, b) => b[k] - a[k]);
+    if (!t.length) return "";
+    return `<div class="cat">${title}</div><div class="heat">` + t.map((r) =>
+      `<div class="tile" style="background:${color(r[k] / s)};cursor:pointer" data-s="${E(r.symbol)}" title="${E(r.name)}: 1 h ${pct(r.h1)}, 4 h ${pct(r.h4)}, 1 d ${pct(r.d1)}, 5 d ${pct(r.d5)}, 20 d ${pct(r.d20)}">
+       <b>${E(r.symbol)}</b><span>${pct(r[k])}</span></div>`).join("") + "</div>";
+  }).join("");
+}
+document.querySelectorAll("#periods button").forEach((b) => b.addEventListener("click", () => {
+  period = b.dataset.p;
+  document.querySelectorAll("#periods button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+  drawMarket();
+}));
+const norm = (s) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/ł/g, "l");
+function hits(q) {
+  const n = norm(q.trim());
+  if (!n) return [];
+  return DATA.market.filter((r) => norm(r.symbol).includes(n) || norm(r.name).includes(n))
+    .sort((a, b) => (norm(a.symbol).startsWith(n) ? 0 : 1) - (norm(b.symbol).startsWith(n) ? 0 : 1)).slice(0, 12);
+}
+function show(sym) {
+  const r = DATA.market.find((x) => x.symbol === sym); if (!r) return;
+  const c = DATA.charts[sym];
+  const per = [["1 h", r.h1], ["4 h", r.h4], ["1 dzień", r.d1], ["5 dni", r.d5], ["20 dni", r.d20]]
+    .map(([l, v]) => `<dt>${l}</dt><dd class="${v == null ? "" : v >= 0 ? "up" : "down"}">${pct(v)}</dd>`).join("");
+  const tr = r.trend == null ? "" : `<dt>Trend miesięczny</dt><dd class="${r.trend ? "up" : "down"}">${r.trend ? "w trendzie" : "poza trendem"} <span class="mut">(hipoteza H3)</span></dd>`;
+  const pr = (r.pred || []).map((p) => `<dt>Model, ${p.h} sesji</dt><dd>${Math.round(100 * p.p)}% <span class="mut">(częstość ${Math.round(100 * p.b)}%, jakość: ${E(p.skill)})</span></dd>`).join("");
+  const st = r.stock ? `<h2 class="sub">Fundamenty</h2><p class="${r.stock.cls === "good" ? "up" : r.stock.cls === "bad" ? "down" : ""}"><b>${E(r.stock.verdict)}</b>${r.stock.report != null && r.stock.report >= 0 ? ` · raport za ${r.stock.report} dni` : ""}</p>
+    <div class="chips">${r.stock.pillars.filter((p) => p[1] != null).map((p) => `<span class="chip ${p[1] > 0 ? "ok" : p[1] < 0 ? "bad" : ""}">${E(p[0])}: ${E(p[2])}</span>`).join("")}</div>` : "";
+  const pats = c && c.patterns && c.patterns.length ? `<ul class="pat">${c.patterns.map((p) => `<li><b class="${p.direction > 0 ? "up" : p.direction < 0 ? "down" : ""}">${E(p.label)}</b> <span class="mut">(${E(p.status)})</span> ${E(p.note)}</li>`).join("")}</ul>` : "";
+  document.getElementById("detail").innerHTML = `<div class="det"><div class="chart">${c ? c.svg : "<p class='mut'>Brak wykresu.</p>"}${pats}</div>
+    <div><h2 class="sub">${E(r.symbol)} · ${E(r.name)} <span class="mut small">${E(CATS[r.category] || r.category)}</span></h2>
+    <dl class="kv"><dt>Ostatnia cena</dt><dd>${r.price >= 1000 ? r.price.toLocaleString("pl-PL", {maximumFractionDigits: 0}) : r.price.toFixed(r.price >= 10 ? 2 : 4)} <span class="mut">${E((r.time || "").slice(0, 16).replace("T", " "))} UTC</span></dd>${per}${tr}${pr}</dl>${st}</div></div>`;
+  document.querySelectorAll(".hit").forEach((h) => h.setAttribute("aria-pressed", String(h.dataset.s === sym)));
+}
+const q = document.getElementById("q");
+q.addEventListener("input", () => {
+  const h = hits(q.value);
+  document.getElementById("hits").innerHTML = h.map((r) => `<button type="button" class="chip hit" data-s="${E(r.symbol)}">${E(r.symbol)} <span class="mut">${E(r.name)}</span></button>`).join("")
+    || (q.value.trim() ? "<span class='mut small'>Brak takiego instrumentu na liście śledzonych.</span>" : "");
+  if (h.length === 1) show(h[0].symbol);
+});
+q.addEventListener("keydown", (e) => { if (e.key === "Enter") { const h = hits(q.value); if (h.length) show(h[0].symbol); } });
+document.addEventListener("click", (e) => {
+  const t = e.target.closest("[data-s]"); if (!t) return;
+  e.preventDefault(); show(t.dataset.s);
+  if (!t.classList.contains("hit")) { q.value = t.dataset.s; document.getElementById("q").scrollIntoView({behavior: "smooth", block: "start"}); }
+});
+drawMarket();
+"""

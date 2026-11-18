@@ -510,7 +510,16 @@ def cmd_now(args) -> None:
         if len(c) < 22:
             continue
         ch = lambda k: float(100 * (c.iloc[-1] / c.iloc[-1 - k] - 1))
-        market.append({"symbol": inst.symbol, "name": inst.name, "category": inst.category, "d1": ch(1), "d5": ch(5), "d20": ch(20)})
+        row = {"symbol": inst.symbol, "name": inst.name, "category": inst.category, "d1": ch(1), "d5": ch(5), "d20": ch(20),
+               "h1": None, "h4": None, "price": float(c.iloc[-1]), "time": c.index[-1].isoformat()}
+        try:   # krotkie okresy ze swiec godzinowych (ostatnia moze byc niedomknieta: to zmiana "do teraz")
+            h = svc_m.get(inst, "1h")["close"].dropna()
+            if len(h) >= 5:
+                row.update(h1=float(100 * (h.iloc[-1] / h.iloc[-2] - 1)), h4=float(100 * (h.iloc[-1] / h.iloc[-5] - 1)),
+                           price=float(h.iloc[-1]), time=h.index[-1].isoformat())
+        except Exception:
+            pass
+        market.append(row)
     snap["market"] = market
     # Wykresy z formacjami: lista obserwowanych na 1d i najwazniejsze na 4h (na zamknietych swiecach).
     from .charts import chart_panel
@@ -528,6 +537,15 @@ def cmd_now(args) -> None:
         except Exception:  # wykres jednego instrumentu nie moze zatrzymac ekranu
             continue
     snap["charts"] = charts
+    # Wykres dzienny kazdego instrumentu dla wyszukiwarki (doczytywany po wybraniu instrumentu).
+    snap["search_charts"] = {}
+    for inst in instruments.values():
+        try:
+            df_c = svc_m.get(inst, "1d").iloc[:-1]
+            if len(df_c) >= 60:
+                snap["search_charts"][inst.symbol] = chart_panel(inst, df_c, "1d", bars=70, width=560, height=230)
+        except Exception:
+            continue
     watch = (load_settings(_cfg(args, "settings.yaml")).get("live") or {}).get("watchlist") or DEFAULT_WATCHLIST
     snap["quotes"] = quotes(instruments, svc_m, watch, refresh=False)
     pred_path = Path("reports/prognozy.json")
