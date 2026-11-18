@@ -146,4 +146,6 @@ Klucze i tokeny wpisuj tylko do `.env`, sekretów GitHub i sekretów Supabase. N
 - **Otwarte:** czy usunąć pozostałość po panelu z logowaniem (`web/`, `vercel.json`, `supabase/`, `src/cfd/sync.py`).
 - **2026-11-16: dziennik publikowany na gałęzi `dane`** (zgoda użytkownika), żeby sesje nauki miały do niego dostęp. Panel z logowaniem zostaje w repozytorium.
 - **2026-11-16: trend miesięczny (H3) na ekranie od razu**, z oznaczeniem „hipoteza w trakcie potwierdzania”, bez czekania na roczną ocenę w przód.
+- **2026-11-18: dodane spółki z WIG20** (prośba użytkownika). Do sprawdzenia przez użytkownika: aktualny skład indeksu i symbol CCC w XTB
+  (Yahoo nie ma notowań `CCC.WA`), oraz czy `SPL.PL` w XTB to dziś Erste Bank Polska (`EBP`).
 

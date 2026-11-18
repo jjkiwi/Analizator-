@@ -1125,3 +1125,13 @@ Notowania są opóźnione (Yahoo) i pochodzą z kontraktów futures lub indeksó
 - Strona ma ok. 0,75 MB (wykresy wszystkich instrumentów są w pliku, żeby wyszukiwarka działała także offline).
 - Sprawdzone lokalnie w przeglądarce (komputer i telefon, ciemny motyw): bez błędów JS, bez poziomego przewijania.
 
+## Spółki z WIG20 (2026-11-18)
+
+Dodane do `config/instruments.yaml` (16 nowych, sprawdzone w Yahoo): ALE, ALR, BDX, CPS, KGH, KRU, KTY, LPP, MBK, OPL, PCO, PEO, PGE, PKN, PKO, PZU
+(symbole XTB w formacie `XXX.PL`, dane z `XXX.WA`). CDR, DNP i ZAB były już na liście. **CCC pominięte**: Yahoo nie ma notowań `CCC.WA`.
+`SPL.PL` (Erste Bank Polska, dawny Santander) naprawione: na GPW ma dziś symbol EBP, więc źródło to `EBP.WA` (wcześniej brak danych).
+Skład WIG20 przyjęty według wiedzy z 2026 r. i do sprawdzenia na gpw.pl (zmienia się kwartalnie).
+Słowa kluczowe newsów i dwa nowe zapytania Google News po polsku z nazwami spółek. Na mapie rynku akcje są podzielone na GPW i zagraniczne.
+Razem 88 instrumentów, w tym 47 spółek. Historia nowych spółek pobierze się przy najbliższym skanie, fundamenty przy przebiegu dziennym,
+a w walidacji i trendzie miesięcznym pojawią się po cotygodniowym przeliczeniu.
+

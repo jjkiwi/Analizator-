@@ -75,6 +75,22 @@ instruments:
   SPL.PL:    ["erste bank polska", "erste group"]
   TEN.PL:    ["ten square games"]
   ZAB.PL:    ["żabka", "zabka group"]
+  ALE.PL:    ["allegro"]
+  ALR.PL:    ["alior"]
+  BDX.PL:    ["budimex"]
+  CPS.PL:    ["cyfrowy polsat", "polsat plus"]
+  KGH.PL:    ["kghm"]
+  KRU.PL:    ["cs:Kruk", "kruk sa", "kruk s.a."]
+  KTY.PL:    ["grupa kęty", "grupa kety", "cs:Kęty"]
+  LPP.PL:    ["cs:LPP"]
+  MBK.PL:    ["mbank"]
+  OPL.PL:    ["orange polska"]
+  PCO.PL:    ["pepco"]
+  PEO.PL:    ["pekao"]
+  PGE.PL:    ["cs:PGE", "polska grupa energetyczna"]
+  PKN.PL:    ["orlen"]
+  PKO.PL:    ["pko bp", "pko bank polski"]
+  PZU.PL:    ["cs:PZU"]
 
 exclude:
   GOLD:      ["gold medal", "gold medals", "golden", "gold coast", "gold standard", "gold card",

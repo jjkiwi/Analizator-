@@ -55,6 +55,8 @@ google_news:
       queries:
         - "stopy procentowe NBP RPP"
         - "WIG20 giełda"
+        - "Orlen OR PKO OR PZU OR KGHM OR Pekao OR mBank OR LPP OR Allegro OR Budimex"
+        - "Alior OR \"Cyfrowy Polsat\" OR Kruk OR \"Grupa Kęty\" OR \"Orange Polska\" OR Pepco OR PGE"
         - "\"CD Projekt\" OR \"Dino Polska\" OR Żabka OR AmRest OR \"Citi Handlowy\" OR \"Erste Bank Polska\""
         - "Synektik OR Creotech OR DataWalk OR Bloober OR \"Ten Square Games\" OR Medicalgorithmics"
         - "cyber_Folks OR \"Rainbow Tours\" OR Astarta OR Niewiadów OR Syn2bio OR \"GPW SA\""

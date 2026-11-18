@@ -280,8 +280,10 @@ function drawMarket() {
   const li = (r) => `<li><a href="#" data-s="${E(r.symbol)}">${E(r.symbol)}</a> <span class="${r[k] >= 0 ? "up" : "down"}">${pct(r[k])}</span></li>`;
   document.getElementById("gainers").innerHTML = sorted.slice(0, 5).map(li).join("");
   document.getElementById("losers").innerHTML = sorted.slice(-5).reverse().map(li).join("");
-  document.getElementById("heat").innerHTML = Object.entries(CATS).map(([c, title]) => {
-    const t = rows.filter((r) => r.category === c).sort((a, b) => b[k] - a[k]);
+  const GROUPS = [["indices", "Indeksy", null], ["commodities", "Surowce", null], ["metals", "Metale", null], ["crypto", "Krypto", null],
+    ["stocks", "Akcje GPW", (r) => r.symbol.endsWith(".PL")], ["stocks", "Akcje zagraniczne", (r) => !r.symbol.endsWith(".PL")]];
+  document.getElementById("heat").innerHTML = GROUPS.map(([c, title, f]) => {
+    const t = rows.filter((r) => r.category === c && (!f || f(r))).sort((a, b) => b[k] - a[k]);
     if (!t.length) return "";
     return `<div class="cat">${title}</div><div class="heat">` + t.map((r) =>
       `<div class="tile" style="background:${color(r[k] / s)};cursor:pointer" data-s="${E(r.symbol)}" title="${E(r.name)}: 1 h ${pct(r.h1)}, 4 h ${pct(r.h4)}, 1 d ${pct(r.d1)}, 5 d ${pct(r.d5)}, 20 d ${pct(r.d20)}">

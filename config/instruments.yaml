@@ -102,6 +102,23 @@ instruments:
   - {symbol: RBW.PL,   name: "Rainbow Tours", category: stocks, sources: {yahoo: "RBW.WA", stooq: "rbw"}}
   - {symbol: S2B.PL,   name: "Syn2bio", category: stocks, sources: {yahoo: "S2B.WA", stooq: "s2b"}}
   - {symbol: SNT.PL,   name: "Synektik", category: stocks, sources: {yahoo: "SNT.WA", stooq: "snt"}}
-  - {symbol: SPL.PL,   name: "Erste Bank Polska", category: stocks, sources: {yahoo: "SPL.WA", stooq: "spl"}}
+  - {symbol: SPL.PL,   name: "Erste Bank Polska", category: stocks, sources: {yahoo: "EBP.WA", stooq: "spl"}}   # dawny Santander Bank Polska; na GPW dzis EBP
   - {symbol: TEN.PL,   name: "Ten Square Games", category: stocks, sources: {yahoo: "TEN.WA", stooq: "ten"}}
   - {symbol: ZAB.PL,   name: "Zabka Group", category: stocks, sources: {yahoo: "ZAB.WA", stooq: "zab"}}
+  # --- WIG20 (dodane 2026-11-18; sklad wedlug wiedzy z 2026 r., do sprawdzenia na gpw.pl). CCC pominiete: brak notowan w Yahoo. ---
+  - {symbol: ALE.PL,  name: "Allegro", category: stocks, sources: {yahoo: "ALE.WA"}}
+  - {symbol: ALR.PL,  name: "Alior Bank", category: stocks, sources: {yahoo: "ALR.WA"}}
+  - {symbol: BDX.PL,  name: "Budimex", category: stocks, sources: {yahoo: "BDX.WA"}}
+  - {symbol: CPS.PL,  name: "Cyfrowy Polsat", category: stocks, sources: {yahoo: "CPS.WA"}}
+  - {symbol: KGH.PL,  name: "KGHM", category: stocks, sources: {yahoo: "KGH.WA"}}
+  - {symbol: KRU.PL,  name: "Kruk", category: stocks, sources: {yahoo: "KRU.WA"}}
+  - {symbol: KTY.PL,  name: "Grupa Kety", category: stocks, sources: {yahoo: "KTY.WA"}}
+  - {symbol: LPP.PL,  name: "LPP", category: stocks, sources: {yahoo: "LPP.WA"}}
+  - {symbol: MBK.PL,  name: "mBank", category: stocks, sources: {yahoo: "MBK.WA"}}
+  - {symbol: OPL.PL,  name: "Orange Polska", category: stocks, sources: {yahoo: "OPL.WA"}}
+  - {symbol: PCO.PL,  name: "Pepco", category: stocks, sources: {yahoo: "PCO.WA"}}
+  - {symbol: PEO.PL,  name: "Bank Pekao", category: stocks, sources: {yahoo: "PEO.WA"}}
+  - {symbol: PGE.PL,  name: "PGE", category: stocks, sources: {yahoo: "PGE.WA"}}
+  - {symbol: PKN.PL,  name: "Orlen", category: stocks, sources: {yahoo: "PKN.WA"}}
+  - {symbol: PKO.PL,  name: "PKO BP", category: stocks, sources: {yahoo: "PKO.WA"}}
+  - {symbol: PZU.PL,  name: "PZU", category: stocks, sources: {yahoo: "PZU.WA"}}
