@@ -1135,3 +1135,9 @@ Słowa kluczowe newsów i dwa nowe zapytania Google News po polsku z nazwami sp�
 Razem 88 instrumentów, w tym 47 spółek. Historia nowych spółek pobierze się przy najbliższym skanie, fundamenty przy przebiegu dziennym,
 a w walidacji i trendzie miesięcznym pojawią się po cotygodniowym przeliczeniu.
 
+## Sesja nauki 4 (2026-11-18)
+
+Zapis w `CLAUDE_CODE/HIPOTEZY.md`. H6 („wybicia 1d bez strony SHORT”) czeka na dziennik (1 z wymaganych 50 sygnałów). H7 (dryf po wynikach kwartalnych)
+nie została przetestowana: brak darmowego, dostępnego źródła historii prognoz i wyników EPS. Dziennik na żywo potwierdza, że `mean_reversion`
+traci (1h: 103 sygnały, −0,57 R, t = −5,3). Silnik i ekran bez zmian.
+
