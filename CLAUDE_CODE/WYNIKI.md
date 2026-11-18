@@ -1122,6 +1122,6 @@ Notowania są opóźnione (Yahoo) i pochodzą z kontraktów futures lub indeksó
 - **Wyszukiwarka:** po symbolu lub nazwie (bez polskich znaków, np. „zloto”, „cd projekt”). Karta instrumentu: wykres dzienny z formacjami,
   zmiany we wszystkich okresach, trend miesięczny (H3), prognozy modelu z jakością, fundamenty spółki i data raportu.
   Kliknięcie kafelka mapy albo pozycji z topów otwiera tę samą kartę.
-- Strona ma ok. 0,65 MB (wykresy wszystkich instrumentów są w pliku, żeby wyszukiwarka działała także offline).
+- Strona ma ok. 0,75 MB (wykresy wszystkich instrumentów są w pliku, żeby wyszukiwarka działała także offline).
 - Sprawdzone lokalnie w przeglądarce (komputer i telefon, ciemny motyw): bez błędów JS, bez poziomego przewijania.
 
