@@ -1163,3 +1163,11 @@ Szczegóły i wnioski: `CLAUDE_CODE/HIPOTEZY.md`. Silnik i ekran bez zmian.
 - Nowy moduł `src/cfd/validation/risk.py` + `tests/test_risk.py` (3 testy, w tym 2 na przyczynowość).
 - Licznik hipotez: 12 przetestowanych, 1 przeszła historię (H3), 1 czeka na dziennik (H6), 1 wstrzymana (H7).
 
+## Sesja nauki 7 (2026-11-18): H13 i H14
+
+- Zapisane przed testem (commit 88ca4c7). Dane: `^GSPC` (Yahoo), daty FOMC z federalreserve.gov (jednorazowo, 28 stron, odstęp 3 s) → `walidacja/fomc_daty.csv` (258 dat).
+- **H13, dzień decyzji FOMC**: odkrywcza nadwyżka +0,31 pp (t 3,23), potwierdzająca +0,04 pp (t 0,33). Odrzucona: efekt zanikł po 2013.
+- **H14, dzień przed świętem w USA**: odkrywcza +0,13 pp (t 2,77), potwierdzająca +0,09 pp (t 1,45 < 1,65), średnio +0,13% w dniu. Odrzucona według kryterium.
+- Nowe: `src/cfd/validation/events.py`, `tests/test_events.py` (4 testy), próbki `tests/fixtures/fomc_*.html`.
+- Licznik: 14 przetestowanych; H3 przeszła historię i czeka na dziennik, H6 czeka na dziennik, H7 wstrzymana.
+
