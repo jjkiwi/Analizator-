@@ -1146,3 +1146,12 @@ Różnica dryfu przez 20 sesji po dodatniej i ujemnej reakcji: −0,75 pp (t = �
 Źródło dat: oficjalne API SEC (8-K, punkt 2.02), kontakt w nagłówku z `.env` (`SEC_USER_AGENT`). H7 (z prognozami analityków) pozostaje wstrzymana:
 robots.txt finance.yahoo.com zabrania dostępu agentom AI.
 
+## Sesja nauki 5 (2026-11-18)
+
+| Hipoteza | Starsze 60% | Nowsze 40% | Wynik |
+|---|---|---|---|
+| H9: ekspozycja zmniejszana przy wysokiej zmienności (koszyk 16 indeksów) | Sharpe 0,78 = 0,78; obsunięcie −48,5% wobec −52,6% | Sharpe 0,67 wobec 0,60; obsunięcie −37,9% wobec −52,2% | odrzucona (próg +0,10 Sharpe) |
+| H10: przełom miesiąca (ostatnia + 3 pierwsze sesje) | +0,38 pp, t = 3,78 | +0,09 pp, t = 0,64 | odrzucona |
+
+Szczegóły i wnioski: `CLAUDE_CODE/HIPOTEZY.md`. Silnik i ekran bez zmian.
+
