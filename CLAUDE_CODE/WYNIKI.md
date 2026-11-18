@@ -1141,3 +1141,8 @@ Zapis w `CLAUDE_CODE/HIPOTEZY.md`. H6 („wybicia 1d bez strony SHORT”) czeka 
 nie została przetestowana: brak darmowego, dostępnego źródła historii prognoz i wyników EPS. Dziennik na żywo potwierdza, że `mean_reversion`
 traci (1h: 103 sygnały, −0,57 R, t = −5,3). Silnik i ekran bez zmian.
 
+**H8 (dryf po reakcji na wyniki, SEC EDGAR):** odrzucona. 1053 publikacje 37 spółek z USA (30 z Dow Jones i 7 z listy użytkownika), 2013–2026.
+Różnica dryfu przez 20 sesji po dodatniej i ujemnej reakcji: −0,75 pp (t = −1,25) na starszych 60% danych i −0,55 pp (t = −0,71) na nowszych.
+Źródło dat: oficjalne API SEC (8-K, punkt 2.02), kontakt w nagłówku z `.env` (`SEC_USER_AGENT`). H7 (z prognozami analityków) pozostaje wstrzymana:
+robots.txt finance.yahoo.com zabrania dostępu agentom AI.
+
