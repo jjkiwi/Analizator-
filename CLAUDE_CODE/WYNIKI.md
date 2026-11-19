@@ -1202,3 +1202,14 @@ Szczegóły i wnioski: `CLAUDE_CODE/HIPOTEZY.md`. Silnik i ekran bez zmian.
 - Analiza opisowa (nie hipoteza do silnika, bez wpływu na licznik): po spadku ≥ 25% od szczytu 252 sesji, epizody bez nakładania (co najmniej 250 sesji odstępu), 8 spółek półprzewodnikowych z Yahoo.
   NVDA (18 epizodów od 1999): po 60 sesjach na plusie 50% (zawsze 66%), po 250 sesjach 72% (zawsze 75%). Pozostałe spółki podobnie: spadek o 25% nie zmienia wyraźnie szans w żadną stronę. Zastrzeżenie: same spółki, które przetrwały.
 - Stan NVDA na 2026-11-18: 150,96 USD, −36,9% od szczytu, −32% w 20 sesji, poniżej SMA200 (203,72).
+
+## H19: model zmienności (zasięg ruchu na 5 sesji), 2026-11-19
+
+- Zapisana przed testem (commit 01d3131). Kod: `src/cfd/model/vol.py`, testy `tests/test_vol.py` (5, w tym przyczynowość cech i to, że cel leży w przyszłości).
+- Model: regresja log-wariancji 5 sesji naprzód na log średniej wariancji Parkinsona z 1/5/22/66 sesji i log wariancji stóp z 22 sesji, wspólna dla instrumentów; skala dobrana pod QLIKE na treningu; przedział 80% z kwantyli stopy znormalizowanej (treningowych).
+- Poprawka po pierwszym uruchomieniu (opisana w rejestrze): filtr stojących kursów, jednakowy dla modelu i wzorców. Kryterium bez zmian.
+- Wynik (zbiór z rejestracji, 55 instrumentów): test QLIKE −10,3% wobec EWMA (p < 0,001), walk-forward 5/5, pokrycie 81,1%. **Przeszła.** Kontrola na 72 instrumentach: −10,8%, 5/5, 81,1%. Raport: `walidacja/zmiennosc.md`.
+- Wpięcie: `cfd model train` liczy też H19 (`walidacja/zmiennosc.json/.md`, kopiowane w `recalc.yml`); `cfd model predict` dodaje `ranges` do `reports/prognozy.json` i dopisuje `walidacja/zakresy_log.csv` (commit w `daily.yml`; przebieg skanu cofa zmiany dziennika); `cfd model score` liczy pokrycie w przód.
+- Ekran: panel „Zasięg ruchu” (20 instrumentów o najwyższej zmienności wobec roku), zakres 80% w karcie instrumentu. Poprawka przy okazji: „częstość 0%” dla instrumentów bez historii modelu kierunku → „nieznana”.
+- Prognoza pomija instrument, gdy najnowszy dzień ma stojący kurs albo jest starszy o > 7 dni od najnowszych danych (bez cichego powrotu do starej daty).
+

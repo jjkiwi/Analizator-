@@ -42,10 +42,10 @@ jobs:
       - name: Zapisz wyniki w repozytorium
         run: |
           # dziennik prognoz i (gdy trening zawiodl) poprzedni model przechodza do nowego katalogu walidacja/
-          for f in model.json model.md prognozy_log.csv; do [ -f "nowe/$f" ] || cp "walidacja/$f" nowe/ 2>/dev/null || true; done
+          for f in model.json model.md zmiennosc.json zmiennosc.md prognozy_log.csv; do [ -f "nowe/$f" ] || cp "walidacja/$f" nowe/ 2>/dev/null || true; done
           rm -rf walidacja && mkdir -p walidacja
           cp nowe/walidacja_1d.json nowe/walidacja_4h.json nowe/walidacja_1h.json nowe/kontekst.md nowe/kontekst_filtry.json walidacja/
-          for f in model.json model.md prognozy_log.csv; do [ -f "nowe/$f" ] && cp "nowe/$f" walidacja/ || true; done
+          for f in model.json model.md zmiennosc.json zmiennosc.md prognozy_log.csv; do [ -f "nowe/$f" ] && cp "nowe/$f" walidacja/ || true; done
           date -u +%F > walidacja/DATA
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

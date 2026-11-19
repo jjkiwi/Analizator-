@@ -131,10 +131,45 @@ def _predictions(pred: dict | None) -> str:
     body = "".join(
         f"<tr><td><b>{_e(r['symbol'])}</b></td><td class='n'>{_e(r.get('horizon'))} sesji</td>"
         f"<td class='n {'up' if (r.get('p_up') or 0) > (r.get('base_rate') or 0.5) else 'down'}'>{100 * (r.get('p_up') or 0):.0f}%</td>"
-        f"<td class='n mut'>{100 * (r.get('base_rate') or 0):.0f}%</td>"
+        f"<td class='n mut'>{_rate(r.get('base_rate'))}</td>"
         f"<td><div class='bar'><i style='{_bar(r)}'></i></div></td><td class='mut'>{_e(r.get('skill'))}</td></tr>" for r in rows[:40])
     return (note + "<div class='scroll'><table><thead><tr><th>Instrument</th><th>Horyzont</th><th>Szansa wzrostu</th>"
             "<th>Częstość hist.</th><th>Różnica</th><th>Jakość</th></tr></thead><tbody>" + body + "</tbody></table></div>")
+
+
+def _rate(x) -> str:
+    return "–" if x is None else f"{100 * x:.0f}%"
+
+
+def _vs(x) -> str:
+    return "" if x is None else f"{x:.1f}×"
+
+
+def _ranges(pred: dict | None) -> str:
+    """Zakres ruchu na h sesji z modelu zmiennosci H19 (jedyny model z potwierdzona jakoscia na danych testowych)."""
+    rg = (pred or {}).get("ranges") or {}
+    items = rg.get("items") or []
+    if not items:
+        return "<p class='mut'>Model zmienności jeszcze nie opublikował zakresów.</p>"
+    ok = rg.get("passed")
+    note = (f"<div class='note'><b>Model zmienności (H19): {'przeszedł test' if ok else 'nie przeszedł testu'}.</b> "
+            f"Przedział, w którym z około 80% szansą zamknie się kurs za {_e(rg.get('horizon'))} sesji. Nie mówi, w którą stronę: "
+            "tylko jak daleko. Na danych testowych 2022–2026 trafiał w ok. 81% przypadków i był dokładniejszy od prostej średniej "
+            "zmienności. Użycie: stop poza zwykłym szumem, mniejsza pozycja przy wysokiej zmienności.</div>")
+    rows = sorted(items, key=lambda r: -(r.get("vs_year") or 0))
+    def num(x):
+        return f"{x:,.0f}".replace(",", " ") if x >= 1000 else f"{x:.2f}" if x >= 10 else f"{x:.4f}"
+    body = "".join(
+        f"<tr><td><b>{_e(r['symbol'])}</b></td><td class='n'>{num(r['price'])}</td>"
+        f"<td class='n'>{num(r['lo'])} – {num(r['hi'])}</td><td class='n'>±{(r['hi_pct'] - r['lo_pct']) / 2:.1f}%</td>"
+        f"<td class='n {'down' if (r.get('vs_year') or 1) > 1.3 else 'up' if (r.get('vs_year') or 1) < 0.8 else ''}'>"
+        f"{_vs(r.get('vs_year'))}</td></tr>"
+        for r in rows[:20])
+    return (note + "<div class='scroll'><table><thead><tr><th>Instrument</th><th>Cena</th><th>Zakres 80%</th><th>Szerokość</th>"
+            "<th>Wobec roku</th></tr></thead><tbody>" + body + "</tbody></table></div>"
+            "<p class='small mut'>„Wobec roku”: bieżąca prognoza zmienności podzielona przez jej medianę z ostatniego roku "
+            f"(powyżej 1,3× czerwono: rynek nerwowy). Pokazane 20 z {len(items)} instrumentów, od najbardziej nerwowych; "
+            "zakres każdego instrumentu jest w wyszukiwarce.</p>")
 
 
 def _bar(r: dict) -> str:
@@ -161,7 +196,9 @@ def render(snap: dict, sections: dict[str, str], live_url: str | None) -> str:
     initial_live = {"generated": snap["generated"], "quotes": snap.get("quotes") or {}, "news": news0}
     trend = {r["symbol"]: r for r in ((snap.get("monthly_trend") or {}).get("rows") or [])}
     stocks = {r["symbol"]: r["assessment"] for r in (snap.get("stocks") or []) if r.get("assessment")}
-    preds = {}
+    preds, rngs = {}, {}
+    for r in (((snap.get("predictions") or {}).get("ranges") or {}).get("items") or []):
+        rngs[r["symbol"]] = {"lo": r["lo"], "hi": r["hi"], "lp": r["lo_pct"], "hp": r["hi_pct"], "vy": r.get("vs_year"), "h": r.get("horizon")}
     for r in ((snap.get("predictions") or {}).get("items") or []):
         preds.setdefault(r["symbol"], []).append({"h": r.get("horizon"), "p": r.get("p_up"), "b": r.get("base_rate"), "skill": r.get("skill")})
     market = []
@@ -171,7 +208,7 @@ def render(snap: dict, sections: dict[str, str], live_url: str | None) -> str:
         market.append({**r, "trend": None if t is None else t["in_trend"],
                        "stock": None if st is None else {"verdict": st["verdict"], "cls": st["class"], "report": st.get("earnings_in_days"),
                                                         "pillars": [[x["name"], x["score"], x["text"]] for x in st["pillars"]]},
-                       "pred": preds.get(r["symbol"])})
+                       "pred": preds.get(r["symbol"]), "rng": rngs.get(r["symbol"])})
     page_data = json.dumps({"market": market, "charts": snap.get("search_charts") or {}}, ensure_ascii=False, default=str).replace("</", "<\\/")
     return f"""<!doctype html><html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Analizator: centrum dowodzenia</title>
@@ -193,7 +230,8 @@ def render(snap: dict, sections: dict[str, str], live_url: str | None) -> str:
 <section class="panel w12"><h2>Wyszukiwarka <small>{len(snap.get('market') or [])} instrumentów: akcje, indeksy, surowce, metale, krypto</small></h2>
 <input id="q" type="search" placeholder="Wpisz symbol lub nazwę, np. CDR, złoto, Nasdaq…" autocomplete="off" aria-label="Szukaj instrumentu">
 <div id="hits" class="chips" style="margin:8px 0"></div><div id="detail"></div></section>
-<section class="panel w5"><h2>Prognozy modelu</h2>{_predictions(snap.get('predictions'))}</section>
+<section class="panel w7"><h2>Zasięg ruchu <small>model zmienności, 5 sesji</small></h2>{_ranges(snap.get('predictions'))}</section>
+<section class="panel w5"><h2>Prognozy kierunku</h2>{_predictions(snap.get('predictions'))}</section>
 <section class="panel w12">{sections.get('monthly', '')}</section>
 <section class="panel w12"><h2>Sygnały strategii <small>{len(snap.get('signals') or [])} z ostatnich świec</small></h2>{sections.get('signals', '')}</section>
 <section class="panel w6">{sections.get('stocks', '')}</section>
@@ -308,13 +346,14 @@ function show(sym) {
   const per = [["1 h", r.h1], ["4 h", r.h4], ["1 dzień", r.d1], ["5 dni", r.d5], ["20 dni", r.d20]]
     .map(([l, v]) => `<dt>${l}</dt><dd class="${v == null ? "" : v >= 0 ? "up" : "down"}">${pct(v)}</dd>`).join("");
   const tr = r.trend == null ? "" : `<dt>Trend miesięczny</dt><dd class="${r.trend ? "up" : "down"}">${r.trend ? "w trendzie" : "poza trendem"} <span class="mut">(hipoteza H3)</span></dd>`;
-  const pr = (r.pred || []).map((p) => `<dt>Model, ${p.h} sesji</dt><dd>${Math.round(100 * p.p)}% <span class="mut">(częstość ${Math.round(100 * p.b)}%, jakość: ${E(p.skill)})</span></dd>`).join("");
+  const rg = r.rng ? `<dt>Zakres 80%, ${r.rng.h} sesji</dt><dd>${pct(r.rng.lp)} do ${pct(r.rng.hp)} <span class="mut">(model zmienności H19${r.rng.vy ? `, ${r.rng.vy.toFixed(1)}× typowej z roku` : ""})</span></dd>` : "";
+  const pr = (r.pred || []).map((p) => `<dt>Model, ${p.h} sesji</dt><dd>${Math.round(100 * p.p)}% <span class="mut">(częstość ${p.b == null ? "nieznana" : Math.round(100 * p.b) + "%"}, jakość: ${E(p.skill)})</span></dd>`).join("");
   const st = r.stock ? `<h2 class="sub">Fundamenty</h2><p class="${r.stock.cls === "good" ? "up" : r.stock.cls === "bad" ? "down" : ""}"><b>${E(r.stock.verdict)}</b>${r.stock.report != null && r.stock.report >= 0 ? ` · raport za ${r.stock.report} dni` : ""}</p>
     <div class="chips">${r.stock.pillars.filter((p) => p[1] != null).map((p) => `<span class="chip ${p[1] > 0 ? "ok" : p[1] < 0 ? "bad" : ""}">${E(p[0])}: ${E(p[2])}</span>`).join("")}</div>` : "";
   const pats = c && c.patterns && c.patterns.length ? `<ul class="pat">${c.patterns.map((p) => `<li><b class="${p.direction > 0 ? "up" : p.direction < 0 ? "down" : ""}">${E(p.label)}</b> <span class="mut">(${E(p.status)})</span> ${E(p.note)}</li>`).join("")}</ul>` : "";
   document.getElementById("detail").innerHTML = `<div class="det"><div class="chart">${c ? c.svg : "<p class='mut'>Brak wykresu.</p>"}${pats}</div>
     <div><h2 class="sub">${E(r.symbol)} · ${E(r.name)} <span class="mut small">${E(CATS[r.category] || r.category)}</span></h2>
-    <dl class="kv"><dt>Ostatnia cena</dt><dd>${r.price >= 1000 ? r.price.toLocaleString("pl-PL", {maximumFractionDigits: 0}) : r.price.toFixed(r.price >= 10 ? 2 : 4)} <span class="mut">${E((r.time || "").slice(0, 16).replace("T", " "))} UTC</span></dd>${per}${tr}${pr}</dl>${st}</div></div>`;
+    <dl class="kv"><dt>Ostatnia cena</dt><dd>${r.price >= 1000 ? r.price.toLocaleString("pl-PL", {maximumFractionDigits: 0}) : r.price.toFixed(r.price >= 10 ? 2 : 4)} <span class="mut">${E((r.time || "").slice(0, 16).replace("T", " "))} UTC</span></dd>${per}${tr}${rg}${pr}</dl>${st}</div></div>`;
   document.querySelectorAll(".hit").forEach((h) => h.setAttribute("aria-pressed", String(h.dataset.s === sym)));
 }
 const q = document.getElementById("q");

@@ -631,6 +631,11 @@ def cmd_model(args) -> None:
         if not log_path.exists():
             sys.exit(f"Brak dziennika prognoz {log_path}.")
         res = mpr.score_log(pd.read_csv(log_path), {s: f["close"] for s, f in frames.items()})
+        rlog = log_path.with_name("zakresy_log.csv")
+        if rlog.exists():
+            from .model import vol as mvol
+
+            res["zakresy_H19"] = mvol.score_range_log(pd.read_csv(rlog), {s: f["close"] for s, f in frames.items()})
         print(json.dumps(res, ensure_ascii=False, indent=1))
         return
     ds = build_dataset(frames, cats)
@@ -639,6 +644,14 @@ def cmd_model(args) -> None:
         if args.action == "train" or args.out:
             pj, pm = mev.write_reports(res, args.out or "walidacja")
             print(f"Zapisano: {pj}, {pm}")
+        if args.action == "train":  # model zmiennosci H19 (osobny raport)
+            from .model import vol as mvol
+
+            vdoc = mvol.train_doc(frames)
+            vj, vm = mvol.write(vdoc, args.out or "walidacja")
+            t = vdoc["evaluation"]["test"]
+            print(f"Zmiennosc (H19): QLIKE {t['qlike_har']:.4f} wobec {t['best_benchmark']} {min(t['qlike_naive'], t['qlike_ewma']):.4f}, "
+                  f"pokrycie 80% {t['coverage80']:.1%} -> {'PRZESZEDL' if vdoc['passed'] else 'nie przeszedl'}; zapisano {vj}, {vm}")
         for h, r in res["horizons"].items():
             t = r["test"]
             print(f"h={h}: BSS test {t['bss']:+.4f}, p={r['bootstrap']['p_brier']:.3f}, AUC {t['auc']:.3f}, "
@@ -647,9 +660,20 @@ def cmd_model(args) -> None:
         return
     doc = mpr.load_model_doc(Path(args.out or "walidacja") / "model.json")
     items = mpr.predict_latest(ds, doc)
-    print(f"Prognozy: {mpr.write_predictions(items, doc, args.predictions)} ({len(items)})")
+    vpath = Path(args.out or "walidacja") / "zmiennosc.json"
+    ranges = None
+    if vpath.exists():
+        from .model import vol as mvol
+
+        vdoc = json.loads(vpath.read_text(encoding="utf-8"))
+        ranges = {"generated": vdoc.get("generated"), "passed": vdoc.get("passed"), "horizon": vdoc.get("h"),
+                  "items": mvol.predict_ranges(frames, vdoc)}
+    print(f"Prognozy: {mpr.write_predictions(items, doc, args.predictions, ranges)} ({len(items)}, zakresy: "
+          f"{len(ranges['items']) if ranges else 'brak modelu zmiennosci'})")
     if not args.no_log:
         print(f"Dziennik prognoz {args.log}: +{mpr.append_log(items, args.log)} wpisow")
+        if ranges:
+            print(f"Dziennik zakresow: +{mvol.append_range_log(ranges['items'], Path(args.log).with_name('zakresy_log.csv'))} wpisow")
 
 
 def cmd_context_test(args) -> None:

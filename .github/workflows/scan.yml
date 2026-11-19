@@ -53,6 +53,7 @@ jobs:
         run: |
           cfd model predict >/dev/null 2>&1 || true      # prognozy H5 na ekran (dziennik prognoz prowadzi przebieg dzienny)
           git checkout -- walidacja/prognozy_log.csv 2>/dev/null || rm -f walidacja/prognozy_log.csv
+          git checkout -- walidacja/zakresy_log.csv 2>/dev/null || rm -f walidacja/zakresy_log.csv
           cfd now --offline --reports walidacja --out public/index.html || true
           { echo '### Dziennik'; echo '```'; cfd journal | head -20; echo '```'; echo '### Kontekst'; cfd journal-context; } >> "$GITHUB_STEP_SUMMARY" || true
       - name: Kopia ekranu i dziennika (artefakt)

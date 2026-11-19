@@ -40,12 +40,14 @@ def predict_latest(ds: pd.DataFrame, doc: dict, horizons=HORIZONS) -> list[dict]
     return out
 
 
-def write_predictions(items: list[dict], doc: dict, path: Path | str = "reports/prognozy.json") -> Path:
+def write_predictions(items: list[dict], doc: dict, path: Path | str = "reports/prognozy.json", ranges: dict | None = None) -> Path:
     p = Path(path)
     p.parent.mkdir(parents=True, exist_ok=True)
     payload = {"generated": pd.Timestamp.now(tz="UTC").isoformat(timespec="seconds"), "model_generated": doc.get("generated"),
                "note": "Prawdopodobieństwo wzrostu ceny za h sesji. skill='brak': model nie jest lepszy od częstości wzrostów.",
                "items": items}
+    if ranges:
+        payload["ranges"] = ranges
     p.write_text(json.dumps(payload, ensure_ascii=False, indent=1), encoding="utf-8")
     return p
 
