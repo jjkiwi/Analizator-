@@ -46,6 +46,7 @@ instruments:
   # --- akcje (nazwy spolek; unikamy skrotow, ktore sa zwyklymi slowami, np. "arm", "mp", "iag") ---
   ARM.US:    ["arm holdings"]
   ANT.US:    ["anthropic"]
+  NVDA.US:   ["nvidia", "jensen huang"]
   CEG.US:    ["constellation energy"]
   MNST.US:   ["monster beverage"]
   MP.US:     ["mp materials"]
@@ -148,7 +149,7 @@ topics:
     symbols: [UEC.US, CEG.US]
   semiconductors:
     keywords: ["semiconductor", "semiconductors", "chip export", "chipmakers", "tsmc", "nvidia"]
-    symbols: [ARM.US, MRVL.US, 1YD.DE, US100]
+    symbols: [ARM.US, MRVL.US, 1YD.DE, NVDA.US, US100]
   rare_earths:
     keywords: ["rare earth", "rare earths", "metale ziem rzadkich"]
     symbols: [MP.US]

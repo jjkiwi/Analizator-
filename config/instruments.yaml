@@ -82,6 +82,7 @@ instruments:
   - {symbol: RVMD.US,  name: "Revolution Medicines", category: stocks, sources: {yahoo: "RVMD"}}
   # Anthropic: debiut na Nasdaq planowany na 2026-11-19 (symbol ANT); do pierwszej sesji Yahoo zwraca blad "brak danych"
   - {symbol: ANT.US,   name: "Anthropic", category: stocks, sources: {yahoo: "ANT"}}
+  - {symbol: NVDA.US,  name: "Nvidia", category: stocks, sources: {yahoo: "NVDA"}}
   - {symbol: TTWO.US,  name: "Take-Two Interactive", category: stocks, sources: {yahoo: "TTWO"}}
   - {symbol: UEC.US,   name: "Uranium Energy", category: stocks, sources: {yahoo: "UEC"}}
   - {symbol: 1YD.DE,   name: "Broadcom (Xetra)", category: stocks, sources: {yahoo: "1YD.DE"}}

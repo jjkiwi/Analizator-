@@ -1195,3 +1195,10 @@ Szczegóły i wnioski: `CLAUDE_CODE/HIPOTEZY.md`. Silnik i ekran bez zmian.
 - `forward_status` i `cluster_mean` w `src/cfd/validation/journal_ctx.py`, uruchamiane `python -m cfd.validation.journal_ctx`. Test w `tests/test_journal_ctx.py`.
 - Licznik: 18 hipotez.
 
+
+## NVDA.US dodane + stopy bazowe po spadkach (2026-11-19)
+
+- Na prośbę użytkownika: `NVDA.US` (Yahoo `NVDA`) w `config/instruments.yaml`, słowa „nvidia”, „jensen huang” w `config/keywords.yaml`, NVDA.US dopisane do tematu `semiconductors`. `cfd check-sources NVDA.US`: działa.
+- Analiza opisowa (nie hipoteza do silnika, bez wpływu na licznik): po spadku ≥ 25% od szczytu 252 sesji, epizody bez nakładania (co najmniej 250 sesji odstępu), 8 spółek półprzewodnikowych z Yahoo.
+  NVDA (18 epizodów od 1999): po 60 sesjach na plusie 50% (zawsze 66%), po 250 sesjach 72% (zawsze 75%). Pozostałe spółki podobnie: spadek o 25% nie zmienia wyraźnie szans w żadną stronę. Zastrzeżenie: same spółki, które przetrwały.
+- Stan NVDA na 2026-11-18: 150,96 USD, −36,9% od szczytu, −32% w 20 sesji, poniżej SMA200 (203,72).
