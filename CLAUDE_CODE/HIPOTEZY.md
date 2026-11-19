@@ -183,3 +183,9 @@ Liczba hipotez przetestowanych do tej pory: **18** (nie licząc 276 filtrów z t
 - Nowe narzędzie: `python -m cfd.validation.journal_ctx sygnaly.csv` rozlicza H6, H17, H18 jednym poleceniem (t po skupiskach), żeby kolejne sesje były tańsze.
 - Rada na kolejne sesje: przy tempie ~100 rozliczeń na dzień roboczy H17 i H18 mogą mieć werdykt po ok. 1–2 tygodniach. Sesje częstsze niż co kilka dni niewiele dodadzą, dopóki dziennik nie urośnie.
 
+
+### Sesja 10 (2026-11-19)
+
+- Dziennik (11:45 UTC): 784 sygnały, 507 rozliczonych. H6: 0/50. H17: 2/100 (−1,11 R, za wcześnie). H18: 0/100. ANT.US: notowania od otwarcia w USA, jeszcze brak.
+- H3: sprawdzone, że ocena w przód działa (`cfd monthly-test --since 2026-12` zwraca n = 0 bez błędu; na oknie od 2026-01 liczy 10 miesięcy). Pierwszy miesiąc do oceny: grudzień 2026, ocena po 2027-01-01.
+- **Świadomie bez nowych hipotez.** Po 18 próbach i 0 potwierdzeniach każda kolejna próba na „przeoranej” historii zwiększa szansę trafienia z przypadku, a dziennik przybywa wolniej niż sesje. Licznik bez zmian: 18.
