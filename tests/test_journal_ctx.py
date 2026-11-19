@@ -42,3 +42,17 @@ def test_load_journal_demeans_within_strategy():
     df = load_journal(_csv(rows))
     assert np.allclose(df["r_adj"], 0)
     assert abs(h15(df)["diff"]) < 1e-12
+
+
+def test_forward_status_uses_only_new_signals():
+    rows = []
+    for i in range(120):
+        rows.append({"symbol": f"S{i}", "strategy": "donchian_breakout", "interval": "1h",
+                     "time": f"2026-11-{20 + i // 24:02d}T{i % 24:02d}:00:00+00:00", "side": 1, "r_result": 0.5 + (i % 3) * 0.1,
+                     "created_at": "2026-11-20 10:00:00", "context": "{}"})
+    rows.append({"symbol": "OLD", "strategy": "donchian_breakout", "interval": "1h", "time": "2026-11-15T10:00:00+00:00",
+                 "side": 1, "r_result": -50.0, "created_at": "2026-11-15 10:00:00", "context": "{}"})
+    from cfd.validation.journal_ctx import forward_status
+    res = forward_status(load_journal(_csv(rows)))
+    assert res["H17"]["n"] == 120 and res["H17"]["verdict"] == "potwierdzona"
+    assert res["H18"]["verdict"] == "za malo danych"

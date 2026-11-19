@@ -1187,3 +1187,11 @@ Szczegóły i wnioski: `CLAUDE_CODE/HIPOTEZY.md`. Silnik i ekran bez zmian.
 - Nowe: `src/cfd/validation/journal_ctx.py`, `tests/test_journal_ctx.py` (3 testy, w tym poszerzenie błędu dla powielonych sygnałów).
 - Licznik: 16 przetestowanych.
 
+## Sesja nauki 9 (2026-11-19): H17 i H18 (tylko w przód)
+
+- Zapisane 00:31 UTC (commit 7614e0a). Ocena wyłącznie na sygnałach z `created_at` po tej chwili; dotychczasowy dziennik był źródłem pomysłów.
+- H17: `donchian_breakout` 1h, kryterium ≥ 100 rozliczonych, średnio > 0 R po kosztach, t ≥ 1,65 po skupiskach.
+- H18: `mean_reversion` 1h + 4h, kryterium ≥ 100 rozliczonych, średnio < 0 R, t ≤ −1,65. Potwierdzenie = rekomendacja dla użytkownika (oznaczenie na ekranie), bez zmian w `alert_strategies`.
+- `forward_status` i `cluster_mean` w `src/cfd/validation/journal_ctx.py`, uruchamiane `python -m cfd.validation.journal_ctx`. Test w `tests/test_journal_ctx.py`.
+- Licznik: 18 hipotez.
+

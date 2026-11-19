@@ -56,3 +56,47 @@ def h16(df: pd.DataFrame, hours: float = 2.0) -> dict:
     out["mean_raw_przed"] = float(d.loc[~rest, "r_result"].mean())
     out["mean_raw_reszta"] = float(d.loc[rest, "r_result"].mean())
     return out
+
+
+def cluster_mean(r: pd.Series, cluster: pd.Series) -> dict:
+    """Srednia z t odpornym na skupiska (CR1)."""
+    n = len(r)
+    if n < 2:
+        return {"n": n, "mean": float(r.mean()) if n else float("nan"), "t": float("nan"), "clusters": n}
+    m = float(r.mean())
+    e = (r - m).groupby(cluster.to_numpy()).sum()
+    g = len(e)
+    se = math.sqrt((e ** 2).sum() * g / (g - 1)) / n if g > 1 else float("nan")
+    return {"n": n, "mean": m, "t": m / se if se and se > 0 else float("nan"), "clusters": g}
+
+
+# Hipotezy oceniane wylacznie w przod: (strategia, interwaly, strona lub None, od kiedy UTC, min n, kierunek)
+FORWARD = {
+    "H6": ("donchian_breakout", ("1d",), -1, "2026-11-18 00:00", 50, -1),  # + recznie: LONG > SHORT w tym okresie
+    "H17": ("donchian_breakout", ("1h",), None, "2026-11-19 00:31", 100, +1),
+    "H18": ("mean_reversion", ("1h", "4h"), None, "2026-11-19 00:31", 100, -1),
+}
+
+
+def forward_status(df: pd.DataFrame, spec: dict = FORWARD) -> dict:
+    """Stan hipotez ocenianych w przod: liczba rozliczonych, srednia R, t po skupiskach, werdykt."""
+    out = {}
+    for name, (strat, intervals, side, since, min_n, sign) in spec.items():
+        d = df[(df["strategy"] == strat) & df["interval"].isin(intervals)
+               & (df["created_at"] >= pd.Timestamp(since, tz="UTC"))]
+        if side is not None:
+            d = d[d["side"] == side]
+        st = cluster_mean(d["r_result"], d["cluster"])
+        ok = st["n"] >= min_n and sign * st["mean"] > 0 and sign * st["t"] >= 1.65
+        st["verdict"] = "potwierdzona" if ok else ("za malo danych" if st["n"] < min_n else "nie potwierdzona")
+        st["min_n"] = min_n
+        out[name] = st
+    return out
+
+
+if __name__ == "__main__":  # python -m cfd.validation.journal_ctx sygnaly.csv
+    import sys
+
+    res = forward_status(load_journal(open(sys.argv[1], encoding="utf-8").read()))
+    for k, v in res.items():
+        print(f"{k}: n={v['n']}/{v['min_n']} srednia={v['mean']:+.3f} R t={v['t']:.2f} skupisk={v['clusters']} -> {v['verdict']}")

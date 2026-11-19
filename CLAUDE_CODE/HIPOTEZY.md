@@ -12,6 +12,8 @@ Wystarczy napisać: „sesja nauki”. Claude Code wykonuje wtedy procedurę pon
 1. `git pull`, przeczytaj ten plik i `walidacja/` (ostatnie przeliczenie). Dziennik: `git fetch origin dane` i `git show origin/dane:sygnaly.csv`
    (skan co godzinę nadpisuje tę gałąź eksportem dziennika; artefaktów Actions nie da się pobrać ze środowiska Claude Code).
 2. **Najpierw rozlicz stare hipotezy**: dla każdej w stanie „czeka na dziennik” sprawdź sygnały zebrane PO dacie jej zapisania.
+   Hipotezy dziennika (H6, H17, H18): `git show origin/dane:sygnaly.csv > s.csv && python -m cfd.validation.journal_ctx s.csv`
+   (błąd po skupiskach; nowe hipotezy w przód dopisuj do `FORWARD` w `src/cfd/validation/journal_ctx.py`). H3: `cfd monthly-test --since 2026-12`.
 3. Postaw najwyżej **dwie** nowe hipotezy. Zapisz je w tabeli **przed** uruchomieniem testu, z uzasadnieniem i kryterium.
 4. Przetestuj na historii metodą zakrytej przyszłości (`cfd context-test`, `cfd report` albo osobny skrypt). Wpisz wynik, także negatywny.
 5. Hipoteza, która przeszła historię, dostaje stan „czeka na dziennik”. Do silnika (ekran, wyróżnienie sygnału) trafia dopiero po
@@ -173,4 +175,11 @@ Liczba hipotez przetestowanych do tej pory: **18** (nie licząc 276 filtrów z t
 - Lekcja metodyczna: sygnały z tej samej świecy na wielu instrumentach nie są niezależne. Liczone po skupiskach t spada, np. `mean_reversion` 1h z −5,75 do −4,34 (nadal wyraźna strata). Od tej sesji oceny dziennika liczę po skupiskach (`src/cfd/validation/journal_ctx.py`).
 - Obserwacja (bez hipotezy, limit dwóch na sesję): `donchian_breakout` 1h w dzienniku +0,22 R na 195 sygnałach, t po skupiskach 1,86. Historia (walk-forward) nie dała tu przewagi po kosztach, a dziennik to 7 dni jednego okresu rynku. Kandydat na hipotezę z oceną wyłącznie w przód w następnej sesji.
 - H15 i H16 można postawić ponownie za kilka tygodni na większym dzienniku, jako nowe próby (licznik rośnie).
+
+### Sesja 9 (2026-11-19)
+
+- Dziennik (00:30 UTC): 739 sygnałów, 463 rozliczone (tylko +2 od sesji 8). H6: 0 sygnałów. H3: od 2026-12. ANT.US: jeszcze bez notowań (debiut dziś).
+- H17 (wybicia 1h zarabiają) i H18 (`mean_reversion` 1h/4h traci): zapisane 00:31 UTC jako **hipotezy wyłącznie w przód**, bo oba pomysły pochodzą z dziennika, który już widziałem. Wcześniejsze 463 sygnały nie liczą się jako dowód.
+- Nowe narzędzie: `python -m cfd.validation.journal_ctx sygnaly.csv` rozlicza H6, H17, H18 jednym poleceniem (t po skupiskach), żeby kolejne sesje były tańsze.
+- Rada na kolejne sesje: przy tempie ~100 rozliczeń na dzień roboczy H17 i H18 mogą mieć werdykt po ok. 1–2 tygodniach. Sesje częstsze niż co kilka dni niewiele dodadzą, dopóki dziennik nie urośnie.
 
