@@ -1,1 +1,11 @@
-[]
+[
+ {
+  "interval": "1d",
+  "strategy": "donchian_breakout",
+  "scope": "stocks",
+  "feature": "vol",
+  "value": "niska",
+  "n": 499,
+  "mean_r": 0.18599877361366876
+ }
+]
