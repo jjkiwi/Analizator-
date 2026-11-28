@@ -1,0 +1,3 @@
+sygnalow: 1810
+rozliczonych: 1473
+newsow: 42029 (istotnych: 19188), od 2026-11-12 07:45:11 do 2026-11-28 20:05:48
