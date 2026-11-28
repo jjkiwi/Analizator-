@@ -1,12 +1,12 @@
 # Model zmienności (H19): raport walidacji
 
-Przeliczono: 2026-11-21T11:45:54+00:00. Dane: 1965-04-13 – 2026-11-15, 72 instrumentów, 371489 wierszy. Horyzont 5 sesji, strata QLIKE (niższa = lepsza).
+Przeliczono: 2026-11-28T12:43:13+00:00. Dane: 1965-04-13 – 2026-11-22, 72 instrumentów, 371845 wierszy. Horyzont 5 sesji, strata QLIKE (niższa = lepsza).
 
 ## Wynik: PRZESZEDŁ
 
 | Okres | HAR | 20 sesji | EWMA | zysk wobec lepszego wzorca | p | pokrycie 80% |
 |---|---|---|---|---|---|---|
-| test | 0.4822 | 0.6412 | 0.5410 | +10.9% | 0.000 | 81.0% |
+| test | 0.4828 | 0.6412 | 0.5413 | +10.8% | 0.000 | 80.9% |
 | WF 2010-01-01–2012-12-31 | 0.4709 | 0.5917 | 0.5073 | +7.2% | 0.000 | 82.3% |
 | WF 2013-01-01–2015-12-31 | 0.4954 | 0.6189 | 0.5257 | +5.8% | 0.000 | 80.5% |
 | WF 2016-01-04–2018-12-31 | 0.4895 | 0.6411 | 0.5341 | +8.4% | 0.000 | 81.1% |
